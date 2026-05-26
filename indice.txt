@@ -8,3 +8,5 @@ indice.txt
 - [_docs/0203_TestSquares.md](_docs/0203_TestSquares.md)
 - [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
 - [_docs/0500_Deploy.md](_docs/0500_Deploy.md)
+- [_docs/0600_Arquitetura_Mobile.md](_docs/0600_Arquitetura_Mobile.md)
+

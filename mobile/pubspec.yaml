@@ -1,0 +1,42 @@
+name: rotaescola_arapongas
+description: "Aplicativo de gestão de transporte escolar público - Arapongas"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Supabase e Autenticação
+  supabase_flutter: ^2.6.0
+
+  # Leitor de QR Code
+  mobile_scanner: ^5.1.1
+
+  # Banco de dados local para Offline-First
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Gerenciamento de Conexão e Rede
+  connectivity_plus: ^6.0.3
+
+  # Câmera e Seleção de Imagens (para upload de documentos)
+  image_picker: ^1.1.2
+
+  # Utilidades adicionais
+  flutter_bloc: ^8.1.6
+  uuid: ^4.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.9
+
+flutter:
+  uses-material-design: true

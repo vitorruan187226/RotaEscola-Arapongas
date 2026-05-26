@@ -5,5 +5,6 @@ indice.txt
 - [_docs/0200_Indice_Telas.md](_docs/0200_Indice_Telas.md)
 - [_docs/0201_Home.md](_docs/0201_Home.md)
 - [_docs/0202_Todos.md](_docs/0202_Todos.md)
+- [_docs/0203_TestSquares.md](_docs/0203_TestSquares.md)
 - [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
 - [_docs/0500_Deploy.md](_docs/0500_Deploy.md)

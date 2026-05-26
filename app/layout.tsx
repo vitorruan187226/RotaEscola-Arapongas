@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Rota Escola Arapongas",
-  description: "Sistema de controle de rotas de transporte escolar",
+  title: "RotaEscola Arapongas",
+  description: "Sistema de gestão do transporte escolar público municipal",
 };
 
 export default function RootLayout({
@@ -16,24 +17,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <style>{`
-          * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-          }
-          body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at top left, #0d1117, #07090e);
-            color: #f0f6fc;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow-x: hidden;
-          }
-        `}</style>
       </head>
       <body>
         {children}

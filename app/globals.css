@@ -1,0 +1,68 @@
+:root {
+  --primary-navy: #0F2042;
+  --secondary-white: #FFFFFF;
+  --accent-yellow: #FBC02D;
+  --background-gray: #F4F6F9;
+  --text-dark: #1E293B;
+  --text-light: #64748B;
+  --border-color: #E2E8F0;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--background-gray);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Glassmorphism Cards */
+.card-premium {
+  background: var(--secondary-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  padding: 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(15, 32, 66, 0.1), 0 4px 6px -2px rgba(15, 32, 66, 0.05);
+}
+
+.badge-yellow {
+  background-color: rgba(251, 192, 45, 0.15);
+  color: #B78103;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(251, 192, 45, 0.3);
+}
+
+.btn-primary {
+  background-color: var(--primary-navy);
+  color: var(--secondary-white);
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}

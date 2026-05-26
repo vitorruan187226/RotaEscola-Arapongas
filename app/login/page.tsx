@@ -23,17 +23,19 @@ export default function LoginPage() {
 
     // Validação contra os dados simulados
     if (cleanCpf === '11111111111' && senha === 'secretariasenha') {
+      document.cookie = "sb-mock-login=secretaria; path=/";
       router.push('/dashboard/secretaria');
       setLoading(false);
       return;
     }
     if (cleanCpf === '22222222222' && senha === 'responsavelsenha') {
+      document.cookie = "sb-mock-login=responsavel; path=/";
       router.push('/dashboard/responsavel');
       setLoading(false);
       return;
     }
-    // Credencial coringa para o painel de administrador total
     if (cleanCpf === '99999999999' && senha === 'adminisenha') {
+      document.cookie = "sb-mock-login=admin; path=/";
       router.push('/dashboard/admin');
       setLoading(false);
       return;

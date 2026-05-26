@@ -29,17 +29,20 @@ export async function middleware(request: NextRequest) {
   // Valida a sessão do usuário
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Permite simular login de teste mesmo sem sessão ativa no Supabase
+  const isMockCookie = request.cookies.get('sb-mock-login')?.value;
+
   // Se o usuário tentar acessar qualquer rota de /dashboard sem estar autenticado, vai para /login
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!user && !isMockCookie && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
   // Se já estiver logado e tentar ir para o login, redireciona para a home ou dashboard
-  if (user && request.nextUrl.pathname === '/login') {
+  if ((user || isMockCookie) && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = '/dashboard/responsavel';
     return NextResponse.redirect(url);
   }
 

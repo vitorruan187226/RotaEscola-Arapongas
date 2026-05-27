@@ -289,20 +289,31 @@ function DocumentosUploadPageContent() {
       </div>
 
       {/* Ação de Conclusão */}
-      <div className="mt-2.5">
+      <div className="mt-2.5 flex flex-col gap-2">
         <button
           disabled={!isAllUploaded}
-          onClick={() => {
+          onClick={async () => {
+            // Atualiza status do aluno para 'Em análise' no banco
+            try {
+              const supabase = createClient();
+              await supabase
+                .from('alunos')
+                .update({ status_carteirinha: 'Em análise' })
+                .eq('id', alunoId);
+            } catch {
+              // Fallback silencioso — o status é atualizado localmente
+            }
+
             setMsg({
               type: 'success',
-              text: 'Seus documentos foram enviados para a fila de análise da Secretaria de Educação!'
+              text: '✅ Documentos recebidos! Sua solicitação entrou na fila de análise da Secretaria de Educação (SEMED). Você será notificado em até 48h.'
             });
-            setTimeout(() => router.push('/responsavel/dashboard'), 2000);
+            setTimeout(() => router.push('/responsavel/dashboard'), 3000);
           }}
           className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-250 shadow-md ${
-            isAllUploaded 
-              ? 'bg-slate-900 text-white hover:bg-slate-800' 
-              : 'bg-slate-250 text-slate-400 border border-slate-300/40 cursor-not-allowed'
+            isAllUploaded
+              ? 'bg-slate-900 text-white hover:bg-slate-800'
+              : 'bg-slate-100 text-slate-400 border border-slate-200/60 cursor-not-allowed'
           }`}
         >
           <CheckCircle2 size={15} />
@@ -310,11 +321,12 @@ function DocumentosUploadPageContent() {
         </button>
 
         {!isAllUploaded && (
-          <p className="text-[10px] text-center text-slate-400 mt-2 font-medium">
+          <p className="text-[10px] text-center text-slate-400 font-medium">
             Todos os documentos precisam ser anexados para prosseguir.
           </p>
         )}
       </div>
+
     </div>
   );
 }

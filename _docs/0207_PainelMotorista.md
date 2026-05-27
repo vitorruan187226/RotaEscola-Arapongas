@@ -6,42 +6,43 @@
 ## Rota Base
 - `/dashboard/motorista` — Painel do veículo (checklist, scanner e ocorrências)
 
-A visualização é forçada em formato de tela de dispositivo móvel (`max-w-md` com fundo de alto contraste e bordas centralizadas no desktop) para atender ao uso em smartphones no painel do veículo.
+A visualização é forçada em formato de tela de dispositivo móvel (`max-w-md` com fundo de alto contraste e bordas centralizadas no desktop com sombra premium e contornos discretos) para atender ao uso em smartphones no painel do veículo.
 
 ## Arquitetura de Pastas
 ```
 app/dashboard/motorista/
-└── page.tsx           ← Painel completo consolidado do motorista (use client)
+└── page.tsx           ← Painel completo redesenhado consolidado do motorista (use client)
 ```
 
-## Páginas & Funcionalidades
+## Páginas & Funcionalidades (Redesenho Premium)
 
-### 1. Layout (`layout.tsx`)
+### 1. Cabeçalho de Status
 - Mantém o encapsulamento móvel responsivo.
-- Possui um seletor visual discreto no cabeçalho superior que permite alternar a rede local de **ONLINE** para **OFFLINE** para fins de teste.
-- Bottom Navigation com transição suave e ícones Lucide.
+- Seletor de conectividade no topo (**ONLINE / OFFLINE**) com efeitos de cor verde (online) e vermelho pulsante (offline) baseados em opacidades sutis.
+- Título minimalista e selo do município ("Arapongas · Bordo").
 
-### 2. Painel de Início (`painel/page.tsx`)
-- **Seletor de Viagem:** Permite que o motorista defina o veículo e a rota no início do turno (dados mockados sincronizados).
-- **Contador Dinâmico:** Exibe instantaneamente a fração de alunos embarcados em tempo real (ex: `4/6`).
-- **Lista de Passageiros:** Checklist interativo que marca/desmarca a bordo de forma manual.
-- **Acessibilidade NEE:** Alunos com Necessidades Educacionais Especiais são destacados com bordas amarelas, ícones de cadeira de rodas/acessibilidade e a respectiva tag de restrição (Autismo, Deficiência Visual, Cadeirante).
+### 2. Card de Rota e Turno (Topo)
+- **Seletor de Viagem:** Card integrado com fundo escuro (`bg-slate-900/60`) e bordas sutis (`border-slate-800/80`).
+- **Contador Dinâmico & Lotação:** Exibe a lotação do veículo em formato mono (`4 / 5`).
+- **Barra de Progresso Suave:** Barra gradiente abaixo do seletor que ilustra a lotação em tempo real (de `0%` a `100%`).
 
-### 3. Leitor de Carteirinha (`leitor/page.tsx`)
-- Moldura de câmera simulada com laser horizontal vermelho animado de varredura.
-- **Botões de Simulação:** Permite que a equipe teste os seguintes comportamentos do scanner:
-  - **Sucesso:** Painel verde gigante com a escrita "EMBARQUE AUTORIZADO" e dados do aluno. Emissão de feedback de voz: *"Embarque autorizado"*.
-  - **Erro de Rota:** Painel vermelho gigante com a escrita "ALUNO NÃO PERTENCE A ESTA ROTA" com a rota correspondente. Feedback de voz: *"Rota inválida"*.
-  - **Expirada:** Painel vermelho escuro com "CARTEIRINHA VENCIDA". Feedback de voz: *"Carteirinha vencida"*.
-- **Modo Offline:** Se o sinalizador de rede estiver offline, a tela exibe um aviso de alerta informando que os registros de escaneamento estão sendo guardados no banco local para sincronização em nuvem posterior.
+### 3. Leitor de Carteirinha (Scanner QR Code)
+- Visor central sem bordas duras internas.
+- Cantoneiras arredondadas discretas no estilo foco de câmera (`border-amber-400`).
+- Laser neon vermelho pulsante simulando leitura (`shadow-[0_0_15px_rgba(239,68,68,0.7)]`).
+- **Botões Simuladores:** Pílulas arredondadas (`rounded-full`) de cores sólidas e opacidade sutil (`bg-emerald-600` e `bg-rose-600`).
+- **Overlay de Validação:** Cards sobrepostos com cantos arredondados e desfoques de vidro para exibir feedback imediato de sucesso ou erro (com áudio em pt-BR).
 
-### 4. Ocorrências Rápidas (`ocorrencias/page.tsx`)
-- **Botões de Toque Único (64px altura):**
-  - *Trânsito Intenso* (Azul)
-  - *Problema Mecânico* (Laranja)
-  - *Via Interditada / Barro* (Slate)
-  - *Emergência* (Vermelho pulsante)
-- **Histórico Diário:** Lista todas as ocorrências reportadas no percurso atual, marcando-as como "Transmitido" (se online) ou "Pendente (Offline)" (se offline).
+### 4. Lista de Passageiros (Card Clean)
+- Organizada em lista contínua com divisores sutis (`divide-y divide-slate-800/40`).
+- Checkbox de toque circular premium (`rounded-full bg-emerald-500` quando ativo).
+- **Tags NEE:** Pílulas semitransparentes com cores pastéis (ex: Autismo = `bg-amber-500/10 text-amber-400 border border-amber-500/20`).
+- **Indicador Limpo de Presença:** Badges discretas no canto direito exibindo 'Presente' ou 'Falta'.
+
+### 5. Menu Inferior de Ocorrências Rápidas
+- Barra flutuante com efeito blur de vidro (`backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60`).
+- Botões super arredondados com ícones Lucide minimalistas e rótulos curtos.
+- Botão **SOS** destacado com fundo vermelho escuro e borda suave (`bg-rose-950/20 border-rose-900/20`) e ícone vermelho pulsante.
 
 ## Mocks Utilizados
 ```ts
@@ -52,6 +53,7 @@ interface Aluno {
   nee: boolean;
   tipoNee?: string;
   aBordo: boolean;
+  fotoUrl?: string;
 }
 ```
 
@@ -59,3 +61,4 @@ interface Aluno {
 | Data | Alteração |
 |---|---|
 | 27/05/2026 | Item 4 — Criação de rotas, painéis, simulador de QR e ocorrências mobile-first |
+| 27/05/2026 | Redesenho Completo — Reconstrução total com design premium estilo iOS/Android nativo |

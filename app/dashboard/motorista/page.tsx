@@ -17,9 +17,8 @@ import {
   Wifi, 
   WifiOff,
   User,
-  ArrowLeft
+  Navigation
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface Aluno {
   id: number;
@@ -80,12 +79,15 @@ export default function MotoristaDashboardPage() {
   const [scanErrorMsg, setScanErrorMsg] = useState<string>('');
   const [isOnline, setIsOnline] = useState(true);
 
-  // Rota ativa selecionada
+  // Rota ativa
   const rotaAtiva = rotas.find(r => r.id === selectedRotaId) || rotas[0];
   const totalAlunos = rotaAtiva.alunos.length;
   const alunosABordo = rotaAtiva.alunos.filter(a => a.aBordo).length;
+  
+  // Percentual de ocupação
+  const percentualOcupacao = totalAlunos > 0 ? (alunosABordo / totalAlunos) * 100 : 0;
 
-  // Reseta estado do leitor QR após 4 segundos
+  // Auto-reset do validador de QR Code
   useEffect(() => {
     if (scanState !== 'idle') {
       const timer = setTimeout(() => {
@@ -115,12 +117,11 @@ export default function MotoristaDashboardPage() {
   const handleSimulateScanSuccess = () => {
     const aluno = rotaAtiva.alunos.find(a => !a.aBordo) || rotaAtiva.alunos[0];
     
-    // Marca o aluno a bordo
     toggleAlunoABordo(aluno.id);
     setScannedAluno(aluno);
     setScanState('success');
 
-    // Emite áudio sintetizado
+    // Feedback por voz
     try {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -133,13 +134,13 @@ export default function MotoristaDashboardPage() {
 
   const handleSimulateScanError = () => {
     setScanState('error');
-    setScanErrorMsg('CARTEIRINHA EXPIRADA OU ROTA INCORRETA');
+    setScanErrorMsg('ALUNO NÃO PERTENCE A ESTA ROTA');
 
-    // Emite áudio de erro
+    // Feedback por voz
     try {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance('Atenção, erro de validação');
+        const msg = new SpeechSynthesisUtterance('Atenção, rota incorreta');
         msg.lang = 'pt-BR';
         window.speechSynthesis.speak(msg);
       }
@@ -147,173 +148,195 @@ export default function MotoristaDashboardPage() {
   };
 
   const handleReportOcorrencia = (tipo: string) => {
-    alert(`Ocorrência de "${tipo}" registrada com sucesso e transmitida à SEMED!`);
+    alert(`Ocorrência de "${tipo}" enviada com sucesso à prefeitura!`);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center font-sans antialiased text-slate-100 p-0 sm:p-4">
-      
-      {/* Moldura Mobile-First Forçada */}
-      <div className="w-full max-w-md bg-slate-900 shadow-2xl flex flex-col relative min-h-screen sm:min-h-[850px] sm:rounded-3xl border border-slate-800 overflow-hidden pb-10">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center font-sans antialiased text-slate-100 p-0 sm:p-6 md:p-8">
+      {/* Estilos customizados para animação de escaneamento sem alterar arquivo CSS global */}
+      <style jsx global>{`
+        @keyframes scan-animation {
+          0%, 100% { top: 5%; }
+          50% { top: 95%; }
+        }
+        .scanner-line {
+          animation: scan-animation 2.5s infinite ease-in-out;
+        }
+      `}</style>
+
+      {/* Moldura Celular Simulada Premium (iOS/Android Nativo) */}
+      <div className="w-full max-w-md bg-slate-950 sm:shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col relative min-h-screen sm:min-h-[840px] sm:rounded-[36px] overflow-hidden border border-slate-900">
         
-        {/* Cabeçalho de Identidade e Status Bar */}
-        <header className="bg-slate-950/90 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-800 sticky top-0 z-50">
-          <div className="flex items-center gap-2">
+        {/* Status Bar / Header minimalista */}
+        <header className="bg-slate-900/90 backdrop-blur-md px-5 py-4 flex items-center justify-between border-b border-slate-800/60 sticky top-0 z-50">
+          <div className="flex items-center gap-2.5">
             <span className="text-xl">🚌</span>
             <div>
               <h2 className="font-extrabold text-sm tracking-tight text-white leading-none">
                 RotaEscola
               </h2>
-              <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider block mt-0.5">
-                Arapongas · Painel do Veículo
+              <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-widest block mt-0.5">
+                Arapongas · Bordo
               </span>
             </div>
           </div>
 
-          {/* Toggle de Sinal de Rede */}
+          {/* Estado de Conectividade */}
           <button 
             onClick={() => setIsOnline(!isOnline)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold tracking-wider transition-all duration-300 ${
               isOnline 
-                ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/50' 
-                : 'bg-rose-950/80 text-rose-400 border-rose-800/50 animate-pulse'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse'
             }`}
           >
             {isOnline ? (
               <>
-                <Wifi size={11} />
-                <span>CONECTADO</span>
+                <Wifi size={10} />
+                <span>ONLINE</span>
               </>
             ) : (
               <>
-                <WifiOff size={11} />
+                <WifiOff size={10} />
                 <span>OFFLINE</span>
               </>
             )}
           </button>
         </header>
 
-        {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto px-4 py-4 space-y-6 pb-28">
+        {/* Área Principal de Scroll */}
+        <main className="flex-1 overflow-y-auto px-5 py-5 space-y-6 pb-36 scrollbar-thin">
           
-          {/* Seletor de Rota / Viagem */}
-          <div className="bg-slate-950/60 border border-slate-850 rounded-2xl p-4 space-y-3">
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Selecione o Turno & Placa
-            </label>
-            <div className="relative">
-              <select
-                value={selectedRotaId}
-                onChange={(e) => setSelectedRotaId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3.5 py-3 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none cursor-pointer pr-10"
-              >
-                {rotas.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.codigo} - {r.nome}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
-                ▼
+          {/* Card de Rota e Turno (Topo) */}
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                Itinerário da Viagem
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedRotaId}
+                  onChange={(e) => setSelectedRotaId(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none cursor-pointer pr-10 transition-colors"
+                >
+                  {rotas.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.codigo} - {r.nome}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">
+                  ▼
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
-              <Bus size={13} className="text-amber-500" />
-              <span>Placa: <strong className="text-white font-mono">{rotaAtiva.placa}</strong> · {rotaAtiva.veiculo}</span>
+            {/* Lotação e Contador com Barra de Progresso Suave */}
+            <div className="pt-2 border-t border-slate-800/50">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
+                    Alunos a Bordo
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium block mt-0.5">
+                    Placa: {rotaAtiva.placa} | {rotaAtiva.veiculo}
+                  </span>
+                </div>
+                <span className="text-xl font-extrabold text-white font-mono tracking-tight">
+                  {alunosABordo} <span className="text-slate-500 text-sm font-semibold">/ {totalAlunos}</span>
+                </span>
+              </div>
+              
+              {/* Barra de Progresso Suave */}
+              <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/40">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${percentualOcupacao}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Contador Grande de Alunos a Bordo */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-850 rounded-2xl p-4.5 flex items-center justify-between shadow-lg relative overflow-hidden">
-            <div>
-              <h3 className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
-                Presença de Alunos
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">Embarque controlado</p>
-            </div>
-            <div className="text-right">
-              <span className="text-3xl font-black text-white font-mono tracking-tighter">
-                {alunosABordo}<span className="text-slate-500 text-xl">/{totalAlunos}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* SIMULADOR DE LEITOR DE CARTEIRINHA (QR CODE) */}
+          {/* SCANNER DE QR CODE MODERNIZADO */}
           <div className="space-y-3">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
-              Validador de Embarque (QR Code)
+            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+              Validador de Carteirinha (Scanner)
             </h3>
 
-            <div className="bg-slate-950/60 border border-slate-850 rounded-2xl p-4 flex flex-col items-center gap-4 relative">
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col items-center gap-5 relative">
               
-              {/* Visor do Leitor */}
-              <div className="relative w-40 h-40 border border-slate-800 rounded-2xl flex items-center justify-center bg-slate-950 overflow-hidden">
-                {/* Linha vermelha pulsante do laser de leitura */}
-                <div className="absolute left-2 right-2 h-0.5 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-bounce z-20" />
+              {/* Visor do Scanner com Cantoneiras estilo câmera */}
+              <div className="relative w-44 h-44 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden border border-slate-800">
+                {/* Linha vermelha pulsante com brilho neon */}
+                <div className="absolute left-4 right-4 h-0.5 bg-rose-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] z-20 scanner-line" />
                 
-                {/* Visor de Foco */}
-                <div className="absolute -top-0.5 -left-0.5 w-4 h-4 border-t-2 border-l-2 border-amber-500 rounded-tl" />
-                <div className="absolute -top-0.5 -right-0.5 w-4 h-4 border-t-2 border-r-2 border-amber-500 rounded-tr" />
-                <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 border-b-2 border-l-2 border-amber-500 rounded-bl" />
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 border-b-2 border-r-2 border-amber-500 rounded-br" />
+                {/* Cantoneiras modernas */}
+                <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-amber-400 rounded-tl-md" />
+                <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-amber-400 rounded-tr-md" />
+                <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-amber-400 rounded-bl-md" />
+                <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-amber-400 rounded-br-md" />
 
-                <QrCode size={52} className="text-slate-800/60 animate-pulse" />
+                <QrCode size={56} className="text-slate-800/60 animate-pulse" />
               </div>
 
-              {/* Botões Simuladores */}
-              <div className="grid grid-cols-2 gap-2.5 w-full">
+              {/* Botões Simuladores em Pílula */}
+              <div className="flex gap-3 w-full">
                 <button
                   onClick={handleSimulateScanSuccess}
-                  className="py-2.5 px-3 rounded-xl text-[10px] font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-900/60 transition-colors cursor-pointer"
+                  className="flex-1 py-3 px-5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:scale-95 transition-all text-center cursor-pointer border-0"
                 >
                   Simular Sucesso
                 </button>
                 <button
                   onClick={handleSimulateScanError}
-                  className="py-2.5 px-3 rounded-xl text-[10px] font-bold bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-900/60 transition-colors cursor-pointer"
+                  className="flex-1 py-3 px-5 rounded-full text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md active:scale-95 transition-all text-center cursor-pointer border-0"
                 >
                   Simular Erro
                 </button>
               </div>
 
-              {/* CARD DE FEEDBACK VISUAL GIGANTE */}
+              {/* CARD DE FEEDBACK VISUAL DE LEITURA (OVERLAY) */}
               {scanState !== 'idle' && (
-                <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-4 rounded-2xl z-30 animate-fadeIn">
+                <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-5 rounded-2xl z-30 animate-fadeIn">
                   {scanState === 'success' && scannedAluno && (
-                    <div className="w-full bg-emerald-950 border border-emerald-500/50 rounded-xl p-5 flex flex-col items-center text-center gap-3.5 shadow-lg">
-                      <CheckCircle2 size={36} className="text-emerald-400 shrink-0" />
-                      <div>
-                        <h4 className="text-lg font-black text-emerald-400 uppercase tracking-wide leading-none">
-                          EMBARQUE AUTORIZADO
-                        </h4>
+                    <div className="w-full bg-slate-900 border border-emerald-500/20 rounded-xl p-5 flex flex-col items-center text-center gap-4 shadow-xl">
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                        <CheckCircle2 size={26} />
                       </div>
                       
-                      {/* Dados e Foto do Aluno */}
-                      <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-lg w-full text-left">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 border border-amber-500/30 overflow-hidden flex items-center justify-center shrink-0">
+                      <div>
+                        <h4 className="text-xs font-extrabold text-emerald-400 uppercase tracking-widest">
+                          Embarque Autorizado
+                        </h4>
+                      </div>
+
+                      {/* Info do Aluno */}
+                      <div className="flex items-center gap-3 bg-slate-950 border border-slate-800/80 p-3 rounded-lg w-full text-left">
+                        <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center text-slate-500">
                           {scannedAluno.fotoUrl ? (
                             <img src={scannedAluno.fotoUrl} alt={scannedAluno.nome} className="w-full h-full object-cover" />
                           ) : (
-                            <User size={18} className="text-slate-400" />
+                            <User size={18} />
                           )}
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-white truncate">{scannedAluno.nome}</p>
-                          <p className="text-[9px] text-slate-400 truncate mt-0.5">{scannedAluno.escola}</p>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">{scannedAluno.escola}</p>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {scanState === 'error' && (
-                    <div className="w-full bg-rose-950 border border-rose-500/50 rounded-xl p-5 flex flex-col items-center text-center gap-3 shadow-lg">
-                      <XCircle size={36} className="text-rose-400 shrink-0" />
+                    <div className="w-full bg-slate-900 border border-rose-500/20 rounded-xl p-5 flex flex-col items-center text-center gap-4 shadow-xl">
+                      <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
+                        <XCircle size={26} />
+                      </div>
                       <div>
-                        <h4 className="text-base font-black text-rose-400 uppercase tracking-wide">
-                          VALIDAÇÃO RECUSADA
+                        <h4 className="text-xs font-extrabold text-rose-450 uppercase tracking-widest">
+                          Validação Recusada
                         </h4>
-                        <p className="text-xs text-white font-semibold mt-2 px-1">
+                        <p className="text-xs text-white font-bold mt-2 leading-relaxed">
                           {scanErrorMsg}
                         </p>
                       </div>
@@ -324,53 +347,54 @@ export default function MotoristaDashboardPage() {
             </div>
           </div>
 
-          {/* LISTA DE PASSAGEIROS RÁPIDA (CHECKLIST) */}
+          {/* LISTA DE PASSAGEIROS (CARD CLEAN) */}
           <div className="space-y-3">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
-              Lista de Passageiros do Turno
+            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+              Lista de Passageiros
             </h3>
 
-            <div className="flex flex-col gap-2">
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden divide-y divide-slate-800/40">
               {rotaAtiva.alunos.map((aluno) => (
                 <div
                   key={aluno.id}
                   onClick={() => toggleAlunoABordo(aluno.id)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
-                    aluno.aBordo
-                      ? 'bg-slate-900 border-emerald-500/50'
-                      : 'bg-slate-950/40 border-slate-850 hover:bg-slate-900/40'
+                  className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer select-none ${
+                    aluno.aBordo ? 'bg-slate-900/20' : 'hover:bg-slate-900/30'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    {/* Checkbox customizado grande para celular */}
-                    <div className={`w-5.5 h-5.5 rounded-lg flex items-center justify-center border transition-all ${
-                      aluno.aBordo
-                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 scale-105'
-                        : 'border-slate-700 bg-slate-950'
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {/* Indicador de Check circular premium */}
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all shrink-0 ${
+                      aluno.aBordo 
+                        ? 'bg-emerald-500 border-emerald-500 text-slate-950' 
+                        : 'border-slate-700 bg-slate-950/60 text-transparent'
                     }`}>
-                      {aluno.aBordo && <Check size={14} strokeWidth={3.5} />}
+                      <Check size={11} strokeWidth={4} />
                     </div>
 
-                    <div>
-                      <p className={`text-xs font-bold text-white ${aluno.aBordo ? 'line-through text-slate-500' : ''}`}>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-bold transition-all truncate ${aluno.aBordo ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
                         {aluno.nome}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[9px] text-slate-500 truncate max-w-[150px]">{aluno.escola}</span>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1 min-w-0">
+                        <span className="text-[10px] text-slate-500 truncate max-w-[150px]">{aluno.escola}</span>
                         {aluno.nee && (
-                          <span className="flex items-center gap-0.5 text-[8px] font-extrabold bg-amber-500 text-slate-950 px-1 py-0.2 rounded uppercase">
+                          <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                             <Accessibility size={8} />
-                            NEE: {aluno.tipoNee}
+                            {aluno.tipoNee}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                    aluno.aBordo ? 'bg-emerald-950/60 text-emerald-400' : 'bg-slate-900 text-slate-500'
+                  {/* Estado Direito Limpo (Transparente e Pastel) */}
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
+                    aluno.aBordo 
+                      ? 'bg-emerald-500/10 text-emerald-400' 
+                      : 'bg-rose-500/10 text-rose-400'
                   }`}>
-                    {aluno.aBordo ? 'A bordo' : 'Falta'}
+                    {aluno.aBordo ? 'Presente' : 'Falta'}
                   </span>
                 </div>
               ))}
@@ -378,39 +402,47 @@ export default function MotoristaDashboardPage() {
           </div>
         </main>
 
-        {/* BOTOES DE OCORRÊNCIA DE 1 CLIQUE */}
-        <div className="absolute bottom-0 left-0 right-0 bg-slate-950/95 border-t border-slate-850 p-2.5 grid grid-cols-4 gap-2 z-40">
+        {/* MENU INFERIOR DE OCORRÊNCIAS COM EFEITO DE VIDRO */}
+        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60 p-4 grid grid-cols-4 gap-3 z-40 rounded-b-[36px]">
           
           <button
             onClick={() => handleReportOcorrencia('Trânsito Intenso')}
-            className="flex flex-col items-center justify-center gap-1 h-[58px] bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 text-slate-300 active:scale-95 transition-all text-center cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95"
           >
-            <Clock size={16} className="text-blue-400" />
-            <span className="text-[8px] font-bold uppercase leading-none">Trânsito</span>
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-inner">
+              <Clock size={16} />
+            </div>
+            <span className="text-[9px] font-semibold text-slate-400">Trânsito</span>
           </button>
 
           <button
             onClick={() => handleReportOcorrencia('Problema Mecânico')}
-            className="flex flex-col items-center justify-center gap-1 h-[58px] bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 text-slate-300 active:scale-95 transition-all text-center cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95"
           >
-            <Wrench size={16} className="text-amber-500" />
-            <span className="text-[8px] font-bold uppercase leading-none">Mecânico</span>
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 shadow-inner">
+              <Wrench size={16} />
+            </div>
+            <span className="text-[9px] font-semibold text-slate-400">Mecânico</span>
           </button>
 
           <button
             onClick={() => handleReportOcorrencia('Via Interditada')}
-            className="flex flex-col items-center justify-center gap-1 h-[58px] bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 text-slate-300 active:scale-95 transition-all text-center cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95"
           >
-            <Map size={16} className="text-slate-400" />
-            <span className="text-[8px] font-bold uppercase leading-none">Barro</span>
+            <div className="w-10 h-10 rounded-full bg-slate-800/40 flex items-center justify-center text-slate-300 shadow-inner">
+              <Map size={16} />
+            </div>
+            <span className="text-[9px] font-semibold text-slate-400">Vias</span>
           </button>
 
           <button
             onClick={() => handleReportOcorrencia('Emergência')}
-            className="flex flex-col items-center justify-center gap-1 h-[58px] bg-red-650/80 border border-red-500 rounded-xl hover:bg-red-600 text-white active:scale-95 transition-all text-center animate-pulse cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-rose-950/20 hover:bg-rose-950/40 transition-all cursor-pointer border border-rose-900/20 active:scale-95"
           >
-            <AlertOctagon size={16} className="text-white" />
-            <span className="text-[8px] font-black uppercase leading-none">SOS</span>
+            <div className="w-10 h-10 rounded-full bg-rose-900/80 flex items-center justify-center text-rose-200 border border-rose-800/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">
+              <AlertOctagon size={16} className="text-rose-400" />
+            </div>
+            <span className="text-[9px] font-bold text-rose-400">SOS</span>
           </button>
 
         </div>

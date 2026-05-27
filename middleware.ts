@@ -42,7 +42,13 @@ export async function middleware(request: NextRequest) {
   // Se já estiver logado e tentar ir para o login, redireciona para a home ou dashboard
   if ((user || isMockCookie) && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard/responsavel';
+    if (isMockCookie === 'admin') {
+      url.pathname = '/dashboard/admin';
+    } else if (isMockCookie === 'secretaria') {
+      url.pathname = '/dashboard/secretaria';
+    } else {
+      url.pathname = '/responsavel/dashboard';
+    }
     return NextResponse.redirect(url);
   }
 

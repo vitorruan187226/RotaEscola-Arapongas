@@ -30,7 +30,7 @@ export default function LoginPage() {
     }
     if (cleanCpf === '22222222222' && senha === 'responsavelsenha') {
       document.cookie = "sb-mock-login=responsavel; path=/";
-      router.push('/dashboard/responsavel');
+      router.push('/responsavel/dashboard');
       setLoading(false);
       return;
     }
@@ -67,10 +67,10 @@ export default function LoginPage() {
           if (role === 'Secretaria') {
             router.push('/dashboard/secretaria');
           } else {
-            router.push('/dashboard/responsavel');
+            router.push('/responsavel/dashboard');
           }
         } else {
-          router.push('/dashboard');
+          router.push('/responsavel/dashboard');
         }
       }
     } catch (err) {

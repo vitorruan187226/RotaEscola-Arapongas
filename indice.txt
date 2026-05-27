@@ -11,6 +11,7 @@ indice.txt
 - [_docs/0202_Todos.md](_docs/0202_Todos.md)
 - [_docs/0205_AdminDashboard.md](_docs/0205_AdminDashboard.md)
 - [_docs/0207_PainelMotorista.md](_docs/0207_PainelMotorista.md)
+- [_docs/0208_PortalPais.md](_docs/0208_PortalPais.md)
 
 ## [04XX] Supabase e Backend
 - [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)

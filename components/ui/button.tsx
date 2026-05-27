@@ -18,9 +18,10 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        // Variante institucional RotaEscola
-        navy: "bg-[#0F172A] text-white hover:bg-[#1e293b] shadow-sm",
+        // Variantes institucionais RotaEscola
+        navy: "bg-[#0F172A] text-white hover:bg-[#1e293b] shadow-sm border border-[rgba(255,255,255,0.1)]",
         yellow: "bg-[#FBBF24] text-[#0F172A] font-bold hover:bg-[#F59E0B] shadow-sm",
+        'white-outline': "border-2 border-white/70 text-white bg-transparent hover:bg-white/10",
       },
       size: {
         default: "h-10 px-4 py-2",

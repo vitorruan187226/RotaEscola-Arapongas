@@ -46,6 +46,8 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/dashboard/admin';
     } else if (isMockCookie === 'secretaria') {
       url.pathname = '/dashboard/secretaria';
+    } else if (isMockCookie === 'motorista') {
+      url.pathname = '/dashboard/motorista';
     } else {
       url.pathname = '/responsavel/dashboard';
     }

@@ -34,6 +34,12 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+    if (cleanCpf === '33333333333' && senha === 'motoristasenha') {
+      document.cookie = "sb-mock-login=motorista; path=/";
+      router.push('/dashboard/motorista');
+      setLoading(false);
+      return;
+    }
     if (cleanCpf === '99999999999' && senha === 'adminisenha') {
       document.cookie = "sb-mock-login=admin; path=/";
       router.push('/dashboard/admin');

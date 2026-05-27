@@ -1,6 +1,6 @@
 import { createClient as createServerClient } from '../../../utils/supabase/server';
 import { cookies } from 'next/headers';
-import { Bus, Users, Map, LogOut, FileText, Filter, AlertTriangle } from 'lucide-react';
+import { Bus, Users, Map, LogOut, FileText, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
 
     const { count: rotasCount } = await supabase.from('rotas').select('*', { count: 'exact', head: true });
     if (rotasCount !== null) totalRotas = rotasCount;
-  } catch (e) {
+  } catch {
     // Fallback silencioso para dados simulados
   }
 
@@ -56,7 +56,7 @@ export default async function AdminDashboard() {
 
       {/* Main Grid */}
       <main className="dashboard-grid">
-        
+
         {/* Resumo de Cards */}
         <section className="summary-cards">
           <div className="card-premium stat-card">
@@ -95,7 +95,7 @@ export default async function AdminDashboard() {
           <div className="card-premium table-card">
             <div className="table-header">
               <div>
-                <h2>Gestão de Frotas & Operadores</h2>
+                <h2>Gestão de Frotas &amp; Operadores</h2>
                 <p>Monitore e filtre a alocação de veículos e seus respectivos motoristas.</p>
               </div>
               <button className="btn-primary report-btn">
@@ -150,272 +150,6 @@ export default async function AdminDashboard() {
         </section>
 
       </main>
-
-      <style>{`
-        .dashboard-container {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          background-color: var(--background-gray);
-        }
-
-        .navbar {
-          background-color: var(--primary-navy);
-          color: var(--secondary-white);
-          padding: 16px 40px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 4px solid var(--accent-yellow);
-        }
-
-        .nav-brand {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .brand-icon {
-          font-size: 2.2rem;
-        }
-
-        .nav-brand h1 {
-          font-size: 1.5rem;
-          font-weight: 700;
-        }
-
-        .nav-brand p {
-          font-size: 0.8rem;
-          color: var(--accent-yellow);
-        }
-
-        .logout-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: var(--secondary-white);
-          text-decoration: none;
-          font-size: 0.9rem;
-          background-color: rgba(255, 255, 255, 0.15);
-          padding: 8px 16px;
-          border-radius: 8px;
-          transition: background 0.2s;
-        }
-
-        .logout-btn:hover {
-          background-color: rgba(255, 255, 255, 0.25);
-        }
-
-        .dashboard-grid {
-          max-width: 1200px;
-          width: 100%;
-          margin: 40px auto;
-          padding: 0 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
-        }
-
-        /* Summary Cards */
-        .summary-cards {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 24px;
-        }
-
-        .stat-card {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          padding: 28px;
-        }
-
-        .stat-icon-wrapper {
-          width: 56px;
-          height: 56px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .stat-icon-wrapper.navy {
-          background-color: rgba(15, 32, 66, 0.08);
-          color: var(--primary-navy);
-        }
-
-        .stat-icon-wrapper.yellow {
-          background-color: rgba(251, 192, 45, 0.15);
-          color: #B78103;
-        }
-
-        .stat-data {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .stat-title {
-          font-size: 0.85rem;
-          color: var(--text-light);
-          font-weight: 500;
-        }
-
-        .stat-value {
-          font-size: 1.8rem;
-          font-weight: 700;
-          color: var(--text-dark);
-        }
-
-        /* Management Table */
-        .management-section {
-          width: 100%;
-        }
-
-        .table-card {
-          padding: 32px;
-        }
-
-        .table-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 24px;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 20px;
-        }
-
-        .table-header h2 {
-          color: var(--primary-navy);
-          font-size: 1.4rem;
-          font-weight: 700;
-        }
-
-        .table-header p {
-          color: var(--text-light);
-          font-size: 0.9rem;
-          margin-top: 4px;
-        }
-
-        .report-btn {
-          height: fit-content;
-        }
-
-        .table-filter-bar {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 24px;
-        }
-
-        .filter-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.9rem;
-          color: var(--text-light);
-          font-weight: 600;
-        }
-
-        .filter-badge {
-          background-color: #F1F5F9;
-          border: 1px solid var(--border-color);
-          padding: 6px 14px;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .filter-badge.active, .filter-badge:hover {
-          background-color: var(--primary-navy);
-          color: var(--secondary-white);
-          border-color: var(--primary-navy);
-        }
-
-        .table-responsive {
-          width: 100%;
-          overflow-x: auto;
-        }
-
-        .custom-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-        }
-
-        .custom-table th, .custom-table td {
-          padding: 16px;
-          border-bottom: 1px solid var(--border-color);
-        }
-
-        .custom-table th {
-          font-size: 0.85rem;
-          font-weight: 700;
-          color: var(--text-light);
-          text-transform: uppercase;
-        }
-
-        .custom-table td {
-          font-size: 0.95rem;
-          color: var(--text-dark);
-        }
-
-        .font-bold {
-          font-weight: 600;
-        }
-
-        .code-font {
-          font-family: monospace;
-          font-weight: 600;
-          color: var(--text-light);
-        }
-
-        .badge-type {
-          padding: 4px 10px;
-          border-radius: 6px;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-
-        .badge-type.own {
-          background-color: #ecfdf5;
-          color: #065f46;
-        }
-
-        .badge-type.partner {
-          background-color: #eff6ff;
-          color: #1e40af;
-        }
-
-        .status-pill {
-          padding: 4px 10px;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-
-        .status-pill.ativo {
-          background-color: rgba(74, 222, 128, 0.15);
-          color: #166534;
-        }
-
-        .status-pill.manutenção {
-          background-color: rgba(239, 68, 68, 0.15);
-          color: #991b1b;
-        }
-
-        @media (max-width: 768px) {
-          .table-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 16px;
-          }
-          .table-filter-bar {
-            flex-wrap: wrap;
-          }
-        }
-      `}</style>
     </div>
   );
 }

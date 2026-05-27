@@ -1,11 +1,20 @@
 indice.txt
 
-# Índice do projeto
+# Índice do projeto RotaEscola Arapongas
 
+## [01XX] Configurações e Infra
+- [_docs/0101_Design_System.md](_docs/0101_Design_System.md)
+
+## [02XX] Telas e UI (Frontend)
 - [_docs/0200_Indice_Telas.md](_docs/0200_Indice_Telas.md)
 - [_docs/0201_Home.md](_docs/0201_Home.md)
 - [_docs/0202_Todos.md](_docs/0202_Todos.md)
-- [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
-- [_docs/0500_Deploy.md](_docs/0500_Deploy.md)
-- [_docs/0600_Arquitetura_Mobile.md](_docs/0600_Arquitetura_Mobile.md)
 
+## [04XX] Supabase e Backend
+- [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
+
+## [05XX] Deploy e Infra
+- [_docs/0500_Deploy.md](_docs/0500_Deploy.md)
+
+## [06XX] Mobile (Flutter)
+- [_docs/0600_Arquitetura_Mobile.md](_docs/0600_Arquitetura_Mobile.md)

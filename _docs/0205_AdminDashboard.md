@@ -9,7 +9,7 @@
 
 ## Arquitetura do Módulo
 ```
-app/dashboard/admin/
+app/dashboard/admin/ (e app/admin/dashboard/)
 ├── layout.tsx          ← Layout com Sidebar + Topbar (use client)
 ├── page.tsx            ← Dashboard principal (KPIs + Mapa + Tabela)
 ├── frota/
@@ -21,6 +21,8 @@ app/dashboard/admin/
 └── rotas/
     └── page.tsx        ← Rotas e Itinerários
 ```
+> [!NOTE]
+> A rota `/admin/dashboard` foi criada diretamente em `app/admin/dashboard/page.tsx` para apresentar a versão premium remodelada do painel de monitoramento de rotas em duas colunas.
 
 ## Layout (layout.tsx)
 

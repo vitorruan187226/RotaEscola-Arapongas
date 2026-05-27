@@ -1,564 +1,300 @@
 import { cookies } from 'next/headers';
 import { createClient as createServerClient } from '../../../utils/supabase/server';
-import {
-  Users,
-  Bus,
-  FileCheck,
-  AlertTriangle,
-  Map,
-  TrendingUp,
-  CheckCircle2,
-  Clock,
-  ArrowUpRight,
-  RefreshCw,
+import { 
+  Users, 
+  Bus, 
+  FileCheck, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock, 
+  RefreshCw, 
+  ArrowUpRight, 
+  MapPin, 
+  FileText,
+  AlertOctagon,
+  UserCheck
 } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-// ─── Tipos ──────────────────────────────────────────────────────────────────
-interface KpiCard {
-  titulo: string;
-  valor: string | number;
-  subtitulo: string;
-  icone: React.ElementType;
-  cor: 'navy' | 'yellow' | 'red' | 'green';
-  tendencia?: string;
+// ─── Interfaces de Dados ──────────────────────────────────────────────────
+interface RotaAtiva {
+  id: number;
+  linha: string;
+  motorista: string;
+  placa: string;
+  status: 'Em movimento' | 'Parado';
+  ultimaSincronizacao: string;
 }
 
-interface AtividadeRecente {
+interface SolicitacaoCarteirinha {
   id: number;
   aluno: string;
   escola: string;
-  rota: string;
-  status: 'Aprovado' | 'Pendente' | 'Em análise';
-  data: string;
+  status: 'Aguardando Análise' | 'Documento Inválido';
+  avatarColor: string;
+  iniciais: string;
 }
 
-// ─── Dados mock tipados ──────────────────────────────────────────────────────
-const mockAtividades: AtividadeRecente[] = [
-  { id: 1, aluno: 'Beatriz Oliveira Santos',   escola: 'E. M. Codorna',         rota: 'Rota 07 — Norte',   status: 'Aprovado',   data: '27/05/2025' },
-  { id: 2, aluno: 'Lucas Henrique Ferreira',   escola: 'E. M. Padre Silvestre', rota: 'Rota 14 — Zona Rural', status: 'Aprovado', data: '27/05/2025' },
-  { id: 3, aluno: 'Mariana Costa Souza',       escola: 'E. M. Lagoa Azul',      rota: 'Rota 22 — Centro',  status: 'Em análise', data: '26/05/2025' },
-  { id: 4, aluno: 'Pedro Augusto Lima',        escola: 'E. M. São Rafael',      rota: 'Rota 03 — Sul',     status: 'Pendente',   data: '26/05/2025' },
-  { id: 5, aluno: 'Isabela Rodrigues Cunha',   escola: 'E. M. Codorna',         rota: 'Rota 07 — Norte',   status: 'Aprovado',   data: '25/05/2025' },
-  { id: 6, aluno: 'Gabriel Mendes Pereira',    escola: 'E. M. Padre Silvestre', rota: 'Rota 19 — Leste',   status: 'Aprovado',   data: '25/05/2025' },
+// ─── Dados Simulados (Mocks de Fallback) ──────────────────────────────────
+const ROTAS_ATIVAS_MOCK: RotaAtiva[] = [
+  { id: 1, linha: 'Rota 04 — Zona Rural', motorista: 'Carlos Alberto Silva', placa: 'BBB-5678', status: 'Em movimento', ultimaSincronizacao: '16:12' },
+  { id: 2, linha: 'Rota 07 — Região Norte', motorista: 'Marcos Vinícius Souza', placa: 'AAA-1234', status: 'Em movimento', ultimaSincronizacao: '16:11' },
+  { id: 3, linha: 'Rota 22 — Centro', motorista: 'Ana Julia Santos', placa: 'CCC-9012', status: 'Parado', ultimaSincronizacao: '16:05' },
+  { id: 4, linha: 'Rota 14 — Zona Sul', motorista: 'Roberto Ferreira', placa: 'DDD-3456', status: 'Em movimento', ultimaSincronizacao: '16:10' },
+  { id: 5, linha: 'Rota 19 — Leste', motorista: 'Sandra Aparecida Lima', placa: 'EEE-7890', status: 'Parado', ultimaSincronizacao: '15:58' }
 ];
 
-// ─── Helper de status ────────────────────────────────────────────────────────
-function StatusPill({ status }: { status: AtividadeRecente['status'] }) {
-  const map = {
-    'Aprovado':   { cls: 'pill-green',  icon: <CheckCircle2 size={12} /> },
-    'Pendente':   { cls: 'pill-yellow', icon: <Clock size={12} /> },
-    'Em análise': { cls: 'pill-blue',   icon: <RefreshCw size={12} /> },
-  };
-  const { cls, icon } = map[status];
-  return (
-    <span className={`adm-pill ${cls}`}>
-      {icon}
-      {status}
-    </span>
-  );
-}
+const SOLICITACOES_MOCK: SolicitacaoCarteirinha[] = [
+  { id: 1, aluno: 'Pedro Henrique Silva', escola: 'E. M. Codorna', status: 'Aguardando Análise', avatarColor: 'bg-indigo-650', iniciais: 'PS' },
+  { id: 2, aluno: 'Sophia Moraes Dias', escola: 'C. E. Julia Wanderley', status: 'Documento Inválido', avatarColor: 'bg-emerald-650', iniciais: 'SD' },
+  { id: 3, aluno: 'Guilherme Augusto Nogueira', escola: 'E. M. Dorcelina Folador', status: 'Aguardando Análise', avatarColor: 'bg-amber-600', iniciais: 'GN' },
+  { id: 4, aluno: 'Beatriz Martins Souza', escola: 'C. E. Julia Wanderley', status: 'Documento Inválido', avatarColor: 'bg-rose-600', iniciais: 'BS' }
+];
 
-// ─── Componente principal ────────────────────────────────────────────────────
 export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
   const supabase = createServerClient(cookieStore);
 
-  // KPIs com fallback para mocks
-  let totalAlunos   = 6000;
+  // KPIs dinâmicos buscando da nuvem se disponível
+  let totalAlunos = 5840;
   let totalVeiculos = 102;
-  let docsPendentes = 34;
-  let ocorrencias   = 0;
+  let solicitacoesPendentes = 34;
+  let alertasOcorrencia = 2;
 
   try {
     const [
       { count: alunosCount },
       { count: veiculosCount },
     ] = await Promise.all([
-      supabase.from('alunos').select('*',   { count: 'exact', head: true }),
+      supabase.from('alunos').select('*', { count: 'exact', head: true }),
       supabase.from('veiculos').select('*', { count: 'exact', head: true }),
     ]);
-    if (alunosCount   !== null) totalAlunos   = alunosCount;
+
+    if (alunosCount !== null) totalAlunos = alunosCount;
     if (veiculosCount !== null) totalVeiculos = veiculosCount;
-  } catch {
-    // fallback silencioso — dados simulados em uso
+  } catch (e) {
+    console.log('Utilizando fallbacks mockados para métricas do dashboard admin');
   }
 
-  const kpis: KpiCard[] = [
-    {
-      titulo: 'Alunos Cadastrados',
-      valor: totalAlunos.toLocaleString('pt-BR'),
-      subtitulo: 'No sistema RotaEscola',
-      icone: Users,
-      cor: 'navy',
-      tendencia: '+124 este mês',
-    },
-    {
-      titulo: 'Frota Ativa',
-      valor: totalVeiculos,
-      subtitulo: 'Veículos em operação',
-      icone: Bus,
-      cor: 'green',
-      tendencia: '100% operacional',
-    },
-    {
-      titulo: 'Documentos Pendentes',
-      valor: docsPendentes,
-      subtitulo: 'Aguardando aprovação',
-      icone: FileCheck,
-      cor: 'yellow',
-      tendencia: '↓ 8 desde ontem',
-    },
-    {
-      titulo: 'Ocorrências Hoje',
-      valor: ocorrencias,
-      subtitulo: 'Registros de incidente',
-      icone: AlertTriangle,
-      cor: 'red',
-      tendencia: 'Tudo normal ✓',
-    },
-  ];
-
-  const corMap = {
-    navy:   { bg: 'kpi-bg-navy',   icon: 'kpi-icon-navy' },
-    green:  { bg: 'kpi-bg-green',  icon: 'kpi-icon-green' },
-    yellow: { bg: 'kpi-bg-yellow', icon: 'kpi-icon-yellow' },
-    red:    { bg: 'kpi-bg-red',    icon: 'kpi-icon-red' },
-  };
-
   return (
-    <div className="adm-page">
-
-      {/* ── Cabeçalho da página ── */}
-      <div className="adm-page-header">
+    <div className="space-y-8 bg-slate-50 min-h-screen p-1 sm:p-4">
+      {/* ── Cabeçalho do Dashboard ── */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="adm-page-title">Visão Geral do Transporte Escolar</h1>
-          <p className="adm-page-sub">
-            Painel de controle — Secretaria Municipal de Educação de Arapongas
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Visão Geral do Transporte Escolar
+          </h1>
+          <p className="text-xs text-slate-500 font-medium">
+            Painel administrativo da Secretaria Municipal de Educação (SEMED) · Arapongas - PR
           </p>
         </div>
-        <div className="adm-page-header-actions">
-          <span className="adm-live-badge">
-            <span className="adm-live-dot" />
-            Dados ao vivo
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Dados em Tempo Real
           </span>
         </div>
       </div>
 
-      {/* ── KPI Cards ── */}
-      <section className="adm-kpis" aria-label="Indicadores de desempenho">
-        {kpis.map((kpi) => {
-          const { bg, icon } = corMap[kpi.cor];
-          return (
-            <div key={kpi.titulo} className={`adm-kpi-card ${bg}`}>
-              <div className="adm-kpi-top">
-                <div className={`adm-kpi-icon ${icon}`}>
-                  <kpi.icone size={22} />
-                </div>
-                <ArrowUpRight size={16} className="adm-kpi-arrow" />
+      {/* ── Grade de 4 Mini-Cards Modernos (KPIs) ── */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" aria-label="Métricas Principais">
+        
+        {/* Solicitações Pendentes */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Solicitações Pendentes
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-amber-600 block tracking-tight font-mono">
+              {solicitacoesPendentes}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium block">Aguardando verificação</span>
+          </div>
+          <div className="p-3 bg-amber-50 rounded-xl text-amber-500 border border-amber-100/50">
+            <FileCheck size={22} />
+          </div>
+        </div>
+
+        {/* Ônibus em Rota */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Ônibus em Rota
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-emerald-700 block tracking-tight font-mono">
+              87<span className="text-slate-400 text-base font-normal">/{totalVeiculos}</span>
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium block">Veículos em operação ativa</span>
+          </div>
+          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 border border-emerald-100/50">
+            <Bus size={22} />
+          </div>
+        </div>
+
+        {/* Alunos Transportados */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Alunos Transportados
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 block tracking-tight font-mono">
+              {totalAlunos.toLocaleString('pt-BR')}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium block">Cadastros ativos no município</span>
+          </div>
+          <div className="p-3 bg-slate-100 rounded-xl text-slate-800 border border-slate-200/20">
+            <Users size={22} />
+          </div>
+        </div>
+
+        {/* Alertas de Ocorrência */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Alertas de Ocorrência
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-rose-600 block tracking-tight font-mono animate-pulse">
+              {alertasOcorrencia}
+            </span>
+            <span className="text-[10px] text-rose-500 font-bold block">Incidentes reportados hoje</span>
+          </div>
+          <div className="p-3 bg-rose-50 rounded-xl text-rose-600 border border-rose-100/50">
+            <AlertTriangle size={22} />
+          </div>
+        </div>
+
+      </section>
+
+      {/* ── Área Central em Duas Colunas (Tabelas e Widgets) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Coluna da Esquerda (Mais larga - Tabela de Monitoramento) */}
+        <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <MapPin size={16} className="text-amber-500" />
+                  Monitoramento de Rotas Ativas
+                </h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Posicionamento e status de sincronização dos veículos em serviço.
+                </p>
               </div>
-              <div className="adm-kpi-valor">{kpi.valor}</div>
-              <div className="adm-kpi-titulo">{kpi.titulo}</div>
-              <div className="adm-kpi-sub">{kpi.subtitulo}</div>
-              {kpi.tendencia && (
-                <div className="adm-kpi-tendencia">{kpi.tendencia}</div>
-              )}
+              <Link 
+                href="/dashboard/admin/rotas" 
+                className="text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200/50 transition-colors flex items-center gap-1"
+              >
+                <span>Ver todas</span>
+                <ArrowUpRight size={12} />
+              </Link>
             </div>
-          );
-        })}
-      </section>
 
-      {/* ── Mapa Placeholder ── */}
-      <section className="adm-mapa-section" aria-label="Área do mapa">
-        <div className="adm-section-header">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="py-3 px-4 font-bold text-slate-400 uppercase tracking-wider">Linha</th>
+                    <th className="py-3 px-4 font-bold text-slate-400 uppercase tracking-wider">Motorista</th>
+                    <th className="py-3 px-4 font-bold text-slate-400 uppercase tracking-wider">Placa</th>
+                    <th className="py-3 px-4 font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="py-3 px-4 font-bold text-slate-400 uppercase tracking-wider text-right">Última Sinc.</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {ROTAS_ATIVAS_MOCK.map((rota) => (
+                    <tr key={rota.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{rota.linha}</td>
+                      <td className="py-3.5 px-4 text-slate-600 font-semibold">{rota.motorista}</td>
+                      <td className="py-3.5 px-4 text-slate-500 font-mono font-medium">{rota.placa}</td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                          rota.status === 'Em movimento' 
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                            : 'bg-slate-100 border-slate-200 text-slate-500'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${rota.status === 'Em movimento' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                          {rota.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-400 font-mono text-right font-medium">{rota.ultimaSincronizacao}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-medium gap-2">
+            <span>Mostrando 5 de 38 rotas registradas em Arapongas.</span>
+            <span className="flex items-center gap-1 text-slate-500 font-bold uppercase text-[9px] tracking-wider bg-slate-100 px-2 py-0.5 rounded">
+              Arapongas SEMED
+            </span>
+          </div>
+        </div>
+
+        {/* Coluna da Direita (Mais estreita - Solicitações) */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
-            <h2 className="adm-section-title">
-              <Map size={18} className="adm-section-icon" />
-              Mapa de Rastreamento em Tempo Real
-            </h2>
-            <p className="adm-section-desc">
-              Visualize a posição de todos os veículos da frota em operação.
-            </p>
-          </div>
-          <span className="adm-tag-integrado">Mapbox — Em breve</span>
-        </div>
-
-        <div className="adm-mapa-placeholder">
-          <div className="adm-mapa-grid" aria-hidden="true">
-            {/* Grade decorativa simulando mapa */}
-            {Array.from({ length: 30 }).map((_, i) => (
-              <div key={i} className="adm-mapa-cell" />
-            ))}
-          </div>
-          <div className="adm-mapa-content">
-            <div className="adm-mapa-icon-ring">
-              <Map size={40} className="adm-mapa-icon" />
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <UserCheck size={16} className="text-amber-500" />
+                  Solicitações
+                </h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Últimos cadastros de carteirinha.
+                </p>
+              </div>
+              <Link 
+                href="/dashboard/admin/documentos" 
+                className="text-[10px] font-bold text-amber-500 hover:text-amber-600 transition-colors"
+              >
+                Analisar
+              </Link>
             </div>
-            <h3>Mapa de Rastreamento em Tempo Real</h3>
-            <p>Mapbox será integrado aqui — visualização das 38 rotas ativas de Arapongas</p>
-            <div className="adm-mapa-badges">
-              <span className="adm-mapa-badge adm-mapa-badge--green">
-                <span className="adm-live-dot" />
-                12 veículos em trânsito
-              </span>
-              <span className="adm-mapa-badge adm-mapa-badge--yellow">
-                ⚑ 3 próximos de escolas
-              </span>
-              <span className="adm-mapa-badge adm-mapa-badge--gray">
-                ✓ 87 concluídos hoje
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Tabela de Atividades Recentes ── */}
-      <section className="adm-table-section" aria-label="Atividades recentes">
-        <div className="adm-section-header">
-          <div>
-            <h2 className="adm-section-title">
-              <TrendingUp size={18} className="adm-section-icon" />
-              Atividades Recentes
-            </h2>
-            <p className="adm-section-desc">
-              Últimos cadastros de alunos processados pelo sistema.
-            </p>
-          </div>
-          <a href="/dashboard/admin/alunos" className="adm-ver-todos">
-            Ver todos
-            <ArrowUpRight size={14} />
-          </a>
-        </div>
+            <div className="flex flex-col gap-3.5">
+              {SOLICITACOES_MOCK.map((sol) => (
+                <div key={sol.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50 transition-colors">
+                  {/* Avatar Circular */}
+                  <div className={`w-8 h-8 rounded-full ${sol.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm`}>
+                    {sol.iniciais}
+                  </div>
 
-        <div className="adm-table-wrap">
-          <table className="adm-table" aria-label="Tabela de atividades recentes">
-            <thead>
-              <tr>
-                <th scope="col">Aluno</th>
-                <th scope="col">Escola</th>
-                <th scope="col">Rota</th>
-                <th scope="col">Data</th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockAtividades.map((row) => (
-                <tr key={row.id}>
-                  <td className="adm-td-aluno">{row.aluno}</td>
-                  <td className="adm-td-escola">{row.escola}</td>
-                  <td className="adm-td-rota">{row.rota}</td>
-                  <td className="adm-td-data">{row.data}</td>
-                  <td><StatusPill status={row.status} /></td>
-                </tr>
+                  {/* Informações do Estudante */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-bold text-slate-900 truncate">{sol.aluno}</h4>
+                    <span className="text-[10px] text-slate-400 block truncate font-medium mt-0.5">{sol.escola}</span>
+                  </div>
+
+                  {/* Badge de Status */}
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                    sol.status === 'Aguardando Análise' 
+                      ? 'bg-amber-50 border-amber-200 text-amber-700' 
+                      : 'bg-rose-50 border-rose-200 text-rose-700'
+                  }`}>
+                    {sol.status}
+                  </span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+            <Link 
+              href="/dashboard/admin/alunos" 
+              className="text-xs font-extrabold text-slate-900 hover:text-slate-700 inline-flex items-center gap-1"
+            >
+              <span>Gerenciar Alunos</span>
+              <ArrowUpRight size={14} className="text-amber-500" />
+            </Link>
+          </div>
         </div>
-      </section>
 
-      {/* ─── ESTILOS ─── */}
-      <style>{`
-        .adm-page {
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
-        }
-
-        /* Cabeçalho */
-        .adm-page-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
-        .adm-page-title {
-          font-size: clamp(1.3rem, 3vw, 1.75rem);
-          font-weight: 800;
-          color: #0F172A;
-          letter-spacing: -0.3px;
-          line-height: 1.2;
-        }
-        .adm-page-sub {
-          font-size: 0.87rem;
-          color: #64748B;
-          margin-top: 4px;
-        }
-        .adm-page-header-actions { display: flex; align-items: center; gap: 12px; }
-        .adm-live-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #166534;
-          background: #dcfce7;
-          border: 1px solid #bbf7d0;
-          padding: 5px 12px;
-          border-radius: 20px;
-        }
-        .adm-live-dot {
-          width: 8px; height: 8px;
-          border-radius: 50%;
-          background: #22c55e;
-          display: inline-block;
-          animation: pulseSoft 2s ease-in-out infinite;
-        }
-
-        /* ── KPI Cards ── */
-        .adm-kpis {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 20px;
-        }
-        .adm-kpi-card {
-          border-radius: 14px;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          border: 1px solid transparent;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .adm-kpi-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-        }
-
-        /* Cores de fundo dos KPIs */
-        .kpi-bg-navy   { background: #fff; border-color: #E2E8F0; }
-        .kpi-bg-green  { background: #fff; border-color: #E2E8F0; }
-        .kpi-bg-yellow { background: #fff; border-color: #E2E8F0; }
-        .kpi-bg-red    { background: #fff; border-color: #E2E8F0; }
-
-        .adm-kpi-top {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          margin-bottom: 8px;
-        }
-        .adm-kpi-icon {
-          width: 48px; height: 48px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .kpi-icon-navy   { background: rgba(15,23,42,0.08);  color: #0F172A; }
-        .kpi-icon-green  { background: rgba(34,197,94,0.12); color: #166534; }
-        .kpi-icon-yellow { background: rgba(251,191,36,0.15); color: #92400E; }
-        .kpi-icon-red    { background: rgba(239,68,68,0.10); color: #991b1b; }
-
-        .adm-kpi-arrow { color: #CBD5E1; }
-
-        .adm-kpi-valor {
-          font-size: 2rem;
-          font-weight: 800;
-          color: #0F172A;
-          letter-spacing: -0.5px;
-          line-height: 1;
-        }
-        .adm-kpi-titulo {
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #334155;
-        }
-        .adm-kpi-sub {
-          font-size: 0.75rem;
-          color: #94A3B8;
-        }
-        .adm-kpi-tendencia {
-          margin-top: 6px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #64748B;
-          padding: 3px 8px;
-          background: #F1F5F9;
-          border-radius: 8px;
-          display: inline-block;
-        }
-
-        /* ── Seções genéricas ── */
-        .adm-section-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 16px;
-          flex-wrap: wrap;
-        }
-        .adm-section-title {
-          font-size: 1.05rem;
-          font-weight: 700;
-          color: #0F172A;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 4px;
-        }
-        .adm-section-icon { color: #0F172A; flex-shrink: 0; }
-        .adm-section-desc { font-size: 0.82rem; color: #64748B; }
-
-        /* ── Mapa ── */
-        .adm-mapa-section {
-          background: #fff;
-          border-radius: 16px;
-          border: 1px solid #E2E8F0;
-          padding: 24px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .adm-tag-integrado {
-          font-size: 0.72rem;
-          font-weight: 700;
-          background: #eff6ff;
-          color: #1d4ed8;
-          border: 1px solid #bfdbfe;
-          padding: 4px 10px;
-          border-radius: 20px;
-          white-space: nowrap;
-        }
-        .adm-mapa-placeholder {
-          position: relative;
-          height: 280px;
-          border-radius: 12px;
-          overflow: hidden;
-          background: #F8FAFC;
-          border: 2px dashed #CBD5E1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .adm-mapa-grid {
-          position: absolute;
-          inset: 0;
-          display: grid;
-          grid-template-columns: repeat(6, 1fr);
-          grid-template-rows: repeat(5, 1fr);
-          opacity: 0.25;
-        }
-        .adm-mapa-cell {
-          border: 1px solid #CBD5E1;
-        }
-        .adm-mapa-content {
-          position: relative;
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-          padding: 0 24px;
-        }
-        .adm-mapa-icon-ring {
-          width: 72px; height: 72px;
-          border-radius: 50%;
-          background: rgba(15,23,42,0.07);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 4px;
-        }
-        .adm-mapa-icon { color: #0F172A; }
-        .adm-mapa-content h3 {
-          font-size: 1rem;
-          font-weight: 700;
-          color: #0F172A;
-        }
-        .adm-mapa-content p {
-          font-size: 0.82rem;
-          color: #64748B;
-          max-width: 360px;
-          line-height: 1.5;
-        }
-        .adm-mapa-badges {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          justify-content: center;
-          margin-top: 4px;
-        }
-        .adm-mapa-badge {
-          font-size: 0.72rem;
-          font-weight: 600;
-          padding: 4px 10px;
-          border-radius: 20px;
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-        }
-        .adm-mapa-badge--green  { background: #dcfce7; color: #166534; }
-        .adm-mapa-badge--yellow { background: #FEF3C7; color: #92400E; }
-        .adm-mapa-badge--gray   { background: #F1F5F9; color: #475569; }
-
-        /* ── Tabela ── */
-        .adm-table-section {
-          background: #fff;
-          border-radius: 16px;
-          border: 1px solid #E2E8F0;
-          padding: 24px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .adm-ver-todos {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 0.82rem;
-          font-weight: 600;
-          color: #0F172A;
-          text-decoration: none;
-          padding: 6px 14px;
-          border: 1px solid #E2E8F0;
-          border-radius: 8px;
-          transition: all 0.15s;
-          white-space: nowrap;
-        }
-        .adm-ver-todos:hover { border-color: #0F172A; background: #F8FAFC; }
-
-        .adm-table-wrap { overflow-x: auto; }
-        .adm-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-          font-size: 0.875rem;
-        }
-        .adm-table th {
-          padding: 12px 16px;
-          font-size: 0.72rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          color: #94A3B8;
-          border-bottom: 2px solid #F1F5F9;
-          white-space: nowrap;
-        }
-        .adm-table td {
-          padding: 14px 16px;
-          border-bottom: 1px solid #F8FAFC;
-          vertical-align: middle;
-        }
-        .adm-table tbody tr:last-child td { border-bottom: none; }
-        .adm-table tbody tr:hover td { background: #FAFAFA; }
-
-        .adm-td-aluno   { font-weight: 600; color: #0F172A; white-space: nowrap; }
-        .adm-td-escola  { color: #475569; white-space: nowrap; }
-        .adm-td-rota    { color: #475569; white-space: nowrap; }
-        .adm-td-data    { color: #94A3B8; font-size: 0.8rem; white-space: nowrap; font-family: monospace; }
-
-        /* Status pills */
-        .adm-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 0.72rem;
-          font-weight: 700;
-          padding: 4px 10px;
-          border-radius: 20px;
-          white-space: nowrap;
-        }
-        .pill-green  { background: #dcfce7; color: #166534; }
-        .pill-yellow { background: #FEF3C7; color: #92400E; }
-        .pill-blue   { background: #dbeafe; color: #1d4ed8; }
-      `}</style>
+      </div>
     </div>
   );
 }

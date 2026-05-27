@@ -15,6 +15,7 @@ indice.txt
 
 ## [04XX] Supabase e Backend
 - [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
+- [_docs/0402_Alunos_Responsavel_RLS.md](_docs/0402_Alunos_Responsavel_RLS.md)
 
 ## [05XX] Deploy e Infra
 - [_docs/0500_Deploy.md](_docs/0500_Deploy.md)

@@ -4,22 +4,14 @@
 Área restrita de uso do motorista/monitor escolar para registro diário de embarque de passageiros, escaneamento de carteirinhas (QR code) e envio de alertas de ocorrências rápidas de trânsito em Arapongas.
 
 ## Rota Base
-- `/motorista/painel` — Início (checklist de passageiros)
-- `/motorista/leitor` — Escaneamento de QR Code (offline-first)
-- `/motorista/ocorrencias` — Registro de problemas de percurso
+- `/dashboard/motorista` — Painel do veículo (checklist, scanner e ocorrências)
 
-A visualização é forçada em formato de tela de dispositivo móvel (`max-w-md` com bordas e sombra centralizada em desktops) para simular o comportamento de aplicativo nativo de celular.
+A visualização é forçada em formato de tela de dispositivo móvel (`max-w-md` com fundo de alto contraste e bordas centralizadas no desktop) para atender ao uso em smartphones no painel do veículo.
 
 ## Arquitetura de Pastas
 ```
-app/motorista/
-├── layout.tsx         ← Layout do celular com Bottom Navigation e Toggle Offline/Online (use client)
-├── painel/
-│   └── page.tsx       ← Escolha da Rota e Checklist de Presença (use client)
-├── leitor/
-│   └── page.tsx       ← Simulador de Câmera de QR Code com áudio e feedbacks de status (use client)
-└── ocorrencias/
-    └── page.tsx       ← Botões gigantes de 1 toque para alertas de trânsito e histórico (use client)
+app/dashboard/motorista/
+└── page.tsx           ← Painel completo consolidado do motorista (use client)
 ```
 
 ## Páginas & Funcionalidades

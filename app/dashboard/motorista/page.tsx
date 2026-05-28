@@ -535,6 +535,21 @@ export default function MotoristaDashboardPage() {
         .animate-slideDown {
           animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+        #reader {
+          width: 100% !important;
+          height: 100% !important;
+          border: none !important;
+          background: transparent !important;
+        }
+        #reader video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          border-radius: 1rem;
+        }
+        #reader img, #reader span, #reader a {
+          display: none !important;
+        }
       `}</style>
 
       {/* Moldura Celular Simulada Premium */}

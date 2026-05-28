@@ -31,6 +31,7 @@ interface Aluno {
   tipoNee?: string;
   aBordo: boolean;
   fotoUrl?: string;
+  responsavelId?: string;
 }
 
 interface RotaConfig {
@@ -50,9 +51,9 @@ const ROTAS_MOCK: RotaConfig[] = [
     placa: 'BBB-5678',
     veiculo: 'Ônibus Mercedes-Benz',
     alunos: [
-      { id: 1, nome: 'Lucas Lima Souza', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false },
-      { id: 2, nome: 'Enzo Gabriel Silva', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false },
-      { id: 3, nome: 'Ana Beatriz Silveira', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Autismo', aBordo: false, fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80' },
+      { id: 1, nome: 'Lucas Lima Souza', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
+      { id: 2, nome: 'Enzo Gabriel Silva', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf' },
+      { id: 3, nome: 'Ana Beatriz Silveira', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Autismo', aBordo: false, fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80', responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
       { id: 4, nome: 'Maria Eduarda Costa', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false },
       { id: 5, nome: 'Arthur Ramos Barbosa', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Cadeirante', aBordo: false }
     ]
@@ -64,7 +65,7 @@ const ROTAS_MOCK: RotaConfig[] = [
     placa: 'AAA-1234',
     veiculo: 'Microônibus Volare',
     alunos: [
-      { id: 7, nome: 'João Pedro Santos', escola: 'Col. Olímpia', nee: false, aBordo: false },
+      { id: 7, nome: 'João Pedro Santos', escola: 'Col. Olímpia', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
       { id: 8, nome: 'Júlia Nogueira Melo', escola: 'Col. Olímpia', nee: false, aBordo: false },
       { id: 9, nome: 'Gustavo Reis Pinheiro', escola: 'Col. Olímpia', nee: true, tipoNee: 'D. Visual', aBordo: false },
       { id: 10, nome: 'Mariana Almeida Ortiz', escola: 'Col. Olímpia', nee: false, aBordo: false },
@@ -87,6 +88,10 @@ export default function MotoristaDashboardPage() {
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // Estados do Feedback/Toast consolidado
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
   // Rota ativa
   const rotaAtiva = rotas.find(r => r.id === selectedRotaId) || rotas[0];
   const totalAlunos = rotaAtiva ? rotaAtiva.alunos.length : 0;
@@ -95,13 +100,12 @@ export default function MotoristaDashboardPage() {
   // Percentual de ocupação
   const percentualOcupacao = totalAlunos > 0 ? (alunosABordo / totalAlunos) * 100 : 0;
 
-  // Carregar dados dinamicamente do Supabase com base no Turno
+  // Carregar dados dinamicamente do Supabase
   const loadData = async (turno: 'Manhã' | 'Tarde' | 'Noite') => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // 1. Obter perfil do motorista logado
         const { data: perfil } = await supabase
           .from('perfis')
           .select('id, nome')
@@ -109,7 +113,6 @@ export default function MotoristaDashboardPage() {
           .single();
           
         if (perfil) {
-          // 2. Obter perfil de motorista específico
           const { data: driverPerfil } = await supabase
             .from('motoristas_perfil')
             .select('id, placa_veiculo, modelo_veiculo')
@@ -117,7 +120,6 @@ export default function MotoristaDashboardPage() {
             .single();
 
           if (driverPerfil) {
-            // 3. Obter rotas deste motorista
             const { data: dbRotas } = await supabase
               .from('rotas')
               .select('id, nome_rota, turno')
@@ -127,10 +129,9 @@ export default function MotoristaDashboardPage() {
               const mappedRotas: RotaConfig[] = [];
               
               for (const r of dbRotas) {
-                // 4. Obter alunos da rota e do turno selecionado
                 const { data: dbAlunos } = await supabase
                   .from('alunos')
-                  .select('id, nome, escola, foto_url')
+                  .select('id, nome, escola, foto_url, responsavel_id')
                   .eq('rota_id', r.id)
                   .eq('turno', turno);
 
@@ -146,13 +147,13 @@ export default function MotoristaDashboardPage() {
                     escola: aluno.escola || 'Escola Municipal',
                     nee: false,
                     aBordo: false,
-                    fotoUrl: aluno.foto_url || undefined
+                    fotoUrl: aluno.foto_url || undefined,
+                    responsavelId: aluno.responsavel_id || undefined
                   }))
                 });
               }
 
               setRotas(mappedRotas);
-              // Garante seleção de rota ativa se existir
               if (mappedRotas.length > 0 && !mappedRotas.some(r => r.id === selectedRotaId)) {
                 setSelectedRotaId(mappedRotas[0].id);
               }
@@ -166,17 +167,17 @@ export default function MotoristaDashboardPage() {
       console.error('Erro ao obter dados do banco:', err);
     }
     
-    // Fallback Mock se não conectado ou offline
+    // Fallback Mock
     const fallbackRotas = ROTAS_MOCK.map(r => {
       let filteredAlunos = r.alunos;
       if (turno === 'Tarde') {
         filteredAlunos = [
-          { id: '101', nome: 'Davi Lucas Santos', escola: r.alunos[0].escola, nee: false, aBordo: false },
-          { id: '102', nome: 'Mariana Silva', escola: r.alunos[0].escola, nee: true, tipoNee: 'Autismo', aBordo: false }
+          { id: '101', nome: 'Davi Lucas Santos', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
+          { id: '102', nome: 'Mariana Silva', escola: r.alunos[0].escola, nee: true, tipoNee: 'Autismo', aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf' }
         ];
       } else if (turno === 'Noite') {
         filteredAlunos = [
-          { id: '201', nome: 'Rodrigo Barbosa', escola: r.alunos[0].escola, nee: false, aBordo: false }
+          { id: '201', nome: 'Rodrigo Barbosa', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf' }
         ];
       }
       return { ...r, alunos: filteredAlunos };
@@ -189,12 +190,10 @@ export default function MotoristaDashboardPage() {
     setLoading(false);
   };
 
-  // Carrega sempre que o turno mudar
   useEffect(() => {
     loadData(selectedTurno);
   }, [selectedTurno]);
 
-  // Auto-reset do visor de escaneamento
   useEffect(() => {
     if (scanState !== 'idle') {
       const timer = setTimeout(() => {
@@ -221,30 +220,14 @@ export default function MotoristaDashboardPage() {
     );
   };
 
-  const handleSimulateScanSuccess = async () => {
+  const handleSimulateScanSuccess = () => {
     if (!rotaAtiva || rotaAtiva.alunos.length === 0) return;
     const aluno = rotaAtiva.alunos.find(a => !a.aBordo) || rotaAtiva.alunos[0];
     
+    // Apenas marca o status local de aBordo no estado React (sem insert imediato no Supabase)
     toggleAlunoABordo(aluno.id);
     setScannedAluno(aluno);
     setScanState('success');
-
-    // Salva o log na tabela real
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
-      
-      if (user && typeof aluno.id === 'string' && selectedRotaId.length > 10) {
-        await supabase.from('logs_embarque').insert({
-          aluno_id: aluno.id,
-          motorista_id: user.id,
-          rota_id: selectedRotaId,
-          tipo_movimento: dbTipoMovimento
-        });
-      }
-    } catch (e) {
-      console.error('Erro de persistência de log:', e);
-    }
 
     // Feedback por voz
     try {
@@ -272,6 +255,69 @@ export default function MotoristaDashboardPage() {
     } catch(e) {}
   };
 
+  // Envio consolidado em lote (Batch)
+  const handleSendBatch = async () => {
+    if (alunosABordo === 0) return;
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const boardedAlunos = rotaAtiva.alunos.filter(a => a.aBordo);
+
+      if (user && selectedRotaId.length > 10) {
+        const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
+
+        // 1. Preparar logs em lote para logs_embarque
+        const logsToInsert = boardedAlunos.map(aluno => ({
+          aluno_id: aluno.id,
+          motorista_id: user.id,
+          rota_id: selectedRotaId,
+          tipo_movimento: dbTipoMovimento
+        }));
+
+        // 2. Preparar notificações em lote para a tabela public.notificacoes
+        const notificationsToInsert = boardedAlunos
+          .filter(aluno => aluno.responsavelId)
+          .map(aluno => ({
+            destinatario_id: aluno.responsavelId,
+            remetente_id: user.id,
+            tipo: 'embarque',
+            titulo: 'Embarque Escolar Confirmado',
+            canal: 'app',
+            mensagem: `Seu filho(a) ${aluno.nome} acabou de embarcar na RotaEscola (${selectedTurno}).`,
+            lida: false
+          }));
+
+        // 3. Executa todas as inserções no banco em paralelo
+        await Promise.all([
+          logsToInsert.length > 0 ? supabase.from('logs_embarque').insert(logsToInsert) : Promise.resolve(),
+          notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve(),
+          
+          // 4. Atualizar a localização/status da rota para em trânsito (velocidade > 0)
+          supabase.from('localizacao_veiculo').insert({
+            rota_id: rotaAtiva.codigo,
+            latitude: -23.4178,
+            longitude: -51.4269,
+            velocidade_kmh: 40,
+            atualizado_em: new Date().toISOString()
+          })
+        ]);
+      }
+    } catch (err) {
+      console.error('Erro ao enviar lote para o banco de dados:', err);
+    }
+
+    // Feedback visual do Toast consolidado
+    setToastMessage('Lista enviada com sucesso para os responsáveis! Boa viagem.');
+    setShowSuccessToast(true);
+    setLoading(false);
+
+    // Auto fadeout do Toast
+    setTimeout(() => {
+      setShowSuccessToast(false);
+    }, 5000);
+  };
+
   const handleReportOcorrencia = (tipo: string) => {
     alert(`Ocorrência de "${tipo}" enviada com sucesso à prefeitura!`);
   };
@@ -289,15 +335,35 @@ export default function MotoristaDashboardPage() {
           0%, 100% { top: 5%; }
           50% { top: 95%; }
         }
+        @keyframes slideDown {
+          0% { transform: translateY(-20px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
         .scanner-line {
           animation: scan-animation 2.5s infinite ease-in-out;
+        }
+        .animate-slideDown {
+          animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
       {/* Moldura Celular Simulada Premium */}
       <div className="w-full max-w-md bg-slate-950 sm:shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col relative min-h-screen sm:min-h-[840px] sm:rounded-[36px] overflow-hidden border border-slate-900">
         
-        {/* Header minimalista com Logout */}
+        {/* Toast Consolidado */}
+        {showSuccessToast && (
+          <div className="absolute top-16 left-5 right-5 z-[60] bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3 shadow-2xl animate-slideDown">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-450 shrink-0">
+              <CheckCircle2 size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Checklist Concluído</p>
+              <p className="text-[10px] text-slate-400 mt-1">{toastMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Header com Logout */}
         <header className="bg-slate-900/90 backdrop-blur-md px-5 py-4 flex items-center justify-between border-b border-slate-800/60 sticky top-0 z-50">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🚌</span>
@@ -333,7 +399,6 @@ export default function MotoristaDashboardPage() {
               )}
             </button>
 
-            {/* Logout button */}
             <button
               onClick={handleLogout}
               className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/35 text-slate-400 hover:text-rose-400 transition-colors"
@@ -458,14 +523,15 @@ export default function MotoristaDashboardPage() {
                 <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-5 rounded-2xl z-30 animate-fadeIn">
                   {scanState === 'success' && scannedAluno && (
                     <div className="w-full bg-slate-900 border border-emerald-500/20 rounded-xl p-5 flex flex-col items-center text-center gap-4 shadow-xl">
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-450">
                         <CheckCircle2 size={26} />
                       </div>
                       
                       <div>
-                        <h4 className="text-xs font-extrabold text-emerald-400 uppercase tracking-widest">
-                          Embarque Autorizado
+                        <h4 className="text-xs font-extrabold text-emerald-450 uppercase tracking-widest">
+                          Embarque Registrado
                         </h4>
+                        <p className="text-[10px] text-slate-400 mt-1">Aguardando finalização do lote</p>
                       </div>
 
                       {/* Info do Aluno */}
@@ -564,6 +630,26 @@ export default function MotoristaDashboardPage() {
                 </div>
               )}
             </div>
+            
+            {/* Botão de Envio em Lote (Checklist Finalizado) */}
+            {alunosABordo > 0 && (
+              <div className="pt-4 pb-2">
+                <button
+                  onClick={handleSendBatch}
+                  disabled={loading}
+                  className="w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.2)] hover:shadow-[0_12px_24px_rgba(245,158,11,0.35)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border-0 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Navigation size={14} className="animate-pulse" />
+                      <span>Finalizar Checklist e Notificar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </main>
 

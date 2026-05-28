@@ -22,7 +22,7 @@ app/dashboard/admin/
     └── page.tsx        ← Rotas e Itinerários
 ```
 > [!NOTE]
-> O painel específico da secretaria municipal foi refatorado diretamente em `app/dashboard/secretaria/page.tsx` para apresentar a versão premium remodelada do painel de monitoramento de rotas em duas colunas.
+> O painel principal do administrador consolidou todas as funcionalidades e o design do antigo painel da secretaria municipal, concentrando a gestão operacional em um único local.
 
 ## Layout (layout.tsx)
 

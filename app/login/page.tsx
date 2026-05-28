@@ -21,13 +21,6 @@ export default function LoginPage() {
 
     const cleanCpf = cpf.replace(/\D/g, '');
 
-    // Validação contra os dados simulados
-    if (cleanCpf === '11111111111' && senha === 'secretariasenha') {
-      document.cookie = "sb-mock-login=secretaria; path=/";
-      router.push('/dashboard/secretaria');
-      setLoading(false);
-      return;
-    }
     if (cleanCpf === '22222222222' && senha === 'responsavelsenha') {
       document.cookie = "sb-mock-login=responsavel; path=/";
       router.push('/responsavel/dashboard');
@@ -70,8 +63,10 @@ export default function LoginPage() {
 
         if (!perfilError && perfil) {
           const role = perfil.tipo_usuario;
-          if (role === 'Secretaria') {
-            router.push('/dashboard/secretaria');
+          if (role === 'Admin') {
+            router.push('/dashboard/admin');
+          } else if (role === 'Motorista') {
+            router.push('/dashboard/motorista');
           } else {
             router.push('/responsavel/dashboard');
           }

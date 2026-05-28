@@ -49,8 +49,6 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     if (isMockCookie === 'admin') {
       url.pathname = '/dashboard/admin';
-    } else if (isMockCookie === 'secretaria') {
-      url.pathname = '/dashboard/secretaria';
     } else if (isMockCookie === 'motorista') {
       url.pathname = '/dashboard/motorista';
     } else {

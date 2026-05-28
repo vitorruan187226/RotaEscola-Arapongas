@@ -2,7 +2,7 @@ export interface MockUser {
   cpf: string;
   senha: string;
   nome: string;
-  tipo_usuario: 'Admin' | 'Secretaria' | 'Motorista' | 'Responsável';
+  tipo_usuario: 'Admin' | 'Motorista' | 'Responsável';
   detalhes: {
     cargo?: string;
     filho?: string;
@@ -18,15 +18,6 @@ export const mockUsers: MockUser[] = [
     tipo_usuario: 'Admin',
     detalhes: {
       cargo: 'Administrador do Sistema',
-    }
-  },
-  {
-    cpf: '11111111111',
-    senha: 'secretariasenha',
-    nome: 'Maria Silva (Gestora)',
-    tipo_usuario: 'Secretaria',
-    detalhes: {
-      cargo: 'Supervisora de Transportes',
     }
   },
   {

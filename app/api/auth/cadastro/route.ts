@@ -3,6 +3,31 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
+// Isolamento Total do Cliente Admin (Server-Only):
+// Declarado no escopo do módulo sem exportar para manter a blindagem.
+// Instanciado de forma preguiçosa (lazy-loading) no runtime para evitar quebras durante o build
+// caso as chaves de serviço do servidor não estejam disponíveis.
+let supabaseAdminInstance: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdminInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Configurações do Supabase ausentes no servidor (URL ou SERVICE_ROLE_KEY).');
+    }
+
+    supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+  }
+  return supabaseAdminInstance;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { nomeCompleto, cpf, telefone, senha } = await req.json();
@@ -17,26 +42,9 @@ export async function POST(req: NextRequest) {
     const cpfLimpo = cpf.replace(/\D/g, '');
     const emailDerivado = `${cpfLimpo}@rotaescola.com`;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAdmin = getSupabaseAdmin();
 
-    if (!supabaseServiceKey) {
-      console.error('[API Cadastro] Erro: SUPABASE_SERVICE_ROLE_KEY não está configurada no ambiente do servidor.');
-      return NextResponse.json(
-        { success: false, error: 'Erro de configuração do servidor: SUPABASE_SERVICE_ROLE_KEY ausente.' },
-        { status: 500 }
-      );
-    }
-
-    // Cria o cliente admin com a service role key do ambiente do servidor
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
-    // 1. Consulta direta na tabela de perfis para verificar duplicidade de CPF
+    // 1. Consulta direta na tabela de perfis para verificar duplicidade de CPF (Server-side)
     console.log('[API Cadastro] Verificando duplicidade de CPF na tabela perfis:', cpfLimpo);
     const { data: perfilExistente, error: queryError } = await supabaseAdmin
       .from('perfis')
@@ -45,7 +53,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (queryError) {
-      console.error('[API Cadastro] Erro ao consultar duplicidade de CPF:', queryError);
+      console.error('[ERRO CADASTRO DEv]: Erro ao consultar duplicidade de CPF:', queryError);
       return NextResponse.json(
         { success: false, error: 'Erro ao verificar CPF no banco de dados.' },
         { status: 500 }
@@ -60,7 +68,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Cria o usuário via Admin Auth (Ignorando limites de e-mail do Supabase e auto-confirmando)
+    // 2. Criar o Usuário via Admin Auth (Ignorando limites de e-mail do Supabase e auto-confirmando)
     console.log('[API Cadastro] Criando usuário no Supabase Auth via Admin client:', emailDerivado);
     const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: emailDerivado,
@@ -68,14 +76,16 @@ export async function POST(req: NextRequest) {
       email_confirm: true, // Auto-confirma instantaneamente no Auth
       user_metadata: {
         full_name: nomeCompleto,
+        nome: nomeCompleto, // Passa ambos para evitar quebra se a trigger buscar por 'nome'
         cpf: cpfLimpo,
         telefone: telefone,
-        role: 'responsavel'
+        role: 'responsavel',
+        tipo_usuario: 'responsavel'
       }
     });
 
     if (createError || !authData?.user) {
-      console.error('[API Cadastro] Erro ao criar usuário no Auth:', createError);
+      console.error('[ERRO CADASTRO DEv]: Erro ao criar usuário no Auth:', createError);
       return NextResponse.json(
         { success: false, error: createError?.message || 'Erro ao registrar usuário no sistema.' },
         { status: 500 }
@@ -89,10 +99,11 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Erro interno na API de cadastro:', error);
+    console.error('[ERRO CADASTRO DEv]:', error);
     return NextResponse.json(
-      { success: false, error: 'Erro interno no servidor de cadastro.' },
+      { success: false, error: error?.message || 'Erro interno no servidor de cadastro.' },
       { status: 500 }
     );
   }
 }
+

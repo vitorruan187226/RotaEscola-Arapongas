@@ -86,9 +86,14 @@ As alterações descritas acima foram implementadas nos seguintes arquivos:
     *   *Alterações:* Criação e estilização do componente `<HistoricoEmbarque>` para renderização de pílulas retroativas com data e turno, e chamadas dinâmicas ao Supabase.
 3.  **`app/dashboard/admin/page.tsx`**  
     *   *Alterações:* Criação do grid operacional de auditoria de logs com join na tabela de alunos e exibição da data/turno da viagem escolar.
-4.  **`supabase/migrations/20260528161500_alter_logs_status_date.sql`**  
+4.  **`app/login/page.tsx`**  
+    *   *Alterações:* Implementação do estado `isMounted` com guard do lado do cliente para sanar erros de hidratação do React (#418, #425, #423), máscara reativa para CPF e chamada redirecionada para a API interna.
+5.  **`app/api/auth/login/route.ts`**  
+    *   *Alterações:* Sanitização estrita do CPF recebido (remoção de qualquer caractere não numérico com `.replace(/\D/g, '')`) e adição de logs de depuração no servidor detalhados para CPF e e-mail.
+6.  **`supabase/migrations/20260528161500_alter_logs_status_date.sql`**  
     *   *Alterações:* Criação de colunas de controle operacional `status` e `data_registro` no banco Supabase.
-5.  **`supabase/migrations/20260528162700_add_turno_to_logs.sql`**  
+7.  **`supabase/migrations/20260528162700_add_turno_to_logs.sql`**  
     *   *Alterações:* Adição e validação via Check Constraint da coluna `turno` na tabela de logs de embarque.
-6.  **`logs/execucao_2026-05-28.log`**  
+8.  **`logs/execucao_2026-05-28.log`**  
     *   *Alterações:* Registro de auditoria diária das execuções de desenvolvimento.
+

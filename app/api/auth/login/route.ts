@@ -16,25 +16,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cleanCpf = cpf.replace(/\D/g, '');
+    const cleanCpf = cpf ? cpf.toString().replace(/\D/g, '') : '';
+    console.log('[API Login] CPF recebido no payload:', cpf);
+    console.log('[API Login] CPF tratado (somente numeros):', cleanCpf);
 
     // 1. Verificação de Usuários Mocks (Desenvolvimento)
     if (cleanCpf === '22222222222' && senha === 'responsavelsenha') {
+      console.log('[API Login] Login mock detectado: Responsavel');
       const response = NextResponse.json({ success: true, tipoUsuario: 'Responsável', isMock: true });
       response.cookies.set('sb-mock-login', 'responsavel', { path: '/' });
       return response;
     }
     if (cleanCpf === '33333333333' && senha === 'motoristasenha') {
+      console.log('[API Login] Login mock detectado: Motorista');
       const response = NextResponse.json({ success: true, tipoUsuario: 'Motorista', isMock: true });
       response.cookies.set('sb-mock-login', 'motorista', { path: '/' });
       return response;
     }
     if (cleanCpf === '99999999999' && senha === 'adminisenha') {
+      console.log('[API Login] Login mock detectado: Admin');
       const response = NextResponse.json({ success: true, tipoUsuario: 'Admin', isMock: true });
       response.cookies.set('sb-mock-login', 'admin', { path: '/' });
       return response;
     }
     if (cleanCpf === '11111111111' && senha === 'secretariasenha') {
+      console.log('[API Login] Login mock detectado: Secretaria');
       const response = NextResponse.json({ success: true, tipoUsuario: 'Secretaria', isMock: true });
       response.cookies.set('sb-mock-login', 'secretaria', { path: '/' });
       return response;
@@ -52,16 +58,20 @@ export async function POST(req: NextRequest) {
       
       if (!rpcError && dbEmail) {
         email = dbEmail;
+        console.log('[API Login] RPC executada. E-mail real encontrado para o CPF:', email);
+      } else {
+        console.log('[API Login] Nao foi possivel encontrar e-mail real via RPC. Usando fallback derivado:', email);
       }
     } catch (err) {
       console.error('Erro ao resolver e-mail por CPF no servidor:', err);
     }
 
-    // Efetua a autenticação
+    console.log('[API Login] Executando signInWithPassword para e-mail:', email);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password: senha,
     });
+
 
     if (authError || !authData?.user) {
       return NextResponse.json(

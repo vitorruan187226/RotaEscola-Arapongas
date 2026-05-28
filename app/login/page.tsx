@@ -1,17 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, User, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const router = useRouter();
+
+  // Efeito de montagem para evitar erros de hidratação (Mismatch SSR/Client)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="login-wrapper">
+        <div className="login-card card-premium flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-500 font-semibold">Carregando portal...</span>
+        </div>
+      </div>
+    );
+  }
+
+
 
   const formatCPF = (value: string) => {
     return value

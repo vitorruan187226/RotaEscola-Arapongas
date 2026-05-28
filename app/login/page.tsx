@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '../../utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Lock, User, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
@@ -12,70 +12,52 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   
   const router = useRouter();
-  const supabase = createClient();
+
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+      .substring(0, 14);
+  };
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCpf(formatCPF(e.target.value));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const cleanCpf = cpf.replace(/\D/g, '');
-
-    if (cleanCpf === '22222222222' && senha === 'responsavelsenha') {
-      document.cookie = "sb-mock-login=responsavel; path=/";
-      router.push('/responsavel/dashboard');
-      setLoading(false);
-      return;
-    }
-    if (cleanCpf === '33333333333' && senha === 'motoristasenha') {
-      document.cookie = "sb-mock-login=motorista; path=/";
-      router.push('/dashboard/motorista');
-      setLoading(false);
-      return;
-    }
-    if (cleanCpf === '99999999999' && senha === 'adminisenha') {
-      document.cookie = "sb-mock-login=admin; path=/";
-      router.push('/dashboard/admin');
-      setLoading(false);
-      return;
-    }
-
-    const email = `${cleanCpf}@rotaescola.com`;
-
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password: senha,
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf, senha }),
       });
 
-      if (authError) {
-        setError('Usuário ou senha inválidos.');
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Usuário ou senha inválidos.');
         setLoading(false);
         return;
       }
 
-      if (data?.user) {
-        const { data: perfil, error: perfilError } = await supabase
-          .from('perfis')
-          .select('tipo_usuario')
-          .eq('id', data.user.id)
-          .single();
-
-        if (!perfilError && perfil) {
-          const role = perfil.tipo_usuario;
-          if (role === 'Admin') {
-            router.push('/dashboard/admin');
-          } else if (role === 'Motorista') {
-            router.push('/dashboard/motorista');
-          } else {
-            router.push('/responsavel/dashboard');
-          }
-        } else {
-          router.push('/responsavel/dashboard');
-        }
+      const role = data.tipoUsuario;
+      if (role === 'Admin' || role === 'admin') {
+        router.push('/dashboard/admin');
+      } else if (role === 'Motorista' || role === 'motorista') {
+        router.push('/dashboard/motorista');
+      } else if (role === 'Secretaria' || role === 'secretaria') {
+        router.push('/dashboard/secretaria');
+      } else {
+        router.push('/responsavel/dashboard');
       }
     } catch (err) {
-      setError('Ocorreu um erro no servidor.');
+      setError('Ocorreu um erro ao conectar ao servidor.');
       setLoading(false);
     }
   };
@@ -106,7 +88,7 @@ export default function LoginPage() {
                 type="text"
                 placeholder="000.000.000-00"
                 value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
+                onChange={handleCpfChange}
                 required
               />
             </div>
@@ -130,8 +112,15 @@ export default function LoginPage() {
           <button type="submit" className="btn-primary w-full" disabled={loading}>
             {loading ? 'Acessando...' : 'Entrar no Sistema'}
           </button>
+
+          <div className="login-footer">
+            <Link href="/cadastro" className="text-link">
+              Não tem uma conta? Cadastre-se aqui
+            </Link>
+          </div>
         </form>
       </div>
+
 
       <style>{`
         .login-wrapper {
@@ -238,6 +227,26 @@ export default function LoginPage() {
           padding: 14px;
           font-size: 1rem;
         }
+
+        .login-footer {
+          text-align: center;
+          margin-top: 16px;
+        }
+
+        .text-link {
+          color: var(--primary-navy);
+          font-size: 0.85rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: opacity 0.2s;
+          display: inline-block;
+        }
+
+        .text-link:hover {
+          opacity: 0.8;
+          text-decoration: underline;
+        }
+
       `}</style>
     </div>
   );

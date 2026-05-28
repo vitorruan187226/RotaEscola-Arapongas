@@ -24,3 +24,4 @@
 [2026-05-28 17:08:00] INFO: Corrigindo tratamento de CPF no login e erros de hidratacao do React.
 [2026-05-28 17:14:00] INFO: Removendo campo de e-mail do cadastro, unificando fluxo com e-mail derivado de CPF e tratando hidratacao no cadastro.
 [2026-05-28 17:26:00] INFO: Ajuste Fino: Isola cliente admin do Supabase em nivel de modulo na API de cadastro, enriquece metadados para evitar erros na trigger do banco e melhora tratamento/logging de erros no servidor.
+[2026-05-28 17:30:00] INFO: Sobrescrita Forçada: Substitui a API Route e refatora o submit do front-end em /cadastro para eliminar qualquer RPC cliente antiga, usando fetch nativo e redirecionamento nativo.

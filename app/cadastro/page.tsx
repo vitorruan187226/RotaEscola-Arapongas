@@ -110,29 +110,22 @@ export default function CadastroPage() {
     }
 
     try {
-      // 2. Criação do usuário via API do Servidor (Supabase Admin Auth)
-      const res = await fetch('/api/auth/cadastro', {
+      const response = await fetch('/api/auth/cadastro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nomeCompleto,
-          cpf: cleanCpf,
-          telefone,
-          senha
-        })
+        body: JSON.stringify({ nomeCompleto, cpf: cleanCpf, telefone, senha })
       });
 
-      const data = await res.json();
+      const resultado = await response.json();
 
-      if (!res.ok || !data.success) {
-        setError(data.error || 'Erro ao realizar o cadastro.');
+      if (!response.ok) {
+        setError(resultado.error || 'Erro ao realizar o cadastro.');
         setLoading(false);
         return;
       }
 
-      // 3. Login automático imediato no cliente para gerar a sessão local e cookies
-      console.log('[Cadastro] Iniciando login automatico no cliente...');
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      // Se deu sucesso, faz o login na sessão usando o e-mail gerado automaticamente
+      const { error: loginError } = await supabase.auth.signInWithPassword({
         email: emailDerivado,
         password: senha
       });
@@ -144,9 +137,8 @@ export default function CadastroPage() {
         return;
       }
 
-      // 4. Redirecionamento de Sucesso
       document.cookie = "sb-mock-login=responsavel; path=/";
-      router.push('/responsavel/dashboard');
+      window.location.href = '/responsavel/dashboard';
 
     } catch (err: any) {
       setError('Erro ao conectar ao servidor de cadastro.');

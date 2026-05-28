@@ -93,6 +93,7 @@ export default function MotoristaDashboardPage() {
   // Estados do Feedback/Toast consolidado
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isSentSuccessfully, setIsSentSuccessfully] = useState(false);
 
   // Rota ativa
   const rotaAtiva = rotas.find(r => r.id === selectedRotaId) || rotas[0];
@@ -300,6 +301,10 @@ export default function MotoristaDashboardPage() {
       if (user && selectedRotaId.length > 10) {
         const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
 
+        let dbTurno: 'Matutino' | 'Vespertino' | 'Noturno' = 'Matutino';
+        if (selectedTurno === 'Tarde') dbTurno = 'Vespertino';
+        else if (selectedTurno === 'Noite') dbTurno = 'Noturno';
+
         // 1. Preparar logs em lote para logs_embarque
         // Alunos presentes entram com PRESENTE. Alunos não escaneados (pendentes) ou marcados ausentes entram como AUSENTE.
         const logsToInsert = rotaAtiva.alunos.map(aluno => ({
@@ -308,7 +313,8 @@ export default function MotoristaDashboardPage() {
           rota_id: selectedRotaId,
           tipo_movimento: dbTipoMovimento,
           status: aluno.statusLocal === 'presente' ? 'PRESENTE' : 'AUSENTE',
-          data_registro: todayDate
+          data_registro: todayDate,
+          turno: dbTurno
         }));
 
         // 2. Preparar notificações em lote para a tabela public.notificacoes (somente para os presentes)
@@ -344,14 +350,33 @@ export default function MotoristaDashboardPage() {
     }
 
     // Feedback visual do Toast consolidado
-    setToastMessage('Lista enviada com sucesso para os responsáveis! Boa viagem.');
+    setToastMessage('Lista enviada com sucesso!');
     setShowSuccessToast(true);
+    setIsSentSuccessfully(true);
     setLoading(false);
 
-    // Auto fadeout do Toast
+    // Auto reset e fadeout do Toast após 3 segundos
     setTimeout(() => {
+      // Reset local da lista de alunos na rota ativa de volta para 'pendente'
+      setRotas(prevRotas => 
+        prevRotas.map(r => {
+          if (r.id === selectedRotaId) {
+            return {
+              ...r,
+              alunos: r.alunos.map(aluno => ({
+                ...aluno,
+                statusLocal: 'pendente',
+                aBordo: false
+              }))
+            };
+          }
+          return r;
+        })
+      );
+      
+      setIsSentSuccessfully(false);
       setShowSuccessToast(false);
-    }, 5000);
+    }, 3000);
   };
 
   const handleReportOcorrencia = (tipo: string) => {
@@ -691,7 +716,7 @@ export default function MotoristaDashboardPage() {
                       aluno.statusLocal === 'presente' 
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
                         : aluno.statusLocal === 'ausente'
-                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-450'
+                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                         : 'bg-slate-900 border-slate-800 text-slate-500'
                     }`}>
                       {aluno.statusLocal === 'presente' ? 'Presente' : aluno.statusLocal === 'ausente' ? 'Faltou' : 'Pendente'}
@@ -706,15 +731,24 @@ export default function MotoristaDashboardPage() {
             </div>
             
             {/* Botão de Envio em Lote (Checklist Finalizado) */}
-            {temAlteracoes && (
+            {(temAlteracoes || isSentSuccessfully) && (
               <div className="pt-4 pb-2">
                 <button
                   onClick={handleSendBatch}
-                  disabled={loading}
-                  className="w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.2)] hover:shadow-[0_12px_24px_rgba(245,158,11,0.35)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border-0 flex items-center justify-center gap-2"
+                  disabled={loading || isSentSuccessfully}
+                  className={`w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase transition-all transform border-0 flex items-center justify-center gap-2 ${
+                    isSentSuccessfully
+                      ? 'bg-emerald-600 text-white shadow-[0_8px_20px_rgba(16,185,129,0.2)]'
+                      : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.2)] hover:shadow-[0_12px_24px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer'
+                  }`}
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                  ) : isSentSuccessfully ? (
+                    <>
+                      <Check size={14} />
+                      <span>Lista Enviada com Sucesso!</span>
+                    </>
                   ) : (
                     <>
                       <Navigation size={14} className="animate-pulse" />

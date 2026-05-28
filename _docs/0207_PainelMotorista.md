@@ -35,11 +35,18 @@ app/dashboard/motorista/
 
 ### 4. Lista de Passageiros (Card Clean)
 - Organizada em lista contínua com divisores sutis (`divide-y divide-slate-800/40`).
-- Checkbox de toque circular premium (`rounded-full bg-emerald-500` quando ativo).
+- **Três Estados de Checklist:**
+  - **Pendente:** Nome em cor neutra, badge cinza escrito "Pendente".
+  - **Presente (Confirmado):** Card com borda verde e fundo esverdeado sutil. Nome em verde e badge verde escrito "Presente". Chip de texto "Presente" antes do nome.
+  - **Faltou (Ausente):** Card com borda vermelha e fundo avermelhado sutil. Nome em vermelho e badge vermelho escrito "Faltou". Chip de texto "Faltou" destacado antes do nome.
 - **Tags NEE:** Pílulas semitransparentes com cores pastéis (ex: Autismo = `bg-amber-500/10 text-amber-400 border border-amber-500/20`).
-- **Indicador Limpo de Presença:** Badges discretas no canto direito exibindo 'Presente' ou 'Falta'.
 
-### 5. Menu Inferior de Ocorrências Rápidas
+### 5. Botão "Finalizar Checklist e Notificar"
+- **Feedback de Sucesso:** Ao ser clicado, processa o lote, exibe o toast "Lista enviada com sucesso!" e muda de cor para verde (sucesso) exibindo o ícone check e o texto "Lista Enviada com Sucesso!".
+- **Reset Automático:** Após 3 segundos da confirmação, limpa e reseta todos os status locais dos alunos para "Pendente", redefinindo a lista para a próxima viagem.
+- **Salvamento no Banco:** Registra a data atual do evento (`data_registro`) e mapeia o seletor 'Turno de Trabalho' (Manhã -> 'Matutino', Tarde -> 'Vespertino', Noite -> 'Noturno') na tabela `logs_embarque`.
+
+### 6. Menu Inferior de Ocorrências Rápidas
 - Barra flutuante com efeito blur de vidro (`backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60`).
 - Botões super arredondados com ícones Lucide minimalistas e rótulos curtos.
 - Botão **SOS** destacado com fundo vermelho escuro e borda suave (`bg-rose-950/20 border-rose-900/20`) e ícone vermelho pulsante.
@@ -47,18 +54,19 @@ app/dashboard/motorista/
 ## Mocks Utilizados
 ```ts
 interface Aluno {
-  id: number;
+  id: number | string;
   nome: string;
   escola: string;
   nee: boolean;
   tipoNee?: string;
   aBordo: boolean;
   fotoUrl?: string;
+  statusLocal: 'pendente' | 'presente' | 'ausente';
 }
 ```
 
 ## Histórico de Alterações
 | Data | Alteração |
 |---|---|
-| 27/05/2026 | Item 4 — Criação de rotas, painéis, simulador de QR e ocorrências mobile-first |
-| 27/05/2026 | Redesenho Completo — Reconstrução total com design premium estilo iOS/Android nativo |
+| 27/05/2026 | Reconstrução total com design premium estilo iOS/Android nativo |
+| 28/05/2026 | Refinamento do checklist (ciclo de 3 estados, reset automático, data e turno no lote Supabase) |

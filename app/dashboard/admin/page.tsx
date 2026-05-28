@@ -80,6 +80,7 @@ export default async function AdminDashboardPage() {
           status,
           data_registro,
           criado_em,
+          turno,
           alunos (nome, escola)
         `)
         .order('criado_em', { ascending: false })
@@ -97,6 +98,7 @@ export default async function AdminDashboardPage() {
         tipoMovimento: log.tipo_movimento,
         status: log.status,
         dataRegistro: log.data_registro,
+        turno: log.turno || 'Matutino',
         hora: new Date(log.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       }));
     }
@@ -111,11 +113,11 @@ export default async function AdminDashboardPage() {
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
     logsEmbarqueRecentes = [
-      { id: 'l1', alunoNome: 'Lucas Lima Souza', escola: 'E. M. Dorcelina Folador', tipoMovimento: 'IDA', status: 'PRESENTE', dataRegistro: todayStr, hora: '07:15' },
-      { id: 'l2', alunoNome: 'Enzo Gabriel Silva', escola: 'E. M. Dorcelina Folador', tipoMovimento: 'IDA', status: 'AUSENTE', dataRegistro: todayStr, hora: '07:18' },
-      { id: 'l3', alunoNome: 'Ana Beatriz Silveira', escola: 'E. M. Dorcelina Folador', tipoMovimento: 'IDA', status: 'PRESENTE', dataRegistro: todayStr, hora: '07:20' },
-      { id: 'l4', alunoNome: 'João Pedro Santos', escola: 'Colégio Estadual Olímpia', tipoMovimento: 'VOLTA', status: 'PRESENTE', dataRegistro: yesterdayStr, hora: '12:45' },
-      { id: 'l5', alunoNome: 'Júlia Nogueira Melo', escola: 'Colégio Estadual Olímpia', tipoMovimento: 'VOLTA', status: 'AUSENTE', dataRegistro: yesterdayStr, hora: '12:48' }
+      { id: 'l1', alunoNome: 'Lucas Lima Souza', escola: 'E. M. Dorcelina Folador', tipoMovimento: 'IDA', status: 'PRESENTE', dataRegistro: todayStr, turno: 'Matutino', hora: '07:15' },
+      { id: 'l2', alunoNome: 'Enzo Gabriel Silva', escola: 'E. M. Dorcelina Folador', tipoMovimento: 'IDA', status: 'AUSENTE', dataRegistro: todayStr, turno: 'Matutino', hora: '07:18' },
+      { id: 'l3', alunoNome: 'Ana Beatriz Silveira', escola: 'E. M. Dorcelina Folador', tipoMovimento: 'IDA', status: 'PRESENTE', dataRegistro: todayStr, turno: 'Matutino', hora: '07:20' },
+      { id: 'l4', alunoNome: 'João Pedro Santos', escola: 'Colégio Estadual Olímpia', tipoMovimento: 'VOLTA', status: 'PRESENTE', dataRegistro: yesterdayStr, turno: 'Vespertino', hora: '12:45' },
+      { id: 'l5', alunoNome: 'Júlia Nogueira Melo', escola: 'Colégio Estadual Olímpia', tipoMovimento: 'VOLTA', status: 'AUSENTE', dataRegistro: yesterdayStr, turno: 'Vespertino', hora: '12:48' }
     ];
   }
 
@@ -397,8 +399,8 @@ export default async function AdminDashboardPage() {
                       <td className="py-3.5 px-4 font-bold text-slate-900">{log.alunoNome}</td>
                       <td className="py-3.5 px-4 text-slate-500 font-semibold">{log.escola}</td>
                       <td className="py-3.5 px-4">
-                        <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
-                          {log.tipoMovimento}
+                        <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[10px] uppercase">
+                          {log.tipoMovimento} · {log.turno}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 font-mono">{dateFormatted}</td>

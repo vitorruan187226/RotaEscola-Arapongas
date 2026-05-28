@@ -1391,6 +1391,7 @@ interface LogEmbarque {
   tipo_movimento: 'IDA' | 'VOLTA';
   status: 'PRESENTE' | 'AUSENTE';
   data_registro: string;
+  turno?: 'Matutino' | 'Vespertino' | 'Noturno';
   criado_em?: string;
 }
 
@@ -1412,11 +1413,11 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
         const dayBeforeStr = dayBefore.toISOString().split('T')[0];
 
         setLogs([
-          { id: 'mock-1', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: todayStr },
-          { id: 'mock-2', tipo_movimento: 'IDA', status: 'PRESENTE', data_registro: todayStr },
-          { id: 'mock-3', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: yesterdayStr },
-          { id: 'mock-4', tipo_movimento: 'IDA', status: 'AUSENTE', data_registro: yesterdayStr },
-          { id: 'mock-5', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: dayBeforeStr },
+          { id: 'mock-1', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: todayStr, turno: 'Vespertino' },
+          { id: 'mock-2', tipo_movimento: 'IDA', status: 'PRESENTE', data_registro: todayStr, turno: 'Matutino' },
+          { id: 'mock-3', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: yesterdayStr, turno: 'Vespertino' },
+          { id: 'mock-4', tipo_movimento: 'IDA', status: 'AUSENTE', data_registro: yesterdayStr, turno: 'Matutino' },
+          { id: 'mock-5', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: dayBeforeStr, turno: 'Vespertino' },
         ]);
         setLoading(false);
         return;
@@ -1425,7 +1426,7 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
       try {
         const { data, error } = await supabase
           .from('logs_embarque')
-          .select('id, tipo_movimento, status, data_registro')
+          .select('id, tipo_movimento, status, data_registro, turno')
           .eq('aluno_id', alunoId)
           .order('data_registro', { ascending: false })
           .order('criado_em', { ascending: false })
@@ -1485,11 +1486,11 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
                   : 'bg-rose-50/60 border-rose-100 text-rose-700'
               }`}
             >
-              <div className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isPresente ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                <span>{dateStr} · {log.tipo_movimento}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPresente ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                <span className="truncate">{dateStr} · {log.tipo_movimento} ({log.turno || 'Matutino'})</span>
               </div>
-              <span className="font-extrabold uppercase text-[8px] tracking-wider">
+              <span className="font-extrabold uppercase text-[8px] tracking-wider shrink-0 ml-1">
                 {isPresente ? 'Presente' : 'Faltou'}
               </span>
             </div>

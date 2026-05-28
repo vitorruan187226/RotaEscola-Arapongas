@@ -4,6 +4,7 @@ indice.txt
 
 ## [01XX] Configurações e Infra
 - [_docs/0101_Design_System.md](_docs/0101_Design_System.md)
+- [_docs/0102_Auditoria_Relatorio.md](_docs/0102_Auditoria_Relatorio.md)
 
 ## [02XX] Telas e UI (Frontend)
 - [_docs/0200_Indice_Telas.md](_docs/0200_Indice_Telas.md)

@@ -22,9 +22,9 @@ Hub principal do Portal dos Pais/Guardiões. Lista os filhos vinculados ao respo
 | `useState`, `useEffect` | Gerenciamento de estado e lifecycle |
 
 ## Fluxo de Dados (Supabase)
-1. `supabase.auth.getUser()` → Obtém ID do usuário logado
-2. `supabase.from('perfis').select('nome').eq('id', user.id)` → Busca nome para saudação
-3. `supabase.from('alunos').select('*').eq('responsavel_id', user.id)` → Lista filhos (filtrado por RLS)
+1. `supabase.auth.getUser()` → Obtém a sessão e o ID do usuário logado.
+2. `supabase.from('perfis').select('nome, cpf').eq('id', user.id)` → Busca o nome completo e o CPF do responsável logado para exibição do cabeçalho.
+3. `supabase.from('alunos').select('id, nome, escola, serie, rota_id, status_carteirinha, foto_url').eq('responsavel_id', user.id)` → Lista alunos reais do responsável (filtrado por RLS).
 
 ## Contratos de Dados
 ### Tabela `alunos` (campos utilizados)
@@ -42,9 +42,11 @@ Hub principal do Portal dos Pais/Guardiões. Lista os filhos vinculados ao respo
 ```
 
 ## Regras de Negócio
-- **Empty State**: Se `filhos.length === 0`, exibe mensagem informativa com orientação
-- **Carteirinha bloqueada**: O botão "Ver Carteirinha" só fica ativo se `status_carteirinha === 'Aprovado'`
-- **Upload obrigatório**: Status `'Pendente'` exibe badge amarela e direciona para envio de documentos
+- **Empty State**: Se `filhos.length === 0`, exibe card instrutivo amigável orientando o cadastramento do filho ("Você ainda não possui estudantes cadastrados. Clique no botão 'Cadastrar Filho' acima para iniciar.").
+- **Exibição do CPF**: O CPF do usuário logado é renderizado no topo em formato mono formatado com a máscara visual `000.000.000-00`.
+- **Carteirinha bloqueada**: O botão "Ver Carteirinha" só fica ativo se `status_carteirinha === 'Aprovado'`.
+- **Upload obrigatório**: Status `'Pendente'` exibe badge amarela e direciona para envio de documentos.
+- **Remoção de Mocks**: Usuários reais logados nunca visualizam dados mockados (`FILHOS_MOCK`) nem a badge "Modo Demonstração". A interface exibe dados vazios ou dinâmicos de forma autêntica.
 
 ## Sub-rotas Acessíveis
 | Ação | Rota de Destino | Condição |
@@ -54,10 +56,11 @@ Hub principal do Portal dos Pais/Guardiões. Lista os filhos vinculados ao respo
 | Rastrear Ônibus | `/responsavel/rastreio/{rota_id}` | Sempre disponível |
 
 ## Mock Fallback (Lei 4)
-Constante `FILHOS_MOCK` tipada como `Partial<Aluno>[]` para uso quando Supabase não retorna dados em ambiente de desenvolvimento.
+Constante `FILHOS_MOCK` tipada como `Filho[]` para uso demonstrativo. É carregada unicamente se o portal for acessado de forma deslogada (sem sessão de usuário no Auth).
 
 ## Histórico de Alterações
 | Data | Alteração |
 |---|---|
 | 27/05/2026 | Criação do dashboard dinâmico com Supabase, Empty State, status_carteirinha |
 | 28/05/2026 | Documentação criada (0206) |
+| 28/05/2026 | Integração Real: Remoção de mocks para contas reais autenticadas, query de CPF na tabela `perfis`, exibição de CPF formatado e ajuste do texto do empty state. |

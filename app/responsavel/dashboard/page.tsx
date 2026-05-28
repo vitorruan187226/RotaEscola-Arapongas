@@ -66,12 +66,20 @@ function mapStatus(raw: string | null): Filho['statusCarteirinha'] {
   return 'Pendente';
 }
 
+function formatarCpfVisual(rawCpf: string) {
+  const clean = rawCpf.replace(/\D/g, '');
+  if (clean.length !== 11) return rawCpf;
+  return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function ResponsavelDashboard() {
   const router   = useRouter();
   const supabase = createClient();
 
+
   const [userName, setUserName] = useState<string>('');
+  const [userCpf, setUserCpf] = useState<string>('');
   const [filhos,   setFilhos]   = useState<Filho[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [usandoMock, setUsandoMock] = useState(false);
@@ -97,31 +105,35 @@ export default function ResponsavelDashboard() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
+          // Busca o perfil real no Supabase
           const { data: perfil } = await supabase
             .from('perfis')
-            .select('nome')
+            .select('nome, cpf')
             .eq('id', user.id)
             .maybeSingle();
 
-          if (perfil?.nome) {
-            setUserName(perfil.nome.split(' ')[0]);
+          if (perfil) {
+            setUserName(perfil.nome || '');
+            setUserCpf(perfil.cpf || '');
           } else if (user.email) {
             const emailName = user.email.split('@')[0];
             setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+            setUserCpf('');
           }
 
+          // Busca os alunos reais no Supabase
           const { data: alunosDB, error: alunosErr } = await supabase
             .from('alunos')
             .select('id, nome, escola, serie, rota_id, status_carteirinha, foto_url')
             .eq('responsavel_id', user.id);
 
-          if (!alunosErr && alunosDB && alunosDB.length > 0) {
+          if (!alunosErr && alunosDB) {
             const mapeados: Filho[] = alunosDB.map((a: {
               id: string;
               nome: string;
               escola: string;
-              serie: string;
-              rota_id: string;
+              serie: string | null;
+              rota_id: string | null;
               status_carteirinha: string | null;
               foto_url: string | null;
             }) => ({
@@ -136,24 +148,29 @@ export default function ResponsavelDashboard() {
             setFilhos(mapeados);
             setUsandoMock(false);
           } else {
-            setFilhos(FILHOS_MOCK);
-            setUsandoMock(true);
+            setFilhos([]);
+            setUsandoMock(false);
           }
         } else {
-          setUserName('José');
+          // Modo Demonstração (Sem Usuário Logado)
+          setUserName('José Martins');
+          setUserCpf('12345678900');
           setFilhos(FILHOS_MOCK);
           setUsandoMock(true);
         }
-      } catch {
+      } catch (err) {
+        console.error('Erro ao carregar dados do responsável:', err);
         setUserName('Responsável');
-        setFilhos(FILHOS_MOCK);
-        setUsandoMock(true);
+        setUserCpf('');
+        setFilhos([]);
+        setUsandoMock(false);
       } finally {
         setLoading(false);
       }
     }
     loadUserAndFilhos();
   }, [supabase]);
+
 
   // Função para atualizar o status do aluno localmente após upload bem-sucedido
   const handleUpdateStatusLocal = (alunoId: string, newStatus: Filho['statusCarteirinha']) => {
@@ -198,7 +215,12 @@ export default function ResponsavelDashboard() {
         <h2 className="text-xl font-black mt-1">
           Olá, {userName || 'Responsável'}!
         </h2>
-        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+        {userCpf && (
+          <p className="text-xs text-amber-500 font-bold font-mono mt-0.5">
+            CPF: {formatarCpfVisual(userCpf)}
+          </p>
+        )}
+        <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
           Acompanhe o transporte escolar de seus filhos e faça o envio de novos documentos.
         </p>
         {usandoMock && (
@@ -231,9 +253,9 @@ export default function ResponsavelDashboard() {
               <User size={28} />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-900">Nenhum aluno vinculado</h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-[240px]">
-                Ainda não há estudantes associados ao seu CPF neste sistema. Adicione o código da rota fornecido pelo motorista.
+              <h4 className="text-sm font-bold text-slate-900">Nenhum estudante vinculado</h4>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-[280px]">
+                Você ainda não possui estudantes cadastrados. Clique no botão 'Cadastrar Filho' acima para iniciar.
               </p>
             </div>
             <button
@@ -241,7 +263,7 @@ export default function ResponsavelDashboard() {
               className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
             >
               <Plus size={14} className="text-amber-500" />
-              <span>Vincular Código do Vanzeiro</span>
+              <span>Cadastrar Filho</span>
             </button>
           </div>
         ) : (

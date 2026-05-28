@@ -22,3 +22,4 @@
 [2026-05-28 16:59:00] INFO: Iniciando execucao do plano de cadastro seguro com API Route Handler e triggers de banco.
 [2026-05-28 17:01:00] INFO: Execucao concluida com sucesso. Build do Next.js verificado e 100% compativel.
 [2026-05-28 17:08:00] INFO: Corrigindo tratamento de CPF no login e erros de hidratacao do React.
+[2026-05-28 17:14:00] INFO: Removendo campo de e-mail do cadastro, unificando fluxo com e-mail derivado de CPF e tratando hidratacao no cadastro.

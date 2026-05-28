@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '../../utils/supabase/client';
-import { Lock, User, Mail, Phone, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Lock, User, Phone, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function CadastroPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [cpf, setCpf] = useState('');
-  const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -20,6 +20,22 @@ export default function CadastroPage() {
 
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="login-wrapper">
+        <div className="login-card card-premium flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-500 font-semibold">Carregando portal...</span>
+        </div>
+      </div>
+    );
+  }
+
 
   // Máscaras de entrada em tempo real
   const formatCPF = (value: string) => {
@@ -78,6 +94,7 @@ export default function CadastroPage() {
     setError(null);
 
     const cleanCpf = cpf.replace(/\D/g, '');
+    const emailDerivado = `${cleanCpf}@rotaescola.com`;
 
     // 1. Validações client-side
     if (senha !== confirmarSenha) {
@@ -109,7 +126,7 @@ export default function CadastroPage() {
 
       // 3. Cadastro via Supabase Auth com metadados
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: emailDerivado,
         password: senha,
         options: {
           data: {
@@ -154,10 +171,10 @@ export default function CadastroPage() {
           <div className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900">Cadastro Realizado!</h2>
             <p className="text-xs text-slate-500 leading-relaxed max-w-[280px] mx-auto">
-              Enviamos um link de confirmação para o seu e-mail **{email}**. Por favor, clique no link para ativar sua conta e liberar o acesso por CPF.
+              Sua conta foi criada com sucesso no sistema RotaEscola Arapongas. Agora você pode entrar usando seu CPF e a senha que acabou de cadastrar.
             </p>
           </div>
-          <Link href="/login" className="btn-primary w-full block text-center py-3.5 rounded-xl font-bold">
+          <Link href="/login" className="btn-primary w-full block text-center py-3.5 rounded-xl font-bold text-slate-950 bg-amber-500 hover:bg-amber-450 text-decoration-none">
             Ir para a Tela de Login
           </Link>
         </div>
@@ -179,6 +196,7 @@ export default function CadastroPage() {
       </div>
     );
   }
+
 
   return (
     <div className="login-wrapper">
@@ -224,22 +242,6 @@ export default function CadastroPage() {
                 placeholder="000.000.000-00"
                 value={cpf}
                 onChange={handleCpfChange}
-                required
-              />
-            </div>
-          </div>
-
-          {/* E-mail */}
-          <div className="form-group">
-            <label htmlFor="email">E-mail</label>
-            <div className="input-with-icon">
-              <Mail className="input-icon" size={18} />
-              <input
-                id="email"
-                type="email"
-                placeholder="exemplo@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>

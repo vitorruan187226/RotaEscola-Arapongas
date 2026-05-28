@@ -276,6 +276,9 @@ export default function ResponsavelDashboard() {
                 </div>
               </div>
 
+              {/* Histórico de Embarque */}
+              <HistoricoEmbarque alunoId={filho.id} usandoMock={usandoMock} />
+
               {/* Ações Rápidas */}
               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                 {/* Documentos */}
@@ -1382,3 +1385,118 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     </div>
   );
 }
+
+interface LogEmbarque {
+  id: string;
+  tipo_movimento: 'IDA' | 'VOLTA';
+  status: 'PRESENTE' | 'AUSENTE';
+  data_registro: string;
+  criado_em?: string;
+}
+
+function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMock: boolean }) {
+  const supabase = createClient();
+  const [logs, setLogs] = useState<LogEmbarque[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadLogs() {
+      if (usandoMock || alunoId.startsWith('aluno-')) {
+        // Mock data fallback
+        const todayStr = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const dayBefore = new Date();
+        dayBefore.setDate(dayBefore.getDate() - 2);
+        const dayBeforeStr = dayBefore.toISOString().split('T')[0];
+
+        setLogs([
+          { id: 'mock-1', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: todayStr },
+          { id: 'mock-2', tipo_movimento: 'IDA', status: 'PRESENTE', data_registro: todayStr },
+          { id: 'mock-3', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: yesterdayStr },
+          { id: 'mock-4', tipo_movimento: 'IDA', status: 'AUSENTE', data_registro: yesterdayStr },
+          { id: 'mock-5', tipo_movimento: 'VOLTA', status: 'PRESENTE', data_registro: dayBeforeStr },
+        ]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('logs_embarque')
+          .select('id, tipo_movimento, status, data_registro')
+          .eq('aluno_id', alunoId)
+          .order('data_registro', { ascending: false })
+          .order('criado_em', { ascending: false })
+          .limit(4);
+
+        if (!error && data) {
+          setLogs(data as LogEmbarque[]);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar logs de embarque:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadLogs();
+  }, [alunoId, usandoMock, supabase]);
+
+  if (loading) {
+    return (
+      <div className="py-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-medium">
+        <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+        <span>Carregando histórico...</span>
+      </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="py-2 px-3 bg-slate-50 border border-slate-100 rounded-xl text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
+        Nenhum registro de embarque recente
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
+      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+        Histórico de Embarque Recente
+      </span>
+      <div className="grid grid-cols-2 gap-2">
+        {logs.map((log) => {
+          const isPresente = log.status === 'PRESENTE';
+          // Format date from YYYY-MM-DD to DD/MM
+          let dateStr = log.data_registro;
+          if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            dateStr = `${parts[2]}/${parts[1]}`;
+          }
+          
+          return (
+            <div 
+              key={log.id} 
+              className={`flex items-center justify-between p-2 rounded-xl border text-[10px] font-bold ${
+                isPresente 
+                  ? 'bg-emerald-50/60 border-emerald-100 text-emerald-700' 
+                  : 'bg-rose-50/60 border-rose-100 text-rose-700'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isPresente ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                <span>{dateStr} · {log.tipo_movimento}</span>
+              </div>
+              <span className="font-extrabold uppercase text-[8px] tracking-wider">
+                {isPresente ? 'Presente' : 'Faltou'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

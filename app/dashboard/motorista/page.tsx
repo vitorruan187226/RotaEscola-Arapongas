@@ -20,7 +20,8 @@ import {
   WifiOff,
   User,
   Navigation,
-  LogOut
+  LogOut,
+  Calendar
 } from 'lucide-react';
 
 interface Aluno {
@@ -32,6 +33,7 @@ interface Aluno {
   aBordo: boolean;
   fotoUrl?: string;
   responsavelId?: string;
+  statusLocal: 'pendente' | 'presente' | 'ausente';
 }
 
 interface RotaConfig {
@@ -51,11 +53,11 @@ const ROTAS_MOCK: RotaConfig[] = [
     placa: 'BBB-5678',
     veiculo: 'Ônibus Mercedes-Benz',
     alunos: [
-      { id: 1, nome: 'Lucas Lima Souza', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
-      { id: 2, nome: 'Enzo Gabriel Silva', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf' },
-      { id: 3, nome: 'Ana Beatriz Silveira', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Autismo', aBordo: false, fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80', responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
-      { id: 4, nome: 'Maria Eduarda Costa', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false },
-      { id: 5, nome: 'Arthur Ramos Barbosa', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Cadeirante', aBordo: false }
+      { id: 1, nome: 'Lucas Lima Souza', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
+      { id: 2, nome: 'Enzo Gabriel Silva', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente' },
+      { id: 3, nome: 'Ana Beatriz Silveira', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Autismo', aBordo: false, fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80', responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
+      { id: 4, nome: 'Maria Eduarda Costa', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, statusLocal: 'pendente' },
+      { id: 5, nome: 'Arthur Ramos Barbosa', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Cadeirante', aBordo: false, statusLocal: 'pendente' }
     ]
   },
   {
@@ -65,10 +67,10 @@ const ROTAS_MOCK: RotaConfig[] = [
     placa: 'AAA-1234',
     veiculo: 'Microônibus Volare',
     alunos: [
-      { id: 7, nome: 'João Pedro Santos', escola: 'Col. Olímpia', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
-      { id: 8, nome: 'Júlia Nogueira Melo', escola: 'Col. Olímpia', nee: false, aBordo: false },
-      { id: 9, nome: 'Gustavo Reis Pinheiro', escola: 'Col. Olímpia', nee: true, tipoNee: 'D. Visual', aBordo: false },
-      { id: 10, nome: 'Mariana Almeida Ortiz', escola: 'Col. Olímpia', nee: false, aBordo: false },
+      { id: 7, nome: 'João Pedro Santos', escola: 'Col. Olímpia', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
+      { id: 8, nome: 'Júlia Nogueira Melo', escola: 'Col. Olímpia', nee: false, aBordo: false, statusLocal: 'pendente' },
+      { id: 9, nome: 'Gustavo Reis Pinheiro', escola: 'Col. Olímpia', nee: true, tipoNee: 'D. Visual', aBordo: false, statusLocal: 'pendente' },
+      { id: 10, nome: 'Mariana Almeida Ortiz', escola: 'Col. Olímpia', nee: false, aBordo: false, statusLocal: 'pendente' },
     ]
   }
 ];
@@ -95,10 +97,13 @@ export default function MotoristaDashboardPage() {
   // Rota ativa
   const rotaAtiva = rotas.find(r => r.id === selectedRotaId) || rotas[0];
   const totalAlunos = rotaAtiva ? rotaAtiva.alunos.length : 0;
-  const alunosABordo = rotaAtiva ? rotaAtiva.alunos.filter(a => a.aBordo).length : 0;
+  const alunosABordo = rotaAtiva ? rotaAtiva.alunos.filter(a => a.statusLocal === 'presente').length : 0;
   
   // Percentual de ocupação
   const percentualOcupacao = totalAlunos > 0 ? (alunosABordo / totalAlunos) * 100 : 0;
+
+  // Botão habilitado apenas se houver alguma mudança de status
+  const temAlteracoes = rotaAtiva ? rotaAtiva.alunos.some(a => a.statusLocal !== 'pendente') : false;
 
   // Carregar dados dinamicamente do Supabase
   const loadData = async (turno: 'Manhã' | 'Tarde' | 'Noite') => {
@@ -147,6 +152,7 @@ export default function MotoristaDashboardPage() {
                     escola: aluno.escola || 'Escola Municipal',
                     nee: false,
                     aBordo: false,
+                    statusLocal: 'pendente',
                     fotoUrl: aluno.foto_url || undefined,
                     responsavelId: aluno.responsavel_id || undefined
                   }))
@@ -172,12 +178,12 @@ export default function MotoristaDashboardPage() {
       let filteredAlunos = r.alunos;
       if (turno === 'Tarde') {
         filteredAlunos = [
-          { id: '101', nome: 'Davi Lucas Santos', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151' },
-          { id: '102', nome: 'Mariana Silva', escola: r.alunos[0].escola, nee: true, tipoNee: 'Autismo', aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf' }
+          { id: '101', nome: 'Davi Lucas Santos', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
+          { id: '102', nome: 'Mariana Silva', escola: r.alunos[0].escola, nee: true, tipoNee: 'Autismo', aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente' }
         ];
       } else if (turno === 'Noite') {
         filteredAlunos = [
-          { id: '201', nome: 'Rodrigo Barbosa', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf' }
+          { id: '201', nome: 'Rodrigo Barbosa', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente' }
         ];
       }
       return { ...r, alunos: filteredAlunos };
@@ -204,15 +210,29 @@ export default function MotoristaDashboardPage() {
     }
   }, [scanState]);
 
-  const toggleAlunoABordo = (alunoId: number | string) => {
+  // Cicla o status entre Pendente -> Presente -> Ausente -> Pendente ao clicar
+  const cycleAlunoStatus = (alunoId: number | string) => {
     setRotas(prevRotas => 
       prevRotas.map(r => {
         if (r.id === selectedRotaId) {
           return {
             ...r,
-            alunos: r.alunos.map(aluno => 
-              aluno.id === alunoId ? { ...aluno, aBordo: !aluno.aBordo } : aluno
-            )
+            alunos: r.alunos.map(aluno => {
+              if (aluno.id === alunoId) {
+                const currentStatus = aluno.statusLocal;
+                let nextStatus: 'pendente' | 'presente' | 'ausente' = 'pendente';
+                if (currentStatus === 'pendente') nextStatus = 'presente';
+                else if (currentStatus === 'presente') nextStatus = 'ausente';
+                else nextStatus = 'pendente';
+                
+                return { 
+                  ...aluno, 
+                  statusLocal: nextStatus, 
+                  aBordo: nextStatus === 'presente' 
+                };
+              }
+              return aluno;
+            })
           };
         }
         return r;
@@ -222,10 +242,23 @@ export default function MotoristaDashboardPage() {
 
   const handleSimulateScanSuccess = () => {
     if (!rotaAtiva || rotaAtiva.alunos.length === 0) return;
-    const aluno = rotaAtiva.alunos.find(a => !a.aBordo) || rotaAtiva.alunos[0];
+    const aluno = rotaAtiva.alunos.find(a => a.statusLocal === 'pendente') || rotaAtiva.alunos[0];
     
-    // Apenas marca o status local de aBordo no estado React (sem insert imediato no Supabase)
-    toggleAlunoABordo(aluno.id);
+    // Marca como presente
+    setRotas(prevRotas => 
+      prevRotas.map(r => {
+        if (r.id === selectedRotaId) {
+          return {
+            ...r,
+            alunos: r.alunos.map(a => 
+              a.id === aluno.id ? { ...a, statusLocal: 'presente', aBordo: true } : a
+            )
+          };
+        }
+        return r;
+      })
+    );
+    
     setScannedAluno(aluno);
     setScanState('success');
 
@@ -233,7 +266,7 @@ export default function MotoristaDashboardPage() {
     try {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance('Embarque autorizado');
+        const msg = new SpeechSynthesisUtterance('Embarque registrado');
         msg.lang = 'pt-BR';
         window.speechSynthesis.speak(msg);
       }
@@ -257,27 +290,30 @@ export default function MotoristaDashboardPage() {
 
   // Envio consolidado em lote (Batch)
   const handleSendBatch = async () => {
-    if (alunosABordo === 0) return;
+    if (!temAlteracoes) return;
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const boardedAlunos = rotaAtiva.alunos.filter(a => a.aBordo);
+      const todayDate = new Date().toISOString().split('T')[0];
 
       if (user && selectedRotaId.length > 10) {
         const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
 
         // 1. Preparar logs em lote para logs_embarque
-        const logsToInsert = boardedAlunos.map(aluno => ({
+        // Alunos presentes entram com PRESENTE. Alunos não escaneados (pendentes) ou marcados ausentes entram como AUSENTE.
+        const logsToInsert = rotaAtiva.alunos.map(aluno => ({
           aluno_id: aluno.id,
           motorista_id: user.id,
           rota_id: selectedRotaId,
-          tipo_movimento: dbTipoMovimento
+          tipo_movimento: dbTipoMovimento,
+          status: aluno.statusLocal === 'presente' ? 'PRESENTE' : 'AUSENTE',
+          data_registro: todayDate
         }));
 
-        // 2. Preparar notificações em lote para a tabela public.notificacoes
-        const notificationsToInsert = boardedAlunos
-          .filter(aluno => aluno.responsavelId)
+        // 2. Preparar notificações em lote para a tabela public.notificacoes (somente para os presentes)
+        const notificationsToInsert = rotaAtiva.alunos
+          .filter(aluno => aluno.statusLocal === 'presente' && aluno.responsavelId)
           .map(aluno => ({
             destinatario_id: aluno.responsavelId,
             remetente_id: user.id,
@@ -293,7 +329,7 @@ export default function MotoristaDashboardPage() {
           logsToInsert.length > 0 ? supabase.from('logs_embarque').insert(logsToInsert) : Promise.resolve(),
           notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve(),
           
-          // 4. Atualizar a localização/status da rota para em trânsito (velocidade > 0)
+          // 4. Atualizar a localização/status da rota para em trânsito
           supabase.from('localizacao_veiculo').insert({
             rota_id: rotaAtiva.codigo,
             latitude: -23.4178,
@@ -327,6 +363,12 @@ export default function MotoristaDashboardPage() {
     document.cookie = "sb-mock-login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push('/login');
   };
+
+  // Data atual formatada (ex: 28/05/2026) - Hydration-safe
+  const [dataAtualFormatada, setDataAtualFormatada] = useState('');
+  useEffect(() => {
+    setDataAtualFormatada(new Date().toLocaleDateString('pt-BR'));
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center font-sans antialiased text-slate-100 p-0 sm:p-6 md:p-8">
@@ -363,15 +405,19 @@ export default function MotoristaDashboardPage() {
           </div>
         )}
 
-        {/* Header com Logout */}
+        {/* Header com Logout e Data */}
         <header className="bg-slate-900/90 backdrop-blur-md px-5 py-4 flex items-center justify-between border-b border-slate-800/60 sticky top-0 z-50">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🚌</span>
             <div>
-              <h2 className="font-extrabold text-sm tracking-tight text-white leading-none">
+              <h2 className="font-extrabold text-sm tracking-tight text-white leading-none flex items-center gap-2">
                 RotaEscola
+                <span className="text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-medium flex items-center gap-1">
+                  <Calendar size={8} />
+                  {dataAtualFormatada}
+                </span>
               </h2>
-              <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-widest block mt-0.5">
+              <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-widest block mt-1">
                 Arapongas · Bordo
               </span>
             </div>
@@ -464,7 +510,7 @@ export default function MotoristaDashboardPage() {
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
-                    Alunos a Bordo
+                    Alunos Presentes
                   </span>
                   <span className="text-xs text-slate-500 font-medium block mt-0.5">
                     Placa: {rotaAtiva ? rotaAtiva.placa : '...'} | {rotaAtiva ? rotaAtiva.veiculo : '...'}
@@ -478,7 +524,7 @@ export default function MotoristaDashboardPage() {
               {/* Barra de Progresso */}
               <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/40">
                 <div 
-                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500 ease-out"
+                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-450 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${percentualOcupacao}%` }}
                 />
               </div>
@@ -585,22 +631,48 @@ export default function MotoristaDashboardPage() {
                 rotaAtiva.alunos.map((aluno) => (
                   <div
                     key={aluno.id}
-                    onClick={() => toggleAlunoABordo(aluno.id)}
+                    onClick={() => cycleAlunoStatus(aluno.id)}
                     className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer select-none ${
-                      aluno.aBordo ? 'bg-slate-900/20' : 'hover:bg-slate-900/30'
+                      aluno.statusLocal === 'presente' 
+                        ? 'bg-emerald-950/10 border-l-4 border-emerald-500' 
+                        : aluno.statusLocal === 'ausente'
+                        ? 'bg-rose-950/10 border-l-4 border-rose-500'
+                        : 'hover:bg-slate-900/30'
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all shrink-0 ${
-                        aluno.aBordo 
+                        aluno.statusLocal === 'presente' 
                           ? 'bg-emerald-500 border-emerald-500 text-slate-950' 
+                          : aluno.statusLocal === 'ausente'
+                          ? 'bg-rose-500 border-rose-500 text-slate-950'
                           : 'border-slate-700 bg-slate-950/60 text-transparent'
                       }`}>
-                        <Check size={11} strokeWidth={4} />
+                        {aluno.statusLocal === 'presente' ? (
+                          <Check size={11} strokeWidth={4} />
+                        ) : aluno.statusLocal === 'ausente' ? (
+                          <span className="text-[9px] font-black leading-none">X</span>
+                        ) : null}
                       </div>
 
                       <div className="min-w-0">
-                        <p className={`text-xs font-bold transition-all truncate ${aluno.aBordo ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
+                        <p className={`text-xs font-bold transition-all truncate flex items-center gap-2 ${
+                          aluno.statusLocal === 'presente' 
+                            ? 'text-emerald-400 font-extrabold' 
+                            : aluno.statusLocal === 'ausente'
+                            ? 'text-rose-500 font-extrabold'
+                            : 'text-slate-100'
+                        }`}>
+                          {aluno.statusLocal === 'ausente' && (
+                            <span className="text-[9px] bg-rose-500/25 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
+                              Faltou
+                            </span>
+                          )}
+                          {aluno.statusLocal === 'presente' && (
+                            <span className="text-[9px] bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
+                              Presente
+                            </span>
+                          )}
                           {aluno.nome}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1 min-w-0">
@@ -615,12 +687,14 @@ export default function MotoristaDashboardPage() {
                       </div>
                     </div>
 
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-                      aluno.aBordo 
-                        ? 'bg-emerald-500/10 text-emerald-400' 
-                        : 'bg-rose-500/10 text-rose-400'
+                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 border ${
+                      aluno.statusLocal === 'presente' 
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                        : aluno.statusLocal === 'ausente'
+                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-450'
+                        : 'bg-slate-900 border-slate-800 text-slate-500'
                     }`}>
-                      {aluno.aBordo ? 'Presente' : 'Falta'}
+                      {aluno.statusLocal === 'presente' ? 'Presente' : aluno.statusLocal === 'ausente' ? 'Faltou' : 'Pendente'}
                     </span>
                   </div>
                 ))
@@ -632,7 +706,7 @@ export default function MotoristaDashboardPage() {
             </div>
             
             {/* Botão de Envio em Lote (Checklist Finalizado) */}
-            {alunosABordo > 0 && (
+            {temAlteracoes && (
               <div className="pt-4 pb-2">
                 <button
                   onClick={handleSendBatch}

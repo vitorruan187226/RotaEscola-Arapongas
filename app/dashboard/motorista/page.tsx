@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../../utils/supabase/client';
 import { 
@@ -106,6 +106,22 @@ export default function MotoristaDashboardPage() {
   // Botão habilitado apenas se houver alguma mudança de status
   const temAlteracoes = rotaAtiva ? rotaAtiva.alunos.some(a => a.statusLocal !== 'pendente') : false;
 
+  // Estados do escâner real de câmera
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [lastScannedId, setLastScannedId] = useState<string>('');
+
+  // Refs de segurança para callbacks do scanner
+  const rotaAtivaRef = useRef(rotaAtiva);
+  const selectedRotaIdRef = useRef(selectedRotaId);
+
+  useEffect(() => {
+    rotaAtivaRef.current = rotaAtiva;
+  }, [rotaAtiva]);
+
+  useEffect(() => {
+    selectedRotaIdRef.current = selectedRotaId;
+  }, [selectedRotaId]);
+
   // Carregar dados dinamicamente do Supabase
   const loadData = async (turno: 'Manhã' | 'Tarde' | 'Noite') => {
     setLoading(true);
@@ -206,6 +222,7 @@ export default function MotoristaDashboardPage() {
       const timer = setTimeout(() => {
         setScanState('idle');
         setScannedAluno(null);
+        setLastScannedId('');
       }, 4000);
       return () => clearTimeout(timer);
     }
@@ -241,53 +258,159 @@ export default function MotoristaDashboardPage() {
     );
   };
 
-  const handleSimulateScanSuccess = () => {
-    if (!rotaAtiva || rotaAtiva.alunos.length === 0) return;
-    const aluno = rotaAtiva.alunos.find(a => a.statusLocal === 'pendente') || rotaAtiva.alunos[0];
+  const handleQrCodeScanned = (decodedText: string) => {
+    // Evita múltiplas leituras em lote do mesmo ID em seguida
+    if (decodedText === lastScannedId && scanState === 'success') return;
     
-    // Marca como presente
-    setRotas(prevRotas => 
-      prevRotas.map(r => {
-        if (r.id === selectedRotaId) {
-          return {
-            ...r,
-            alunos: r.alunos.map(a => 
-              a.id === aluno.id ? { ...a, statusLocal: 'presente', aBordo: true } : a
-            )
-          };
+    const scannedId = decodedText.trim();
+    setLastScannedId(scannedId);
+    
+    const activeRoute = rotaAtivaRef.current;
+    const currentSelectedRotaId = selectedRotaIdRef.current;
+    
+    const alunoEncontrado = activeRoute.alunos.find(a => a.id.toString() === scannedId);
+    
+    if (alunoEncontrado) {
+      // Marca como presente
+      setRotas(prevRotas => 
+        prevRotas.map(r => {
+          if (r.id === currentSelectedRotaId) {
+            return {
+              ...r,
+              alunos: r.alunos.map(a => 
+                a.id.toString() === scannedId ? { ...a, statusLocal: 'presente', aBordo: true } : a
+              )
+            };
+          }
+          return r;
+        })
+      );
+      
+      setScannedAluno(alunoEncontrado);
+      setScanState('success');
+      
+      // Feedback sonoro: beep agudo (Web Audio API)
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Tom agudo
+        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.12);
+      } catch (e) {}
+      
+      // Feedback por voz
+      try {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const msg = new SpeechSynthesisUtterance(`${alunoEncontrado.nome.split(' ')[0]} confirmado`);
+          msg.lang = 'pt-BR';
+          window.speechSynthesis.speak(msg);
         }
-        return r;
-      })
-    );
-    
-    setScannedAluno(aluno);
-    setScanState('success');
+      } catch(e) {}
 
-    // Feedback por voz
-    try {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance('Embarque registrado');
-        msg.lang = 'pt-BR';
-        window.speechSynthesis.speak(msg);
-      }
-    } catch(e) {}
+      // Feedback vibratório (100ms)
+      try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(100);
+        }
+      } catch(e) {}
+      
+    } else {
+      setScanState('error');
+      setScanErrorMsg('ALUNO NÃO PERTENCE A ESTA ROTA');
+      
+      // Feedback sonoro: dois beeps graves
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.frequency.setValueAtTime(220, audioCtx.currentTime);
+        gain1.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start();
+        osc1.stop(audioCtx.currentTime + 0.18);
+        
+        setTimeout(() => {
+          try {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.frequency.setValueAtTime(180, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.22);
+          } catch(e){}
+        }, 220);
+      } catch(e) {}
+      
+      // Feedback por voz
+      try {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const msg = new SpeechSynthesisUtterance('Atenção, rota incorreta');
+          msg.lang = 'pt-BR';
+          window.speechSynthesis.speak(msg);
+        }
+      } catch(e) {}
+
+      // Feedback vibratório de erro
+      try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([150, 100, 150]);
+        }
+      } catch(e) {}
+    }
   };
 
-  const handleSimulateScanError = () => {
-    setScanState('error');
-    setScanErrorMsg('ALUNO NÃO PERTENCE A ESTA ROTA');
+  // Inicializa o Scanner real usando a camera do dispositivo
+  useEffect(() => {
+    let html5QrCode: any = null;
 
-    // Feedback por voz
-    try {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance('Atenção, rota incorreta');
-        msg.lang = 'pt-BR';
-        window.speechSynthesis.speak(msg);
+    async function startCamera() {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        html5QrCode = new Html5Qrcode("reader");
+        
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 15,
+            qrbox: (width: number, height: number) => {
+              const size = Math.min(width, height) - 20;
+              return { width: size, height: size };
+            }
+          },
+          (decodedText: string) => {
+            handleQrCodeScanned(decodedText);
+          },
+          () => {
+            // Ignorado
+          }
+        );
+        setHasCameraPermission(true);
+      } catch (err) {
+        console.error("Erro ao iniciar camera:", err);
+        setHasCameraPermission(false);
       }
-    } catch(e) {}
-  };
+    }
+
+    startCamera();
+
+    return () => {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop()
+          .then(() => console.log("Camera desligada"))
+          .catch((err: any) => console.error("Erro ao desligar camera:", err));
+      }
+    };
+  }, []);
 
   // Envio consolidado em lote (Batch)
   const handleSendBatch = async () => {
@@ -564,29 +687,28 @@ export default function MotoristaDashboardPage() {
 
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col items-center gap-5 relative">
               <div className="relative w-44 h-44 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden border border-slate-800">
-                <div className="absolute left-4 right-4 h-0.5 bg-rose-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] z-20 scanner-line" />
+                <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
                 
-                <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-amber-400 rounded-tl-md" />
-                <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-amber-400 rounded-tr-md" />
-                <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-amber-400 rounded-bl-md" />
-                <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-amber-400 rounded-br-md" />
+                {/* Overlay visual do Scanner (laser + cantoneiras) */}
+                <div className="absolute left-4 right-4 h-0.5 bg-rose-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] z-20 scanner-line pointer-events-none" />
+                
+                <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-amber-400 rounded-tl-md z-10 pointer-events-none" />
+                <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-amber-400 rounded-tr-md z-10 pointer-events-none" />
+                <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-amber-400 rounded-bl-md z-10 pointer-events-none" />
+                <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-amber-400 rounded-br-md z-10 pointer-events-none" />
 
-                <QrCode size={56} className="text-slate-800/60 animate-pulse" />
-              </div>
+                {/* Mostra o ícone fallback apenas se a permissão não foi concedida ou está carregando */}
+                {hasCameraPermission === null && (
+                  <QrCode size={56} className="text-slate-800/60 animate-pulse z-10" />
+                )}
 
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={handleSimulateScanSuccess}
-                  className="flex-1 py-3 px-5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:scale-95 transition-all text-center cursor-pointer border-0"
-                >
-                  Simular Sucesso
-                </button>
-                <button
-                  onClick={handleSimulateScanError}
-                  className="flex-1 py-3 px-5 rounded-full text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md active:scale-95 transition-all text-center cursor-pointer border-0"
-                >
-                  Simular Erro
-                </button>
+                {hasCameraPermission === false && (
+                  <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-3 text-center gap-2 z-30">
+                    <WifiOff size={24} className="text-rose-500" />
+                    <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wide">Câmera Bloqueada</span>
+                    <p className="text-[8px] text-slate-400">Permita o acesso à câmera para escanear.</p>
+                  </div>
+                )}
               </div>
 
               {/* CARD DE FEEDBACK VISUAL DE LEITURA */}

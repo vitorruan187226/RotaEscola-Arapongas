@@ -1,0 +1,63 @@
+# Dashboard do Responsável (0206)
+
+## Propósito
+Hub principal do Portal dos Pais/Guardiões. Lista os filhos vinculados ao responsável logado, exibe o status de cada carteirinha e oferece ações rápidas (ver carteirinha, enviar documentos, rastrear ônibus).
+
+## Rota
+- `/responsavel/dashboard` → `app/responsavel/dashboard/page.tsx`
+
+## Layout Wrapper
+- `app/responsavel/layout.tsx` — Moldura celular simulada (`max-w-md`), header premium com botão voltar condicional e botão logout com `signOut()`.
+
+## Modo de Renderização
+- `'use client'` — Contém múltiplos `useState` e `useEffect` para carregar dados do Supabase.
+
+## Componentes e Dependências
+| Módulo | Uso |
+|---|---|
+| `@supabase/supabase-js` | Autenticação + queries dinâmicas |
+| `utils/supabase/client` | `createClient()` para browser |
+| `next/link` | Navegação para sub-rotas |
+| `lucide-react` | Ícones variados |
+| `useState`, `useEffect` | Gerenciamento de estado e lifecycle |
+
+## Fluxo de Dados (Supabase)
+1. `supabase.auth.getUser()` → Obtém ID do usuário logado
+2. `supabase.from('perfis').select('nome').eq('id', user.id)` → Busca nome para saudação
+3. `supabase.from('alunos').select('*').eq('responsavel_id', user.id)` → Lista filhos (filtrado por RLS)
+
+## Contratos de Dados
+### Tabela `alunos` (campos utilizados)
+```typescript
+{
+  id: string;
+  nome: string;
+  escola: string;
+  serie: string;
+  rota_id: string;
+  responsavel_id: string;
+  status_carteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
+  foto_url?: string;
+}
+```
+
+## Regras de Negócio
+- **Empty State**: Se `filhos.length === 0`, exibe mensagem informativa com orientação
+- **Carteirinha bloqueada**: O botão "Ver Carteirinha" só fica ativo se `status_carteirinha === 'Aprovado'`
+- **Upload obrigatório**: Status `'Pendente'` exibe badge amarela e direciona para envio de documentos
+
+## Sub-rotas Acessíveis
+| Ação | Rota de Destino | Condição |
+|---|---|---|
+| Ver Carteirinha | `/responsavel/carteirinha/{id}` | `status_carteirinha === 'Aprovado'` |
+| Enviar Documentos | `/responsavel/documentos?alunoId={id}` | Sempre disponível |
+| Rastrear Ônibus | `/responsavel/rastreio/{rota_id}` | Sempre disponível |
+
+## Mock Fallback (Lei 4)
+Constante `FILHOS_MOCK` tipada como `Partial<Aluno>[]` para uso quando Supabase não retorna dados em ambiente de desenvolvimento.
+
+## Histórico de Alterações
+| Data | Alteração |
+|---|---|
+| 27/05/2026 | Criação do dashboard dinâmico com Supabase, Empty State, status_carteirinha |
+| 28/05/2026 | Documentação criada (0206) |

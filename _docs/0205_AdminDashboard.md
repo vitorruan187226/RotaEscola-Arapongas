@@ -91,9 +91,27 @@ interface AtividadeRecente {
 | `btn-admin-logout` | Botão logout na sidebar |
 | `btn-admin-menu` | Hamburguer mobile |
 | `btn-topbar-logout` | Botão logout no topbar |
+| `btn-novo-aluno` | Abre modal de novo aluno |
+| `btn-novo-veiculo` | Abre modal de novo veículo |
+| `btn-nova-rota` | Abre modal de nova rota |
+| `search-alunos` | Campo de busca de alunos |
+| `search-rotas` | Campo de busca de rotas |
+| `btn-edit-rota-{id}` | Editar rota específica |
+| `btn-delete-rota-{id}` | Excluir rota específica |
+
+## Status dos Módulos Admin
+| Módulo | Arquivo | Status | Tabela Supabase |
+|---|---|---|---|
+| Visão Geral | `page.tsx` | ✅ Ativo (KPIs mock) | — |
+| Gestão de Alunos | `alunos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` |
+| Frota e Veículos | `frota/page.tsx` | ✅ Ativo (CRUD real) | `veiculos` |
+| Aprovação de Docs | `documentos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` + Storage |
+| Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real) | `rotas` |
 
 ## Histórico de Alterações
 | Data | Alteração |
 |---|---|
 | Setup inicial | Criação do admin/page.tsx com tabela de frota simples |
-| Item 3 — Painel Admin | Criação do layout.tsx com sidebar + topbar; reescrita completa do page.tsx com KPIs, mapa e tabela; criação das sub-rotas frota, alunos, documentos, rotas |
+| Sprint 2 — Painel Admin | Criação do layout.tsx com sidebar + topbar; reescrita completa do page.tsx com KPIs, mapa e tabela; criação das sub-rotas frota, alunos, documentos, rotas |
+| 2026-05-27 | **Ativação completa:** todos os 4 módulos convertidos de mock estático para integração real Supabase com CRUD, busca, KPIs, modais e fallback inteligente. Commit `71de8e6`. |
+

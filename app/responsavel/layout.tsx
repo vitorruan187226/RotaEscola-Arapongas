@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft, LogOut } from 'lucide-react';
+import { createClient } from '../../utils/supabase/client';
 import React from 'react';
 
 export default function ResponsavelLayout({
@@ -15,7 +16,10 @@ export default function ResponsavelLayout({
   // Define se exibe botão voltar (exibe em todas as páginas exceto no dashboard inicial)
   const showBackButton = pathname !== '/responsavel/dashboard';
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Derruba a sessão real no backend do Supabase
+    const supabase = createClient();
+    await supabase.auth.signOut();
     // Limpa o cookie mock e redireciona
     document.cookie = "sb-mock-login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push('/login');

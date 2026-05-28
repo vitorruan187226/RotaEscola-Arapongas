@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Bus,
@@ -15,6 +15,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { createClient } from '../../../utils/supabase/client';
 
 // ─── Itens de navegação da sidebar ─────────────────────────────────────────
 const NAV_ITEMS = [
@@ -75,7 +76,15 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    document.cookie = "sb-mock-login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    router.push('/login');
+  };
 
   return (
     <div className="admin-shell">
@@ -131,14 +140,14 @@ export default function AdminLayout({
               <span className="sidebar-user-role">Secretaria de Educação</span>
             </div>
           </div>
-          <Link
-            href="/login"
+          <button
+            onClick={handleLogout}
             className="sidebar-logout"
             id="btn-admin-logout"
             title="Sair do sistema"
           >
             <LogOut size={18} />
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -173,10 +182,10 @@ export default function AdminLayout({
               <span className="topbar-user-name">Administrador SEMED</span>
               <span className="topbar-user-role">Secretaria de Educação</span>
             </div>
-            <Link href="/login" className="topbar-logout-btn" id="btn-topbar-logout">
+            <button onClick={handleLogout} className="topbar-logout-btn" id="btn-topbar-logout">
               <LogOut size={16} />
               <span>Sair</span>
-            </Link>
+            </button>
           </div>
         </header>
 

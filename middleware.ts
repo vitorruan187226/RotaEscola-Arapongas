@@ -32,8 +32,13 @@ export async function middleware(request: NextRequest) {
   // Permite simular login de teste mesmo sem sessão ativa no Supabase
   const isMockCookie = request.cookies.get('sb-mock-login')?.value;
 
-  // Se o usuário tentar acessar qualquer rota de /dashboard sem estar autenticado, vai para /login
-  if (!user && !isMockCookie && request.nextUrl.pathname.startsWith('/dashboard')) {
+  // Verifica se é rota protegida (dashboard OU portal do responsável)
+  const isProtectedRoute =
+    request.nextUrl.pathname.startsWith('/dashboard') ||
+    request.nextUrl.pathname.startsWith('/responsavel');
+
+  // Se o usuário tentar acessar qualquer rota protegida sem estar autenticado, vai para /login
+  if (!user && !isMockCookie && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
@@ -60,6 +65,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/responsavel/:path*',
     '/login',
   ],
 };

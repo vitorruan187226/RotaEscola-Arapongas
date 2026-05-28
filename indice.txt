@@ -8,14 +8,17 @@ indice.txt
 ## [02XX] Telas e UI (Frontend)
 - [_docs/0200_Indice_Telas.md](_docs/0200_Indice_Telas.md)
 - [_docs/0201_Home.md](_docs/0201_Home.md)
-- [_docs/0202_Todos.md](_docs/0202_Todos.md)
+- [_docs/0202_Todos.md](_docs/0202_Todos.md) ⛔ DEPRECATED
+- [_docs/0204_Login.md](_docs/0204_Login.md)
 - [_docs/0205_AdminDashboard.md](_docs/0205_AdminDashboard.md)
+- [_docs/0206_ResponsavelDashboard.md](_docs/0206_ResponsavelDashboard.md)
 - [_docs/0207_PainelMotorista.md](_docs/0207_PainelMotorista.md)
 - [_docs/0208_PortalPais.md](_docs/0208_PortalPais.md)
 
 ## [04XX] Supabase e Backend
 - [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
 - [_docs/0402_Alunos_Responsavel_RLS.md](_docs/0402_Alunos_Responsavel_RLS.md)
+- [_docs/0403_Firebase_Push.md](_docs/0403_Firebase_Push.md)
 
 ## [05XX] Deploy e Infra
 - [_docs/0500_Deploy.md](_docs/0500_Deploy.md)

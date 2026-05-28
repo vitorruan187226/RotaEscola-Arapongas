@@ -15,6 +15,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
+import LogoutButton from '../../../components/LogoutButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,13 +97,10 @@ export default async function SecretariaDashboardPage() {
           </div>
         </div>
 
-        <Link 
-          href="/login" 
+        <LogoutButton 
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
-        >
-          <LogOut size={14} />
-          <span>Sair</span>
-        </Link>
+          iconSize={14}
+        />
       </header>
 
       {/* Conteúdo do Dashboard */}

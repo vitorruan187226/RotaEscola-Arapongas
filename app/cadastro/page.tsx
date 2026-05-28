@@ -110,49 +110,43 @@ export default function CadastroPage() {
     }
 
     try {
-      // 2. Consulta à RPC check_cpf_exists para validar duplicidade
-      const { data: cpfExists, error: rpcError } = await supabase
-        .rpc('check_cpf_exists', { cpf_to_check: cleanCpf });
-
-      if (rpcError) {
-        console.error('Erro na RPC de verificação de CPF:', rpcError);
-      }
-
-      if (cpfExists) {
-        setError('Este CPF já está cadastrado no sistema.');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Cadastro via Supabase Auth com metadados
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: emailDerivado,
-        password: senha,
-        options: {
-          data: {
-            full_name: nomeCompleto,
-            cpf: cleanCpf,
-            telefone: telefone,
-            role: 'responsavel',
-          },
-        },
+      // 2. Criação do usuário via API do Servidor (Supabase Admin Auth)
+      const res = await fetch('/api/auth/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nomeCompleto,
+          cpf: cleanCpf,
+          telefone,
+          senha
+        })
       });
 
-      if (signUpError) {
-        setError(signUpError.message || 'Erro ao realizar o cadastro.');
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Erro ao realizar o cadastro.');
         setLoading(false);
         return;
       }
 
-      // 4. Fluxo de Sucesso / Redirecionamento
-      if (data?.session) {
-        // Se a sessão está ativa (auto-confirm habilitado), loga e redireciona
-        document.cookie = "sb-mock-login=responsavel; path=/";
-        router.push('/responsavel/dashboard');
-      } else {
-        // Se exige confirmação de e-mail
-        setCadastroSucesso(true);
+      // 3. Login automático imediato no cliente para gerar a sessão local e cookies
+      console.log('[Cadastro] Iniciando login automatico no cliente...');
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: emailDerivado,
+        password: senha
+      });
+
+      if (loginError) {
+        console.error('[Cadastro] Erro ao autenticar apos cadastro:', loginError);
+        setError('Cadastro realizado, mas não conseguimos fazer o login automático. Por favor, acesse a tela de login.');
+        setLoading(false);
+        return;
       }
+
+      // 4. Redirecionamento de Sucesso
+      document.cookie = "sb-mock-login=responsavel; path=/";
+      router.push('/responsavel/dashboard');
 
     } catch (err: any) {
       setError('Erro ao conectar ao servidor de cadastro.');
@@ -160,6 +154,7 @@ export default function CadastroPage() {
       setLoading(false);
     }
   };
+
 
   if (cadastroSucesso) {
     return (

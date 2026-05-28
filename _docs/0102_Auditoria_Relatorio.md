@@ -89,14 +89,17 @@ As alterações descritas acima foram implementadas nos seguintes arquivos:
 4.  **`app/login/page.tsx`**  
     *   *Alterações:* Implementação do estado `isMounted` com guard do lado do cliente para sanar erros de hidratação do React (#418, #425, #423), máscara reativa para CPF e chamada redirecionada para a API interna.
 5.  **`app/cadastro/page.tsx`**  
-    *   *Alterações:* Implementação do estado `isMounted` para limpeza de erros de hidratação, remoção completa do campo E-mail da interface de cadastro, geração de e-mail derivado de forma determinística nos bastidores (`{cpf}@rotaescola.com`) e integração direta com o Supabase Auth.
-6.  **`app/api/auth/login/route.ts`**  
+    *   *Alterações:* Implementação do estado `isMounted` para limpeza de erros de hidratação, remoção completa do campo E-mail da interface de cadastro, requisição HTTP POST para a API segura de cadastro no servidor, e login automático imediato no cliente em caso de sucesso.
+6.  **`app/api/auth/cadastro/route.ts`**  
+    *   *Alterações:* Criação de endpoint seguro que consome a `SUPABASE_SERVICE_ROLE_KEY` do servidor, realiza consulta direta para verificar duplicidade de CPF na tabela `perfis` (bypasando limites RLS), e cria o usuário via Supabase Admin Auth com e-mail auto-confirmado.
+7.  **`app/api/auth/login/route.ts`**  
     *   *Alterações:* Sanitização estrita do CPF recebido (remoção de qualquer caractere não numérico com `.replace(/\D/g, '')`) e adição de logs de depuração no servidor detalhados para CPF e e-mail.
-7.  **`supabase/migrations/20260528161500_alter_logs_status_date.sql`**  
+8.  **`supabase/migrations/20260528161500_alter_logs_status_date.sql`**  
     *   *Alterações:* Criação de colunas de controle operacional `status` e `data_registro` no banco Supabase.
-8.  **`supabase/migrations/20260528162700_add_turno_to_logs.sql`**  
+9.  **`supabase/migrations/20260528162700_add_turno_to_logs.sql`**  
     *   *Alterações:* Adição e validação via Check Constraint da coluna `turno` na tabela de logs de embarque.
-9.  **`logs/execucao_2026-05-28.log`**  
+10. **`logs/execucao_2026-05-28.log`**  
     *   *Alterações:* Registro de auditoria diária das execuções de desenvolvimento.
+
 
 

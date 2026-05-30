@@ -17,8 +17,10 @@ interface Filho {
   escola: string;
   serie: string;
   statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
-  rotaId: string;
+  rotaId?: string;
   fotoUrl?: string;
+  motorista_nome?: string;
+  veiculo_numero?: string;
 }
 
 // ─── Mock tipado de fallback (lei 4 — sem @ts-ignore) ────────────────────────
@@ -31,6 +33,8 @@ const FILHOS_MOCK: Filho[] = [
     statusCarteirinha: 'Aprovado',
     rotaId: 'Rota 04',
     fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80',
+    motorista_nome: 'Silvio Roberto',
+    veiculo_numero: 'BEX-1234 (Van Escolar)'
   },
   {
     id: 'aluno-02',
@@ -38,7 +42,7 @@ const FILHOS_MOCK: Filho[] = [
     escola: 'Colégio Estadual Julia Wanderley',
     serie: '7º Ano A',
     statusCarteirinha: 'Em análise',
-    rotaId: 'Rota 22',
+    rotaId: 'Pendente de Atribuição',
     fotoUrl: undefined,
   },
 ];
@@ -47,15 +51,17 @@ const FILHOS_MOCK: Filho[] = [
 function getStatusBadgeClass(status: Filho['statusCarteirinha']) {
   switch (status) {
     case 'Aprovado':      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    case 'Em análise':   return 'bg-blue-100 text-blue-700 border-blue-200';
-    default:              return 'bg-amber-100 text-amber-700 border-amber-200';
+    case 'Em análise':
+    case 'Pendente':      return 'bg-amber-100 text-amber-700 border-amber-200';
+    default:              return 'bg-slate-100 text-slate-700 border-slate-200';
   }
 }
 
 function getStatusIcon(status: Filho['statusCarteirinha']) {
   switch (status) {
     case 'Aprovado':    return <CheckCircle size={13} />;
-    case 'Em análise': return <Clock size={13} />;
+    case 'Em análise':
+    case 'Pendente':    return <Clock size={13} />;
     default:            return <AlertCircle size={13} />;
   }
 }
@@ -144,6 +150,8 @@ export default function ResponsavelDashboard() {
               statusCarteirinha: mapStatus(a.status_carteirinha),
               rotaId:            a.rota_id ?? 'Aguardando Atribuição',
               fotoUrl:           a.foto_url ?? undefined,
+              motorista_nome:    'Não atribuído',
+              veiculo_numero:    'Não atribuído',
             }));
             setFilhos(mapeados);
             setUsandoMock(false);
@@ -233,7 +241,7 @@ export default function ResponsavelDashboard() {
       {/* ── Cards dos Filhos ─────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         
-        {/* Cabeçalho com Título + Botão de Cadastro de Filho */}
+        {/* Cabeçalho com Título + Botão de Solicitação */}
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             Estudantes Vinculados ({filhos.length})
@@ -243,7 +251,7 @@ export default function ResponsavelDashboard() {
             className="flex items-center gap-1.5 py-2 px-3 rounded-full text-[10px] font-black bg-slate-900 text-white hover:bg-slate-800 border border-slate-800 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-sm uppercase tracking-wider"
           >
             <Plus size={12} className="text-amber-500" />
-            <span>Cadastrar Filho</span>
+            <span>Solicitar Transporte Escolar</span>
           </button>
         </div>
 
@@ -255,7 +263,7 @@ export default function ResponsavelDashboard() {
             <div>
               <h4 className="text-sm font-bold text-slate-900">Nenhum estudante vinculado</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-[280px]">
-                Você ainda não possui estudantes cadastrados. Clique no botão 'Cadastrar Filho' acima para iniciar.
+                Você ainda não possui estudantes cadastrados. Clique no botão 'Solicitar Transporte Escolar' acima para iniciar a auditoria de documentos.
               </p>
             </div>
             <button
@@ -263,7 +271,7 @@ export default function ResponsavelDashboard() {
               className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
             >
               <Plus size={14} className="text-amber-500" />
-              <span>Cadastrar Filho</span>
+              <span>Solicitar Transporte Escolar</span>
             </button>
           </div>
         ) : (
@@ -288,13 +296,21 @@ export default function ResponsavelDashboard() {
                 <div className="flex-1 flex flex-col justify-center min-w-0">
                   <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border w-fit ${getStatusBadgeClass(filho.statusCarteirinha)}`}>
                     {getStatusIcon(filho.statusCarteirinha)}
-                    <span>{filho.statusCarteirinha}</span>
+                    <span>{filho.statusCarteirinha === 'Aprovado' ? 'Aprovado' : 'Em Análise pela Secretaria'}</span>
                   </span>
                   <h4 className="text-sm font-bold text-slate-900 truncate mt-1.5">{filho.nome}</h4>
                   <span className="text-xs text-slate-500 mt-0.5 truncate">{filho.escola}</span>
-                  <span className="text-[10px] text-slate-400 font-mono mt-0.5">
-                    {filho.serie} · {filho.rotaId}
-                  </span>
+                  
+                  {filho.statusCarteirinha === 'Aprovado' ? (
+                    <div className="mt-1 flex flex-col gap-0.5 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-md font-medium">
+                      <span className="flex items-center gap-1"><User size={10} /> Motorista: {filho.motorista_nome || 'Aguardando'}</span>
+                      <span className="flex items-center gap-1"><Bus size={10} /> Veículo: {filho.veiculo_numero || 'Aguardando'}</span>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                      {filho.serie} · {filho.rotaId || 'Sem Rota'}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -407,7 +423,7 @@ export default function ResponsavelDashboard() {
   );
 }
 
-// ─── SUB-COMPONENTE: MODAL DE CADASTRO E VÍNCULO DE FILHO ──────────────────────
+// ─── SUB-COMPONENTE: MODAL DE INSCRIÇÃO (AUDITORIA DOCUMENTAL) ───────────────
 interface CadastroFilhoModalProps {
   onClose: () => void;
   onSuccess: (novoFilho: Filho) => void;
@@ -419,74 +435,21 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [codigoVanzeiro, setCodigoVanzeiro] = useState('');
-  const [rotaValida, setRotaValida] = useState<{ id: string; nome: string } | null>(null);
 
-  // Campos do Aluno
+  // Campos - Etapa 1
   const [nomeAluno, setNomeAluno] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
   const [escolaAluno, setEscolaAluno] = useState('Escola Municipal Dorcelina Folador');
   const [serieAluno, setSerieAluno] = useState('');
+  const [turnoAluno, setTurnoAluno] = useState('Manhã');
 
-  const handleValidarCodigo = async () => {
-    if (!codigoVanzeiro.trim()) return;
-    setLoading(true);
-
-    try {
-      let rotaEncontrada: { id: string; nome: string } | null = null;
-
-      // 1. Tenta buscar no Supabase se for um código válido
-      const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(codigoVanzeiro);
-      let query = supabase.from('rotas').select('id, nome');
-      if (isUuid) {
-        query = query.eq('id', codigoVanzeiro);
-      } else {
-        query = query.ilike('nome', `%${codigoVanzeiro.trim()}%`);
-      }
-
-      const { data: rotasData } = await query;
-      if (rotasData && rotasData.length > 0) {
-        rotaEncontrada = {
-          id: rotasData[0].id,
-          nome: rotasData[0].nome
-        };
-      }
-
-      // 2. Fallback: Lista de rotas municipais cadastradas/homologadas em Arapongas
-      if (!rotaEncontrada) {
-        const codigosMock = [
-          { id: 'RT-07', nome: 'Região Norte' },
-          { id: 'RT-14', nome: 'Zona Rural' },
-          { id: 'RT-22', nome: 'Centro' },
-          { id: 'RT-03', nome: 'Região Sul' },
-          { id: 'RT-19', nome: 'Leste' },
-          { id: 'Rota 04', nome: 'Rota 04' }
-        ];
-
-        const match = codigosMock.find(
-          c => c.id.toLowerCase() === codigoVanzeiro.trim().toLowerCase() ||
-               c.nome.toLowerCase() === codigoVanzeiro.trim().toLowerCase()
-        );
-
-        if (match) {
-          rotaEncontrada = match;
-        }
-      }
-
-      if (rotaEncontrada) {
-        setRotaValida(rotaEncontrada);
-        setStep(2);
-      } else {
-        onError('Código do Vanzeiro não encontrado. Verifique com o motorista.');
-      }
-    } catch {
-      onError('Erro ao conectar ao banco de dados. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Campos - Etapa 2 (Arquivos)
+  const [fileComprovante, setFileComprovante] = useState<File | null>(null);
+  const [fileDocAluno, setFileDocAluno] = useState<File | null>(null);
+  const [fileDocResponsavel, setFileDocResponsavel] = useState<File | null>(null);
 
   const handleSalvarFilho = async () => {
-    if (!nomeAluno.trim() || !serieAluno.trim() || !rotaValida) return;
+    if (!nomeAluno.trim() || !serieAluno.trim() || !dataNascimento) return;
     setLoading(true);
 
     try {
@@ -495,13 +458,14 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
       let alunoSalvoId = `aluno-new-${Date.now()}`;
 
       if (user) {
-        // Tenta fazer o insert completo respeitando a tipagem física do banco de dados remoto
-        // Se a coluna 'status_carteirinha' não existir no cache do Supabase remoto, ela falhará.
-        // Faremos tratamento adaptativo de resiliência.
+        // Insere aluno com status Pendente e rota indefinida (será definida pela SEMED)
         const insertCompleto = {
           nome: nomeAluno,
+          data_nascimento: dataNascimento,
           escola: escolaAluno,
-          rota_id: rotaValida.nome, // Vincula ao nome legível da rota
+          serie: serieAluno,
+          turno: turnoAluno,
+          status_carteirinha: 'Pendente',
           responsavel_id: user.id
         };
 
@@ -512,13 +476,13 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
           .maybeSingle();
 
         if (insertError) {
-          // Retry automático apenas com colunas base do Supabase legado se houver falhas de cache
+          // Retry de resiliência caso schema difira
           const { data: retryData, error: retryError } = await supabase
             .from('alunos')
             .insert({
               nome: nomeAluno,
               escola: escolaAluno,
-              rota_id: rotaValida.nome,
+              serie: serieAluno,
               responsavel_id: user.id
             })
             .select('id')
@@ -529,31 +493,69 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
         } else if (insertData?.id) {
           alunoSalvoId = insertData.id;
         }
+
+        // Tenta fazer upload dos arquivos se existirem
+        const arquivosUpload = [
+          { file: fileComprovante, tipo: 'Comprovante_Residencia' },
+          { file: fileDocAluno, tipo: 'Documento_Aluno' },
+          { file: fileDocResponsavel, tipo: 'Documento_Responsavel' }
+        ];
+
+        for (const item of arquivosUpload) {
+          if (item.file) {
+            try {
+              const ext = item.file.name.split('.').pop() || 'jpg';
+              const fileName = `${alunoSalvoId}_${item.tipo}_${Date.now()}.${ext}`;
+              
+              const { error: storageError } = await supabase.storage
+                .from('documentos-alunos')
+                .upload(`documentos/${fileName}`, item.file, { upsert: true });
+                
+              if (!storageError) {
+                const publicUrl = supabase.storage
+                  .from('documentos-alunos')
+                  .getPublicUrl(`documentos/${fileName}`).data.publicUrl;
+                  
+                await supabase.from('documentos_aluno').insert({
+                  aluno_id: alunoSalvoId,
+                  tipo_documento: item.tipo,
+                  url_documento: publicUrl
+                });
+              }
+            } catch (err) {
+              console.warn(`Falha no upload do documento ${item.tipo}`, err);
+            }
+          }
+        }
       }
 
-      // Conclui retornando o objeto reativo para a UI
+      // Conclui retornando o objeto reativo
       const novoFilho: Filho = {
         id: alunoSalvoId,
         nome: nomeAluno,
         escola: escolaAluno,
         serie: serieAluno,
         statusCarteirinha: 'Pendente',
-        rotaId: rotaValida.nome,
-        fotoUrl: undefined
+        rotaId: 'Aguardando Atribuição',
+        fotoUrl: undefined,
+        motorista_nome: 'Não atribuído',
+        veiculo_numero: 'Não atribuído'
       };
 
       onSuccess(novoFilho);
     } catch (err: any) {
       console.log('Realizando simulação de cadastro reativo local:', err.message);
-      // Fallback local instantâneo caso dê RLS 401 ou erro de rede
+      // Fallback local
       const novoFilho: Filho = {
         id: `aluno-new-${Date.now()}`,
         nome: nomeAluno,
         escola: escolaAluno,
         serie: serieAluno,
         statusCarteirinha: 'Pendente',
-        rotaId: rotaValida.nome,
-        fotoUrl: undefined
+        rotaId: 'Aguardando Atribuição',
+        fotoUrl: undefined,
+        motorista_nome: 'Não atribuído',
+        veiculo_numero: 'Não atribuído'
       };
       onSuccess(novoFilho);
     } finally {
@@ -563,14 +565,14 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-fadeIn">
+      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-fadeIn max-h-[90vh]">
         
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50">
+        <div className="px-5 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50 sticky top-0 z-10">
           <div>
-            <h3 className="font-black text-slate-900 text-sm">Vincular Estudante</h3>
+            <h3 className="font-black text-slate-900 text-sm">Solicitar Transporte Escolar</h3>
             <span className="text-[9px] text-slate-500 font-bold block mt-0.5 uppercase tracking-wide">
-              {step === 1 ? 'Passo 1: Código de Rota' : 'Passo 2: Dados do Estudante'}
+              {step === 1 ? 'Etapa 1: Dados do Aluno' : 'Etapa 2: Auditoria Documental'}
             </span>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
@@ -578,77 +580,38 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-5 flex flex-col gap-4">
+        {/* Content (Scrollable) */}
+        <div className="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
           
           {step === 1 ? (
-            /* PASSO 1: Código do Vanzeiro/Rota */
+            /* ETAPA 1: Dados do Aluno */
             <div className="flex flex-col gap-3">
+              
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                  Código do Vanzeiro / Rota
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={codigoVanzeiro}
-                    onChange={(e) => setCodigoVanzeiro(e.target.value)}
-                    placeholder="Ex: RT-14 ou ROTA-04"
-                    className="w-full pl-3 pr-10 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all font-mono"
-                  />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                    <Shield size={16} />
-                  </div>
-                </div>
-                <span className="text-[9px] text-slate-400 mt-1.5 block leading-relaxed font-semibold">
-                  Solicite o código identificador diretamente ao motorista ou monitor responsável pelo veículo escolar.
-                </span>
-              </div>
-
-              <button
-                disabled={!codigoVanzeiro.trim() || loading}
-                onClick={handleValidarCodigo}
-                className={`w-full py-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
-                  codigoVanzeiro.trim() && !loading
-                    ? 'bg-slate-900 text-white hover:bg-slate-800'
-                    : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                    <span>Validando Código...</span>
-                  </>
-                ) : (
-                  <span>Avançar para Passo 2</span>
-                )}
-              </button>
-            </div>
-          ) : (
-            /* PASSO 2: Dados do Aluno */
-            <div className="flex flex-col gap-3">
-              <div className="bg-amber-50/70 border border-amber-200/50 rounded-xl p-2.5 flex items-center justify-between text-[10px] text-slate-700">
-                <span className="font-medium">Itinerário Autenticado:</span>
-                <span className="font-black text-amber-700 uppercase font-mono bg-amber-100/50 px-2 py-0.5 rounded border border-amber-200/40">
-                  {rotaValida?.nome}
-                </span>
-              </div>
-
-              {/* Nome Completo */}
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                  Nome Completo do Aluno
+                  Nome Completo
                 </label>
                 <input
                   type="text"
                   value={nomeAluno}
                   onChange={(e) => setNomeAluno(e.target.value)}
-                  placeholder="Nome do Estudante"
-                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                  placeholder="Ex: João da Silva"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
                 />
               </div>
 
-              {/* Escola */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Data de Nascimento
+                </label>
+                <input
+                  type="date"
+                  value={dataNascimento}
+                  onChange={(e) => setDataNascimento(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                />
+              </div>
+
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                   Instituição de Ensino
@@ -656,7 +619,7 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
                 <select
                   value={escolaAluno}
                   onChange={(e) => setEscolaAluno(e.target.value)}
-                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
                 >
                   <option value="Escola Municipal Dorcelina Folador">Escola Municipal Dorcelina Folador</option>
                   <option value="Colégio Estadual Julia Wanderley">Colégio Estadual Julia Wanderley</option>
@@ -664,22 +627,103 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
                 </select>
               </div>
 
-              {/* Ano/Turma */}
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                  Ano / Turma do Aluno
-                </label>
-                <input
-                  type="text"
-                  value={serieAluno}
-                  onChange={(e) => setSerieAluno(e.target.value)}
-                  placeholder="Ex: 4º Ano B"
-                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    Ano / Turma
+                  </label>
+                  <input
+                    type="text"
+                    value={serieAluno}
+                    onChange={(e) => setSerieAluno(e.target.value)}
+                    placeholder="Ex: 4º Ano B"
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    Turno
+                  </label>
+                  <select
+                    value={turnoAluno}
+                    onChange={(e) => setTurnoAluno(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                  >
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="flex gap-2 mt-1">
-                {/* Voltar */}
+              <button
+                disabled={!nomeAluno.trim() || !serieAluno.trim() || !dataNascimento}
+                onClick={() => setStep(2)}
+                className={`w-full py-3.5 mt-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
+                  nomeAluno.trim() && serieAluno.trim() && dataNascimento
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
+                }`}
+              >
+                <span>Avançar para Documentos</span>
+              </button>
+            </div>
+          ) : (
+            /* ETAPA 2: Upload de Documentos */
+            <div className="flex flex-col gap-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[10px] text-amber-800 font-medium">
+                <Shield size={14} className="inline mr-1 text-amber-600 mb-0.5" />
+                Os documentos são obrigatórios para a aprovação da carteirinha pela SEMED. Você pode usar a câmera do celular.
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {/* Comprovante */}
+                <div className="border border-slate-200 rounded-xl p-3 relative hover:border-amber-500 transition-colors">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">
+                    Comprovante de Residência
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileComprovante(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Doc Aluno */}
+                <div className="border border-slate-200 rounded-xl p-3 relative hover:border-amber-500 transition-colors">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">
+                    Documento do Aluno (RG/Certidão)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileDocAluno(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Doc Responsavel */}
+                <div className="border border-slate-200 rounded-xl p-3 relative hover:border-amber-500 transition-colors">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">
+                    Doc. Responsável e Matrícula
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileDocResponsavel(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-2 sticky bottom-0 bg-white py-2">
                 <button
                   disabled={loading}
                   onClick={() => setStep(1)}
@@ -688,20 +732,15 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
                   Voltar
                 </button>
 
-                {/* Cadastrar */}
                 <button
-                  disabled={!nomeAluno.trim() || !serieAluno.trim() || loading}
+                  disabled={loading}
                   onClick={handleSalvarFilho}
-                  className={`flex-1 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
-                    nomeAluno.trim() && serieAluno.trim() && !loading
-                      ? 'bg-slate-900 text-white hover:bg-slate-800'
-                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border'
-                  }`}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow bg-slate-900 text-white hover:bg-slate-800"
                 >
                   {loading ? (
                     <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <span>Cadastrar Aluno</span>
+                    <span>Enviar para Análise</span>
                   )}
                 </button>
               </div>
@@ -709,7 +748,6 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
           )}
 
         </div>
-
       </div>
     </div>
   );

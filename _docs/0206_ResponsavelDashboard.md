@@ -32,21 +32,38 @@ Hub principal do Portal dos Pais/Guardiões. Lista os filhos vinculados ao respo
 {
   id: string;
   nome: string;
+  data_nascimento: string;
   escola: string;
   serie: string;
-  rota_id: string;
+  turno: string;
+  rota_id: string; // Fica 'Pendente'/'Aguardando' até alocação
   responsavel_id: string;
   status_carteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
   foto_url?: string;
 }
 ```
 
-## Regras de Negócio
-- **Empty State**: Se `filhos.length === 0`, exibe card instrutivo amigável orientando o cadastramento do filho ("Você ainda não possui estudantes cadastrados. Clique no botão 'Cadastrar Filho' acima para iniciar.").
+### Interface Frontend (`Filho`)
+```typescript
+interface Filho {
+  id: string;
+  nome: string;
+  escola: string;
+  serie: string;
+  statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
+  rotaId?: string;
+  fotoUrl?: string;
+  motorista_nome?: string;
+  veiculo_numero?: string;
+}
+```
+
+- **Empty State**: Se `filhos.length === 0`, exibe card instrutivo amigável orientando a solicitação do transporte ("Você ainda não possui estudantes cadastrados. Clique no botão 'Solicitar Transporte Escolar' acima para iniciar a auditoria de documentos.").
 - **Exibição do CPF**: O CPF do usuário logado é renderizado no topo em formato mono formatado com a máscara visual `000.000.000-00`.
-- **Carteirinha bloqueada**: O botão "Ver Carteirinha" só fica ativo se `status_carteirinha === 'Aprovado'`.
-- **Upload obrigatório**: Status `'Pendente'` exibe badge amarela e direciona para envio de documentos.
-- **Remoção de Mocks**: Usuários reais logados nunca visualizam dados mockados (`FILHOS_MOCK`) nem a badge "Modo Demonstração". A interface exibe dados vazios ou dinâmicos de forma autêntica.
+- **Auditoria Documental (Novo Fluxo)**: O cadastro de estudante não depende mais de "Código de Vanzeiro". A vinculação ocorre via preenchimento de dados (Nome, Nascimento, Escola, Série, Turno) e upload obrigatório de 3 tipos de documentos (Comprovante, Doc. Aluno, Doc. Responsável/Matrícula) para o Supabase Storage. O status inicial é sempre `Pendente` (amarelo/laranja). A `rota_id` só é atribuída após aprovação.
+- **Carteirinha bloqueada**: O botão "Ver Carteirinha" só fica ativo se `status_carteirinha === 'Aprovado'`. Estando aprovado, o card exibe dinamicamente o Motorista Designado e o Veículo/Ônibus.
+- **Upload obrigatório**: Status `'Pendente'` ou `'Em análise'` exibe badge amarela/laranja informando a análise ou pendência pela SEMED.
+- **Remoção de Mocks**: Usuários reais logados nunca visualizam dados mockados (`FILHOS_MOCK`).
 
 ## Sub-rotas Acessíveis
 | Ação | Rota de Destino | Condição |
@@ -64,3 +81,4 @@ Constante `FILHOS_MOCK` tipada como `Filho[]` para uso demonstrativo. É carrega
 | 27/05/2026 | Criação do dashboard dinâmico com Supabase, Empty State, status_carteirinha |
 | 28/05/2026 | Documentação criada (0206) |
 | 28/05/2026 | Integração Real: Remoção de mocks para contas reais autenticadas, query de CPF na tabela `perfis`, exibição de CPF formatado e ajuste do texto do empty state. |
+| 30/05/2026 | Refatoração profunda do Fluxo de Cadastro: Remoção completa da lógica de "Código de Vanzeiro". Introdução do formulário de Auditoria Documental com upload via Storage (3 documentos obrigatórios) e exibição do Motorista/Veículo para status "Aprovado". |

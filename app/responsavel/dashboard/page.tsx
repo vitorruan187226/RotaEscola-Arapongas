@@ -87,6 +87,7 @@ export default function ResponsavelDashboard() {
   const [userName, setUserName] = useState<string>('');
   const [userCpf, setUserCpf] = useState<string>('');
   const [filhos,   setFilhos]   = useState<Filho[]>([]);
+  const [escolas,  setEscolas]  = useState<any[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [usandoMock, setUsandoMock] = useState(false);
 
@@ -174,12 +175,33 @@ export default function ResponsavelDashboard() {
             setFilhos([]);
             setUsandoMock(false);
           }
+
+          // Carrega as escolas do Supabase para o dropdown
+          const { data: escolasDB } = await supabase
+            .from('escolas')
+            .select('id, nome, turnos')
+            .order('nome', { ascending: true });
+          
+          if (escolasDB && escolasDB.length > 0) {
+            setEscolas(escolasDB);
+          } else {
+            setEscolas([
+              { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'] },
+              { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'] },
+              { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'] }
+            ]);
+          }
         } else {
           // Modo Demonstração (Sem Usuário Logado)
           setUserName('José Martins');
           setUserCpf('12345678900');
           setFilhos(FILHOS_MOCK);
           setUsandoMock(true);
+          setEscolas([
+            { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'] },
+            { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'] },
+            { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'] }
+          ]);
         }
       } catch (err) {
         console.error('Erro ao carregar dados do responsável:', err);
@@ -187,6 +209,11 @@ export default function ResponsavelDashboard() {
         setUserCpf('');
         setFilhos([]);
         setUsandoMock(false);
+        setEscolas([
+          { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'] },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'] },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'] }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -418,6 +445,7 @@ export default function ResponsavelDashboard() {
       {/* ── MODAL 4: CADASTRO E VÍNCULO DE FILHO ─────────────────────────────── */}
       {activeModalCadastro && (
         <CadastroFilhoModal
+          escolas={escolas}
           onClose={() => setActiveModalCadastro(false)}
           onSuccess={(novoFilho) => {
             setFilhos(prev => {
@@ -440,12 +468,13 @@ export default function ResponsavelDashboard() {
 
 // ─── SUB-COMPONENTE: MODAL DE INSCRIÇÃO (AUDITORIA DOCUMENTAL) ───────────────
 interface CadastroFilhoModalProps {
+  escolas: any[];
   onClose: () => void;
   onSuccess: (novoFilho: Filho) => void;
   onError: (text: string) => void;
 }
 
-function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalProps) {
+function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFilhoModalProps) {
   const supabase = createClient();
 
   const [step, setStep] = useState(1);
@@ -454,9 +483,17 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
   // Campos - Etapa 1
   const [nomeAluno, setNomeAluno] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
-  const [escolaAluno, setEscolaAluno] = useState('Escola Municipal Dorcelina Folador');
+  const [escolaIdAluno, setEscolaIdAluno] = useState(escolas[0]?.id || '');
+  const [escolaAluno, setEscolaAluno] = useState(escolas[0]?.nome || '');
   const [serieAluno, setSerieAluno] = useState('');
   const [turnoAluno, setTurnoAluno] = useState('Manhã');
+
+  useEffect(() => {
+    if (escolas.length > 0 && !escolaIdAluno) {
+      setEscolaIdAluno(escolas[0].id);
+      setEscolaAluno(escolas[0].nome);
+    }
+  }, [escolas]);
 
   // Campos - Etapa 2 (Arquivos)
   const [fileComprovante, setFileComprovante] = useState<File | null>(null);
@@ -479,6 +516,7 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
           nome: nomeAluno,
           data_nascimento: dataNascimento,
           escola: escolaAluno,
+          escola_id: escolaIdAluno,
           serie: serieAluno,
           turno: turnoAluno,
           status_carteirinha: 'Em análise',
@@ -498,7 +536,9 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
             .insert({
               nome: nomeAluno,
               escola: escolaAluno,
+              escola_id: escolaIdAluno,
               serie: serieAluno,
+              turno: turnoAluno,
               status_carteirinha: 'Em análise',
               responsavel_id: user.id
             })
@@ -635,13 +675,19 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
                   Instituição de Ensino
                 </label>
                 <select
-                  value={escolaAluno}
-                  onChange={(e) => setEscolaAluno(e.target.value)}
+                  value={escolaIdAluno}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setEscolaIdAluno(selId);
+                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
+                    setEscolaAluno(selNome);
+                  }}
                   className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
                 >
-                  <option value="Escola Municipal Dorcelina Folador">Escola Municipal Dorcelina Folador</option>
-                  <option value="Colégio Estadual Julia Wanderley">Colégio Estadual Julia Wanderley</option>
-                  <option value="Escola Municipal Codorna">Escola Municipal Codorna</option>
+                  <option value="" disabled>-- Selecione uma Escola --</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                  ))}
                 </select>
               </div>
 

@@ -16,12 +16,14 @@ indice.txt
 - [_docs/0207_PainelMotorista.md](_docs/0207_PainelMotorista.md)
 - [_docs/0208_PortalPais.md](_docs/0208_PortalPais.md)
 - [_docs/0209_Cadastro.md](_docs/0209_Cadastro.md)
+- [_docs/0210_GestaoEscolas.md](_docs/0210_GestaoEscolas.md)
 
 
 ## [04XX] Supabase e Backend
 - [_docs/0401_Supabase_Client.md](_docs/0401_Supabase_Client.md)
 - [_docs/0402_Alunos_Responsavel_RLS.md](_docs/0402_Alunos_Responsavel_RLS.md)
 - [_docs/0403_Firebase_Push.md](_docs/0403_Firebase_Push.md)
+- [_docs/0404_Table_Escolas.md](_docs/0404_Table_Escolas.md)
 
 ## [05XX] Deploy e Infra
 - [_docs/0500_Deploy.md](_docs/0500_Deploy.md)

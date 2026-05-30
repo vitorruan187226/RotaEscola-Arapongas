@@ -8,23 +8,25 @@ interface AlunoAdmin {
   id: string;
   nome: string;
   escola: string;
+  escolaId?: string;
   serie: string;
   rotaId: string;
   statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
 }
 
 const ALUNOS_MOCK: AlunoAdmin[] = [
-  { id: 'aluno-mock-1', nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', serie: '4º Ano B', rotaId: 'Rota 04', statusCarteirinha: 'Aprovado' },
-  { id: 'aluno-mock-2', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', serie: '7º Ano A', rotaId: 'Rota 22', statusCarteirinha: 'Em análise' },
-  { id: 'aluno-mock-3', nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', serie: '2º Ano C', rotaId: 'Rota 14', statusCarteirinha: 'Pendente' },
-  { id: 'aluno-mock-4', nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', serie: '6º Ano B', rotaId: 'Rota 07', statusCarteirinha: 'Pendente' },
-  { id: 'aluno-mock-5', nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', serie: '3º Ano A', rotaId: 'Rota 04', statusCarteirinha: 'Em análise' }
+  { id: 'aluno-mock-1', nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '4º Ano B', rotaId: 'Rota 04', statusCarteirinha: 'Aprovado' },
+  { id: 'aluno-mock-2', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '7º Ano A', rotaId: 'Rota 22', statusCarteirinha: 'Em análise' },
+  { id: 'aluno-mock-3', nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', escolaId: 'b73e2840-7288-4682-9642-17cb25e36003', serie: '2º Ano C', rotaId: 'Rota 14', statusCarteirinha: 'Pendente' },
+  { id: 'aluno-mock-4', nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '6º Ano B', rotaId: 'Rota 07', statusCarteirinha: 'Pendente' },
+  { id: 'aluno-mock-5', nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '3º Ano A', rotaId: 'Rota 04', statusCarteirinha: 'Em análise' }
 ];
 
 export default function AlunosPage() {
   const supabase = createClient();
   
   const [alunos, setAlunos] = useState<AlunoAdmin[]>([]);
+  const [escolas, setEscolas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [usandoMock, setUsandoMock] = useState(false);
@@ -37,6 +39,7 @@ export default function AlunosPage() {
   // Form Fields (Novo / Editar)
   const [nome, setNome] = useState('');
   const [escola, setEscola] = useState('Escola Municipal Dorcelina Folador');
+  const [escolaId, setEscolaId] = useState('');
   const [serie, setSerie] = useState('');
   const [rotaId, setRotaId] = useState('Rota 04');
   const [status, setStatus] = useState<'Pendente' | 'Em análise' | 'Aprovado'>('Pendente');
@@ -51,20 +54,46 @@ export default function AlunosPage() {
 
   useEffect(() => {
     loadAlunos();
+    loadEscolas();
   }, []);
+
+  async function loadEscolas() {
+    try {
+      const { data, error } = await supabase
+        .from('escolas')
+        .select('id, nome')
+        .order('nome', { ascending: true });
+      if (!error && data && data.length > 0) {
+        setEscolas(data);
+      } else {
+        setEscolas([
+          { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador' },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley' },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna' }
+        ]);
+      }
+    } catch {
+      setEscolas([
+        { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador' },
+        { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley' },
+        { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna' }
+      ]);
+    }
+  }
 
   async function loadAlunos() {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, serie, rota_id, status_carteirinha');
+        .select('id, nome, escola, escola_id, serie, rota_id, status_carteirinha');
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAdmin[] = data.map((a: any) => ({
           id: a.id,
           nome: a.nome,
           escola: a.escola,
+          escolaId: a.escola_id ?? undefined,
           serie: a.serie ?? '—',
           rotaId: a.rota_id ?? 'Aguardando Atribuição',
           statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente'
@@ -90,12 +119,14 @@ export default function AlunosPage() {
       let createdId = `aluno-gen-${Date.now()}`;
       
       if (!usandoMock) {
-        // Tenta insert adaptativo para evitar erro caso colunas de migração não existam fisicamente
         const { data, error } = await supabase
           .from('alunos')
           .insert({
             nome,
             escola,
+            escola_id: escolaId || null,
+            serie,
+            status_carteirinha: status,
             rota_id: rotaId
           })
           .select('id')
@@ -105,7 +136,14 @@ export default function AlunosPage() {
           // Retry
           const { data: retryData, error: retryError } = await supabase
             .from('alunos')
-            .insert({ nome, escola, rota_id: rotaId })
+            .insert({
+              nome,
+              escola,
+              escola_id: escolaId || null,
+              serie,
+              status_carteirinha: status,
+              rota_id: rotaId
+            })
             .select('id')
             .maybeSingle();
 
@@ -120,6 +158,7 @@ export default function AlunosPage() {
         id: createdId,
         nome,
         escola,
+        escolaId,
         serie,
         rotaId,
         statusCarteirinha: status
@@ -136,6 +175,7 @@ export default function AlunosPage() {
         id: `aluno-mock-${Date.now()}`,
         nome,
         escola,
+        escolaId,
         serie,
         rotaId,
         statusCarteirinha: status
@@ -160,6 +200,9 @@ export default function AlunosPage() {
           .update({
             nome,
             escola,
+            escola_id: escolaId || null,
+            serie,
+            status_carteirinha: status,
             rota_id: rotaId
           })
           .eq('id', modalEditar.id);
@@ -171,6 +214,7 @@ export default function AlunosPage() {
         ...a,
         nome,
         escola,
+        escolaId,
         serie,
         rotaId,
         statusCarteirinha: status
@@ -185,6 +229,7 @@ export default function AlunosPage() {
         ...a,
         nome,
         escola,
+        escolaId,
         serie,
         rotaId,
         statusCarteirinha: status
@@ -244,6 +289,13 @@ export default function AlunosPage() {
             setNome('');
             setSerie('');
             setStatus('Pendente');
+            if (escolas.length > 0) {
+              setEscolaId(escolas[0].id);
+              setEscola(escolas[0].nome);
+            } else {
+              setEscolaId('');
+              setEscola('Escola Municipal Dorcelina Folador');
+            }
             setModalNovo(true);
           }}
           className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
@@ -327,6 +379,7 @@ export default function AlunosPage() {
                           onClick={() => {
                             setNome(aluno.nome);
                             setEscola(aluno.escola);
+                            setEscolaId(aluno.escolaId || '');
                             setSerie(aluno.serie);
                             setRotaId(aluno.rotaId);
                             setStatus(aluno.statusCarteirinha);
@@ -381,13 +434,18 @@ export default function AlunosPage() {
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Instituição de Ensino</label>
                 <select
-                  value={escola}
-                  onChange={(e) => setEscola(e.target.value)}
+                  value={escolaId}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setEscolaId(selId);
+                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
+                    setEscola(selNome);
+                  }}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="Escola Municipal Dorcelina Folador">Escola Municipal Dorcelina Folador</option>
-                  <option value="Colégio Estadual Julia Wanderley">Colégio Estadual Julia Wanderley</option>
-                  <option value="Escola Municipal Codorna">Escola Municipal Codorna</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                  ))}
                 </select>
               </div>
 
@@ -482,13 +540,18 @@ export default function AlunosPage() {
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Instituição de Ensino</label>
                 <select
-                  value={escola}
-                  onChange={(e) => setEscola(e.target.value)}
+                  value={escolaId}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setEscolaId(selId);
+                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
+                    setEscola(selNome);
+                  }}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="Escola Municipal Dorcelina Folador">Escola Municipal Dorcelina Folador</option>
-                  <option value="Colégio Estadual Julia Wanderley">Colégio Estadual Julia Wanderley</option>
-                  <option value="Escola Municipal Codorna">Escola Municipal Codorna</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                  ))}
                 </select>
               </div>
 

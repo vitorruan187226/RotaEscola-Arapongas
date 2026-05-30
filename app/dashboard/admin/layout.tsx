@@ -25,6 +25,11 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
   },
   {
+    label: 'Entidades Escolares',
+    href: '/dashboard/admin/escolas',
+    icon: Building2,
+  },
+  {
     label: 'Frota e Veículos',
     href: '/dashboard/admin/frota',
     icon: Bus,

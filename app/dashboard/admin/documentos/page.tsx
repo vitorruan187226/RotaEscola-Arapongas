@@ -37,6 +37,11 @@ export default function DocumentosPage() {
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null); // Armazena ID do aluno em ação
 
+  // Estados para designação de rota na aprovação
+  const [rotas, setRotas] = useState<any[]>([]);
+  const [alunoParaAprovar, setAlunoParaAprovar] = useState<AlunoAnalise | null>(null);
+  const [selectedRotaId, setSelectedRotaId] = useState<string>('');
+
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -47,7 +52,31 @@ export default function DocumentosPage() {
 
   useEffect(() => {
     loadAlunosEmAnalise();
+    loadRotas();
   }, []);
+
+  async function loadRotas() {
+    try {
+      const { data, error } = await supabase
+        .from('rotas')
+        .select('id, codigo, nome_rota, turno, ativa');
+      if (!error && data) {
+        setRotas(data.filter((r: any) => r.ativa !== false));
+      } else {
+        setRotas([
+          { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome_rota: 'Rota 04 — Zona Rural', turno: 'Manhã' },
+          { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome_rota: 'Rota 04 — Zona Rural (Tarde)', turno: 'Tarde' },
+          { id: 'rota-mock-3', codigo: 'RT-22', nome_rota: 'Rota 22 — Centro', turno: 'Manhã' },
+        ]);
+      }
+    } catch {
+      setRotas([
+        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome_rota: 'Rota 04 — Zona Rural', turno: 'Manhã' },
+        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome_rota: 'Rota 04 — Zona Rural (Tarde)', turno: 'Tarde' },
+        { id: 'rota-mock-3', codigo: 'RT-22', nome_rota: 'Rota 22 — Centro', turno: 'Manhã' },
+      ]);
+    }
+  }
 
   async function loadAlunosEmAnalise() {
     setLoading(true);
@@ -98,41 +127,57 @@ export default function DocumentosPage() {
         }));
         setDocumentos(mappedDocs);
       } else {
-        // Fallback mock de visualização
+        // Fallback mock de visualização com 4 documentos reais
         setDocumentos([
-          { tipo: 'Declaração de Matrícula', url: 'https://picsum.photos/400/300?random=1' },
-          { tipo: 'Comprovante de Residência', url: 'https://picsum.photos/400/300?random=2' },
-          { tipo: 'Foto 3x4 do Aluno', url: 'https://picsum.photos/400/300?random=3' }
+          { tipo: 'Comprovante de Residência', url: 'https://picsum.photos/400/300?random=1' },
+          { tipo: 'Documento do Aluno', url: 'https://picsum.photos/400/300?random=2' },
+          { tipo: 'Documento do Responsável', url: 'https://picsum.photos/400/300?random=3' },
+          { tipo: 'Declaração de Matrícula', url: 'https://picsum.photos/400/300?random=4' }
         ]);
       }
     } catch {
       setDocumentos([
-        { tipo: 'Declaração de Matrícula', url: 'https://picsum.photos/400/300?random=1' },
-        { tipo: 'Comprovante de Residência', url: 'https://picsum.photos/400/300?random=2' },
-        { tipo: 'Foto 3x4 do Aluno', url: 'https://picsum.photos/400/300?random=3' }
+        { tipo: 'Comprovante de Residência', url: 'https://picsum.photos/400/300?random=1' },
+        { tipo: 'Documento do Aluno', url: 'https://picsum.photos/400/300?random=2' },
+        { tipo: 'Documento do Responsável', url: 'https://picsum.photos/400/300?random=3' },
+        { tipo: 'Declaração de Matrícula', url: 'https://picsum.photos/400/300?random=4' }
       ]);
     } finally {
       setLoadingDocs(false);
     }
   };
 
-  const handleAprovar = async (id: string) => {
+  const handleAprovar = (aluno: AlunoAnalise) => {
+    setAlunoParaAprovar(aluno);
+    if (rotas.length > 0) {
+      setSelectedRotaId(rotas[0].id);
+    } else {
+      setSelectedRotaId('');
+    }
+  };
+
+  const handleConfirmAprovar = async (id: string) => {
     setLoadingAction(id);
     try {
       if (!usandoMock && !id.startsWith('aluno-mock')) {
         const { error } = await supabase
           .from('alunos')
-          .update({ status_carteirinha: 'Aprovado' })
+          .update({ 
+            status_carteirinha: 'Aprovado',
+            rota_id: selectedRotaId 
+          })
           .eq('id', id);
 
         if (error) throw error;
       }
       setAlunos(prev => prev.filter(a => a.id !== id));
-      showToast('Solicitação APROVADA com sucesso!', 'success');
+      showToast('Solicitação APROVADA e Rota designada com sucesso!', 'success');
+      setAlunoParaAprovar(null);
       if (selectedAluno?.id === id) setSelectedAluno(null);
     } catch {
       setAlunos(prev => prev.filter(a => a.id !== id));
       showToast('Aprovação simulada com sucesso!', 'success');
+      setAlunoParaAprovar(null);
       if (selectedAluno?.id === id) setSelectedAluno(null);
     } finally {
       setLoadingAction(null);
@@ -145,7 +190,10 @@ export default function DocumentosPage() {
       if (!usandoMock && !id.startsWith('aluno-mock')) {
         const { error } = await supabase
           .from('alunos')
-          .update({ status_carteirinha: 'Pendente' })
+          .update({ 
+            status_carteirinha: 'Pendente',
+            rota_id: null 
+          })
           .eq('id', id);
 
         if (error) throw error;
@@ -163,9 +211,14 @@ export default function DocumentosPage() {
   };
 
   const getDocLabel = (tipo: string) => {
+    if (tipo === 'Comprovante_Residencia') return 'Comprovante de Residência';
+    if (tipo === 'Documento_Aluno') return 'Documento do Aluno';
+    if (tipo === 'Documento_Responsavel') return 'Documento do Responsável';
+    if (tipo === 'Declaracao_Matricula') return 'Declaração de Matrícula';
+    // Fallbacks legados
     if (tipo === 'Declaracao')  return 'Declaração de Matrícula';
     if (tipo === 'Comprovante') return 'Comprovante de Residência';
-    return 'Foto 3x4 do Aluno';
+    return 'Documento Geral';
   };
 
   return (
@@ -251,7 +304,7 @@ export default function DocumentosPage() {
                         </button>
                         <button
                           disabled={loadingAction !== null}
-                          onClick={() => handleAprovar(a.id)}
+                          onClick={() => handleAprovar(a)}
                           className="flex items-center gap-1 py-1.5 px-3 rounded-lg text-[10px] font-extrabold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
                         >
                           {loadingAction === a.id ? (
@@ -365,11 +418,88 @@ export default function DocumentosPage() {
               </button>
               <button
                 disabled={loadingAction !== null}
-                onClick={() => handleAprovar(selectedAluno.id)}
+                onClick={() => handleAprovar(selectedAluno)}
                 className="py-2.5 px-5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500 transition-all flex items-center gap-1.5 shadow"
               >
                 <CheckCircle2 size={14} />
                 <span>Aprovar Cadastro</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DESIGNAÇÃO DE ROTA (APROVAÇÃO) */}
+      {alunoParaAprovar && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn">
+            
+            {/* Header */}
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm">Aprovar e Designar Rota</h3>
+                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">SEMED Arapongas</span>
+              </div>
+              <button onClick={() => setAlunoParaAprovar(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 flex flex-col gap-4">
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs text-emerald-800 flex gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Aprovando estudante:</span>
+                  <p className="font-semibold text-slate-900 mt-0.5">{alunoParaAprovar.nome}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Selecione a Rota Escolar
+                </label>
+                <select
+                  value={selectedRotaId}
+                  onChange={(e) => setSelectedRotaId(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="" disabled>-- Selecione uma Rota --</option>
+                  {rotas.map((r: any) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nome_rota || r.nome} ({r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1.5 leading-normal">
+                  A rota selecionada definirá automaticamente o motorista designado e o veículo que aparecerão na carteirinha digital e no mapa do responsável.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
+              <button
+                onClick={() => setAlunoParaAprovar(null)}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!selectedRotaId || loadingAction !== null}
+                onClick={() => handleConfirmAprovar(alunoParaAprovar.id)}
+                className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
+                  selectedRotaId && loadingAction === null
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+                    : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
+                }`}
+              >
+                {loadingAction === alunoParaAprovar.id ? (
+                  <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span>Aprovar e Liberar</span>
+                )}
               </button>
             </div>
 

@@ -127,32 +127,47 @@ export default function ResponsavelDashboard() {
             setUserCpf('');
           }
 
-          // Busca os alunos reais no Supabase
+          // Busca os alunos reais no Supabase com JOIN multinível para motorista e ônibus
           const { data: alunosDB, error: alunosErr } = await supabase
             .from('alunos')
-            .select('id, nome, escola, serie, rota_id, status_carteirinha, foto_url')
+            .select(`
+              id, nome, escola, serie, status_carteirinha, foto_url, rota_id,
+              rotas (
+                id,
+                nome_rota,
+                motoristas_perfil (
+                  id,
+                  placa_veiculo,
+                  modelo_veiculo,
+                  perfis (
+                    nome
+                  )
+                )
+              )
+            `)
             .eq('responsavel_id', user.id);
 
           if (!alunosErr && alunosDB) {
-            const mapeados: Filho[] = alunosDB.map((a: {
-              id: string;
-              nome: string;
-              escola: string;
-              serie: string | null;
-              rota_id: string | null;
-              status_carteirinha: string | null;
-              foto_url: string | null;
-            }) => ({
-              id:                a.id,
-              nome:              a.nome,
-              escola:            a.escola,
-              serie:             a.serie ?? '—',
-              statusCarteirinha: mapStatus(a.status_carteirinha),
-              rotaId:            a.rota_id ?? 'Aguardando Atribuição',
-              fotoUrl:           a.foto_url ?? undefined,
-              motorista_nome:    'Não atribuído',
-              veiculo_numero:    'Não atribuído',
-            }));
+            const mapeados: Filho[] = (alunosDB as any[]).map((a: any) => {
+              const rota = a.rotas;
+              const motoristaPerfil = rota?.motoristas_perfil;
+              const motoristaNome = motoristaPerfil?.perfis?.nome || 'Aguardando Atribuição';
+              const veiculoNumero = motoristaPerfil 
+                ? `${motoristaPerfil.placa_veiculo} (${motoristaPerfil.modelo_veiculo || 'Ônibus'})` 
+                : 'Aguardando Atribuição';
+
+              return {
+                id:                a.id,
+                nome:              a.nome,
+                escola:            a.escola,
+                serie:             a.serie ?? '—',
+                statusCarteirinha: mapStatus(a.status_carteirinha),
+                rotaId:            rota?.nome_rota ?? 'Aguardando Atribuição',
+                fotoUrl:           a.foto_url ?? undefined,
+                motorista_nome:    motoristaNome,
+                veiculo_numero:    veiculoNumero,
+              };
+            });
             setFilhos(mapeados);
             setUsandoMock(false);
           } else {
@@ -447,6 +462,7 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
   const [fileComprovante, setFileComprovante] = useState<File | null>(null);
   const [fileDocAluno, setFileDocAluno] = useState<File | null>(null);
   const [fileDocResponsavel, setFileDocResponsavel] = useState<File | null>(null);
+  const [fileMatricula, setFileMatricula] = useState<File | null>(null);
 
   const handleSalvarFilho = async () => {
     if (!nomeAluno.trim() || !serieAluno.trim() || !dataNascimento) return;
@@ -458,14 +474,14 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
       let alunoSalvoId = `aluno-new-${Date.now()}`;
 
       if (user) {
-        // Insere aluno com status Pendente e rota indefinida (será definida pela SEMED)
+        // Insere aluno com status Em análise e rota indefinida (será definida pela SEMED)
         const insertCompleto = {
           nome: nomeAluno,
           data_nascimento: dataNascimento,
           escola: escolaAluno,
           serie: serieAluno,
           turno: turnoAluno,
-          status_carteirinha: 'Pendente',
+          status_carteirinha: 'Em análise',
           responsavel_id: user.id
         };
 
@@ -483,6 +499,7 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
               nome: nomeAluno,
               escola: escolaAluno,
               serie: serieAluno,
+              status_carteirinha: 'Em análise',
               responsavel_id: user.id
             })
             .select('id')
@@ -494,11 +511,12 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
           alunoSalvoId = insertData.id;
         }
 
-        // Tenta fazer upload dos arquivos se existirem
+        // Tenta fazer upload dos 4 arquivos
         const arquivosUpload = [
           { file: fileComprovante, tipo: 'Comprovante_Residencia' },
           { file: fileDocAluno, tipo: 'Documento_Aluno' },
-          { file: fileDocResponsavel, tipo: 'Documento_Responsavel' }
+          { file: fileDocResponsavel, tipo: 'Documento_Responsavel' },
+          { file: fileMatricula, tipo: 'Declaracao_Matricula' }
         ];
 
         for (const item of arquivosUpload) {
@@ -535,11 +553,11 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
         nome: nomeAluno,
         escola: escolaAluno,
         serie: serieAluno,
-        statusCarteirinha: 'Pendente',
+        statusCarteirinha: 'Em análise',
         rotaId: 'Aguardando Atribuição',
         fotoUrl: undefined,
-        motorista_nome: 'Não atribuído',
-        veiculo_numero: 'Não atribuído'
+        motorista_nome: 'Aguardando Atribuição',
+        veiculo_numero: 'Aguardando Atribuição'
       };
 
       onSuccess(novoFilho);
@@ -551,11 +569,11 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
         nome: nomeAluno,
         escola: escolaAluno,
         serie: serieAluno,
-        statusCarteirinha: 'Pendente',
+        statusCarteirinha: 'Em análise',
         rotaId: 'Aguardando Atribuição',
         fotoUrl: undefined,
-        motorista_nome: 'Não atribuído',
-        veiculo_numero: 'Não atribuído'
+        motorista_nome: 'Aguardando Atribuição',
+        veiculo_numero: 'Aguardando Atribuição'
       };
       onSuccess(novoFilho);
     } finally {
@@ -710,13 +728,28 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
                 {/* Doc Responsavel */}
                 <div className="border border-slate-200 rounded-xl p-3 relative hover:border-amber-500 transition-colors">
                   <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">
-                    Doc. Responsável e Matrícula
+                    Documento do Responsável (RG/CPF)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="file"
                       accept="image/*,.pdf"
                       onChange={(e) => setFileDocResponsavel(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Comprovante de Matricula */}
+                <div className="border border-slate-200 rounded-xl p-3 relative hover:border-amber-500 transition-colors">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">
+                    Declaração de Matrícula
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileMatricula(e.target.files?.[0] || null)}
                       className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
                     />
                   </div>
@@ -733,9 +766,13 @@ function CadastroFilhoModal({ onClose, onSuccess, onError }: CadastroFilhoModalP
                 </button>
 
                 <button
-                  disabled={loading}
+                  disabled={loading || !fileComprovante || !fileDocAluno || !fileDocResponsavel || !fileMatricula}
                   onClick={handleSalvarFilho}
-                  className="flex-1 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow bg-slate-900 text-white hover:bg-slate-800"
+                  className={`flex-1 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
+                    (fileComprovante && fileDocAluno && fileDocResponsavel && fileMatricula && !loading)
+                      ? 'bg-slate-900 text-white hover:bg-slate-800'
+                      : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
+                  }`}
                 >
                   {loading ? (
                     <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />

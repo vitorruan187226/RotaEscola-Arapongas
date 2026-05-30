@@ -60,9 +60,10 @@ interface Filho {
 
 - **Empty State**: Se `filhos.length === 0`, exibe card instrutivo amigável orientando a solicitação do transporte ("Você ainda não possui estudantes cadastrados. Clique no botão 'Solicitar Transporte Escolar' acima para iniciar a auditoria de documentos.").
 - **Exibição do CPF**: O CPF do usuário logado é renderizado no topo em formato mono formatado com a máscara visual `000.000.000-00`.
-- **Auditoria Documental (Novo Fluxo)**: O cadastro de estudante não depende mais de "Código de Vanzeiro". A vinculação ocorre via preenchimento de dados (Nome, Nascimento, Escola, Série, Turno) e upload obrigatório de 3 tipos de documentos (Comprovante, Doc. Aluno, Doc. Responsável/Matrícula) para o Supabase Storage. O status inicial é sempre `Pendente` (amarelo/laranja). A `rota_id` só é atribuída após aprovação.
+- **Auditoria Documental (Novo Fluxo)**: O cadastro de estudante não depende mais de "Código de Vanzeiro". A vinculação ocorre via preenchimento de dados (Nome, Nascimento, Escola, Série, Turno) e upload obrigatório de **4 tipos de documentos**: Comprovante de Residência, Doc. Aluno, Doc. Responsável e Matrícula. O status inicial de criação é sempre `'Em análise'`. A `rota_id` só é atribuída após aprovação pela SEMED.
+- **Resolução Dinâmica do Motorista/Veículo**: Através de uma consulta JOIN multinível no Supabase (`alunos -> rotas -> motoristas_perfil -> perfis`), o sistema obtém e exibe automaticamente o nome do motorista e o veículo/ônibus da rota designada assim que o cadastro passa para `'Aprovado'`.
 - **Carteirinha bloqueada**: O botão "Ver Carteirinha" só fica ativo se `status_carteirinha === 'Aprovado'`. Estando aprovado, o card exibe dinamicamente o Motorista Designado e o Veículo/Ônibus.
-- **Upload obrigatório**: Status `'Pendente'` ou `'Em análise'` exibe badge amarela/laranja informando a análise ou pendência pela SEMED.
+- **Upload obrigatório**: Status `'Em análise'` exibe badge informando que está sob auditoria pela SEMED.
 - **Remoção de Mocks**: Usuários reais logados nunca visualizam dados mockados (`FILHOS_MOCK`).
 
 ## Sub-rotas Acessíveis
@@ -82,3 +83,5 @@ Constante `FILHOS_MOCK` tipada como `Filho[]` para uso demonstrativo. É carrega
 | 28/05/2026 | Documentação criada (0206) |
 | 28/05/2026 | Integração Real: Remoção de mocks para contas reais autenticadas, query de CPF na tabela `perfis`, exibição de CPF formatado e ajuste do texto do empty state. |
 | 30/05/2026 | Refatoração profunda do Fluxo de Cadastro: Remoção completa da lógica de "Código de Vanzeiro". Introdução do formulário de Auditoria Documental com upload via Storage (3 documentos obrigatórios) e exibição do Motorista/Veículo para status "Aprovado". |
+| 30/05/2026 | **Fase II - Refatoração do Fluxo:** Divisão do envio em 4 documentos obrigatórios, alteração do status inicial para `'Em análise'` e carregamento dinâmico via JOIN multinível do Supabase. |
+

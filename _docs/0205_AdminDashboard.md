@@ -105,8 +105,14 @@ interface AtividadeRecente {
 | Visão Geral | `page.tsx` | ✅ Ativo (KPIs mock) | — |
 | Gestão de Alunos | `alunos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` |
 | Frota e Veículos | `frota/page.tsx` | ✅ Ativo (CRUD real) | `veiculos` |
-| Aprovação de Docs | `documentos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` + Storage |
+| Aprovação de Docs | `documentos/page.tsx` | ✅ Ativo (Aprovação + Rota Dinâmica) | `alunos` + `rotas` + Storage |
 | Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real) | `rotas` |
+
+## Novo Fluxo de Aprovação e Designação de Rota
+No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimentada em tempo real com registros no status `'Em análise'`. 
+- **Botão Aprovar**: Ao clicar em Aprovar, abre-se um modal popup que permite ao administrador selecionar a **Rota Escolar** da lista de rotas ativas (carregadas da tabela `rotas`).
+- **Confirmação**: Ao confirmar no modal, o sistema atualiza `status_carteirinha` para `'Aprovado'` e associa o `rota_id` selecionado ao estudante.
+- **Botão Rejeitar**: Atualiza o status do aluno para `'Pendente'` e define seu `rota_id` como `null`, liberando-o da fila de análise.
 
 ## Histórico de Alterações
 | Data | Alteração |
@@ -114,4 +120,6 @@ interface AtividadeRecente {
 | Setup inicial | Criação do admin/page.tsx com tabela de frota simples |
 | Sprint 2 — Painel Admin | Criação do layout.tsx com sidebar + topbar; reescrita completa do page.tsx com KPIs, mapa e tabela; criação das sub-rotas frota, alunos, documentos, rotas |
 | 2026-05-27 | **Ativação completa:** todos os 4 módulos convertidos de mock estático para integração real Supabase com CRUD, busca, KPIs, modais e fallback inteligente. Commit `71de8e6`. |
+| 2026-05-30 | **Fase II - Designação Dinâmica:** Modificação da ação de aprovação para exigir a designação da rota escolar ao aluno (tabela `alunos` campo `rota_id`), limpando a associação em caso de rejeição. |
+
 

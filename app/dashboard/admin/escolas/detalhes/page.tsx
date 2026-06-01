@@ -94,6 +94,8 @@ export default function EscolaDetalhesPage() {
 
   async function loadEscolaDados() {
     if (!escolaId) return;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(escolaId);
+    if (!isUuid) return;
     try {
       const { data, error } = await supabase
         .from('escolas')
@@ -113,21 +115,21 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('rotas')
-        .select('id, codigo, nome_rota, turno, ativa');
+        .select('id, codigo, nome, status');
       if (!error && data) {
-        setRotas(data.filter((r: any) => r.ativa !== false));
+        setRotas(data.filter((r: any) => r.status === 'Ativo'));
       } else {
         setRotas([
-          { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome_rota: 'Rota 04 — Zona Rural', turno: 'Manhã' },
-          { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome_rota: 'Rota 04 — Zona Rural (Tarde)', turno: 'Tarde' },
-          { id: 'rota-mock-3', codigo: 'RT-22', nome_rota: 'Rota 22 — Centro', turno: 'Manhã' },
+          { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
+          { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
+          { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
         ]);
       }
     } catch {
       setRotas([
-        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome_rota: 'Rota 04 — Zona Rural', turno: 'Manhã' },
-        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome_rota: 'Rota 04 — Zona Rural (Tarde)', turno: 'Tarde' },
-        { id: 'rota-mock-3', codigo: 'RT-22', nome_rota: 'Rota 22 — Centro', turno: 'Manhã' },
+        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
+        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
+        { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
       ]);
     }
   }
@@ -135,10 +137,19 @@ export default function EscolaDetalhesPage() {
   async function loadAlunosDaEscola() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const isUuid = escolaId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(escolaId);
+      
+      let query = supabase
         .from('alunos')
-        .select('id, nome, escola, serie, status_carteirinha, rota_id, created_at')
-        .eq('escola', escolaNome);
+        .select('id, nome, escola, serie, status_carteirinha, rota_id, created_at');
+
+      if (isUuid) {
+        query = query.eq('escola_id', escolaId);
+      } else {
+        query = query.eq('escola', escolaNome);
+      }
+
+      const { data, error } = await query;
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAuditoria[] = data.map((a: any) => ({
@@ -782,7 +793,7 @@ export default function EscolaDetalhesPage() {
                   <option value="" disabled>-- Selecione uma Rota --</option>
                   {rotas.map((r: any) => (
                     <option key={r.id} value={r.id}>
-                      {r.nome_rota || r.nome} ({r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})
+                      {r.nome_rota || r.nome}{r.turno ? ` (${r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})` : ''}
                     </option>
                   ))}
                 </select>

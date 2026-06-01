@@ -59,21 +59,21 @@ export default function DocumentosPage() {
     try {
       const { data, error } = await supabase
         .from('rotas')
-        .select('id, codigo, nome_rota, turno, ativa');
+        .select('id, codigo, nome, status');
       if (!error && data) {
-        setRotas(data.filter((r: any) => r.ativa !== false));
+        setRotas(data.filter((r: any) => r.status === 'Ativo'));
       } else {
         setRotas([
-          { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome_rota: 'Rota 04 — Zona Rural', turno: 'Manhã' },
-          { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome_rota: 'Rota 04 — Zona Rural (Tarde)', turno: 'Tarde' },
-          { id: 'rota-mock-3', codigo: 'RT-22', nome_rota: 'Rota 22 — Centro', turno: 'Manhã' },
+          { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
+          { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
+          { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
         ]);
       }
     } catch {
       setRotas([
-        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome_rota: 'Rota 04 — Zona Rural', turno: 'Manhã' },
-        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome_rota: 'Rota 04 — Zona Rural (Tarde)', turno: 'Tarde' },
-        { id: 'rota-mock-3', codigo: 'RT-22', nome_rota: 'Rota 22 — Centro', turno: 'Manhã' },
+        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
+        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
+        { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
       ]);
     }
   }
@@ -468,7 +468,7 @@ export default function DocumentosPage() {
                   <option value="" disabled>-- Selecione uma Rota --</option>
                   {rotas.map((r: any) => (
                     <option key={r.id} value={r.id}>
-                      {r.nome_rota || r.nome} ({r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})
+                      {r.nome_rota || r.nome}{r.turno ? ` (${r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})` : ''}
                     </option>
                   ))}
                 </select>

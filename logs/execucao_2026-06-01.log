@@ -16,3 +16,7 @@
 [2026-06-01 16:36:00] [INFO] Compilação final de produção (`npm run build`) executada com sucesso absoluto. Toda a navegação interna, auditoria por escola e fluxo contínuo "Aprovar e Próximo" estão integrados e operacionais.
 [2026-06-01 19:15:56] [INFO] Iniciando deploy do projeto atualizado com lógicas condicionais de abas e governança na Vercel.
 [2026-06-01 19:16:39] [INFO] Deploy concluído com sucesso e associado ao alias de Arapongas: https://rota-escola-arapongas.vercel.app
+[2026-06-01 19:35:00] [INFO] Iniciando análise de erro 400 Bad Request reportado no console.
+[2026-06-01 19:36:10] [INFO] Identificado problema de sintaxe na tabela `rotas` (colunas 'nome_rota', 'turno', 'ativa' inexistentes) e no cast automático de UUID de escolas com IDs fictícios de mock ('escola-mock-2').
+[2026-06-01 19:37:05] [INFO] Refatorado e corrigido o arquivo `app/dashboard/admin/escolas/detalhes/page.tsx` para adequação da query de rotas e blindagem regex contra UUIDs inválidos na seleção de escolas e alunos.
+[2026-06-01 19:37:12] [INFO] Replicada a mesma correção da query de rotas no arquivo de auditoria cadastral `app/dashboard/admin/documentos/page.tsx`.

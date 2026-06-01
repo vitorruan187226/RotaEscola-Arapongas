@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { createClient } from '../../../utils/supabase/client';
+import { ALUNOS_MOCK_GLOBAL } from '../../../lib/mocks/alunos';
 
 // ─── Itens de navegação da sidebar ─────────────────────────────────────────
 const NAV_ITEMS = [
@@ -92,13 +93,26 @@ export default function AdminLayout({
     async function fetchEmAnaliseCount() {
       try {
         const supabase = createClient();
-        const { count, error } = await supabase
-          .from('alunos')
-          .select('*', { count: 'exact', head: true })
-          .eq('status_carteirinha', 'Em análise');
+        
+        // 1. Verifica se existem escolas no banco para determinar se estamos em simulação ou produção real
+        const { data: escolasDB, error: escolasErr } = await supabase
+          .from('escolas')
+          .select('id', { count: 'exact', head: true });
 
-        if (!error && count !== null) {
-          setEmAnaliseCount(count);
+        if (!escolasErr && escolasDB && escolasDB.length > 0) {
+          // Produção Real: executa a contagem direta no banco
+          const { count, error } = await supabase
+            .from('alunos')
+            .select('*', { count: 'exact', head: true })
+            .eq('status_carteirinha', 'Em análise');
+
+          if (!error && count !== null) {
+            setEmAnaliseCount(count);
+          }
+        } else {
+          // Modo Simulação: calcula a contagem total baseada no mock global de alunos
+          const mockCount = ALUNOS_MOCK_GLOBAL.filter(a => a.statusCarteirinha === 'Em análise').length;
+          setEmAnaliseCount(mockCount);
         }
       } catch (err) {
         console.error('Erro ao buscar total de alunos em análise:', err);

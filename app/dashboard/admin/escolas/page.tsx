@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle, MapPin, Clock } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
+import { ALUNOS_MOCK_GLOBAL } from '../../../../lib/mocks/alunos';
 
 interface Escola {
   id: string;
@@ -51,10 +52,7 @@ export default function EscolasPage() {
     loadEscolas();
   }, []);
 
-  const ALUNOS_MOCK_EM_ANALISE = [
-    { id: 'aluno-mock-2', escola: 'Colégio Estadual Julia Wanderley', status_carteirinha: 'Em análise' },
-    { id: 'aluno-mock-5', escola: 'Escola Municipal Dorcelina Folador', status_carteirinha: 'Em análise' }
-  ];
+  const ALUNOS_MOCK_EM_ANALISE = ALUNOS_MOCK_GLOBAL.filter(a => a.statusCarteirinha === 'Em análise');
 
   async function loadEscolas() {
     setLoading(true);

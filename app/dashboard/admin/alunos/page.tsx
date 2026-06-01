@@ -94,7 +94,7 @@ export default function AlunosPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, escola_id, serie, rota_id, status_carteirinha');
+        .select('id, nome, escola, escola_id, rota_id, status_carteirinha');
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAdmin[] = data.map((a: any) => ({
@@ -102,7 +102,7 @@ export default function AlunosPage() {
           nome: a.nome,
           escola: a.escola,
           escolaId: a.escola_id ?? undefined,
-          serie: a.serie ?? '—',
+          serie: '—',
           rotaId: a.rota_id ?? 'Aguardando Atribuição',
           statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente'
         }));

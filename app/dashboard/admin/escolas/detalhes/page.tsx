@@ -147,7 +147,7 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, serie, status, rota_id, created_at')
+        .select('id, nome, escola, status, rota_id, created_at')
         .eq('escola', escolaNome);
 
       if (error) {
@@ -163,7 +163,7 @@ export default function EscolaDetalhesPage() {
           id: a.id,
           nome: a.nome,
           escola: a.escola,
-          serie: a.serie ?? '—',
+          serie: '—',
           status: (a.status as AlunoAuditoria['status']) ?? 'Pendente',
           enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
           rotaId: a.rota_id ?? undefined

@@ -83,7 +83,7 @@ export default function DocumentosPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, serie, status')
+        .select('id, nome, escola, status')
         .eq('status', 'Em análise');
 
       if (error) {
@@ -99,7 +99,7 @@ export default function DocumentosPage() {
           id: a.id,
           nome: a.nome,
           escola: a.escola,
-          serie: a.serie ?? '—',
+          serie: '—',
           status: 'Em análise',
           enviadoEm: new Date().toLocaleDateString('pt-BR')
         }));

@@ -55,6 +55,14 @@ export default function AlunosPage() {
   useEffect(() => {
     loadAlunos();
     loadEscolas();
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const escolaParam = params.get('escola');
+      if (escolaParam) {
+        setSearchTerm(escolaParam);
+      }
+    }
   }, []);
 
   async function loadEscolas() {

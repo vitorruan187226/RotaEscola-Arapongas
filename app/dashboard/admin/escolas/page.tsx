@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Building2, Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle, MapPin, Clock } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
 
@@ -18,12 +19,15 @@ const ESCOLAS_MOCK: Escola[] = [
 ];
 
 export default function EscolasPage() {
+  const router = useRouter();
   const supabase = createClient();
   
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [alunosEmAnalise, setAlunosEmAnalise] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [usandoMock, setUsandoMock] = useState(false);
+
 
   // Estados dos Modais
   const [modalNovo, setModalNovo] = useState(false);
@@ -47,23 +51,39 @@ export default function EscolasPage() {
     loadEscolas();
   }, []);
 
+  const ALUNOS_MOCK_EM_ANALISE = [
+    { id: 'aluno-mock-2', escola: 'Colégio Estadual Julia Wanderley', status_carteirinha: 'Em análise' },
+    { id: 'aluno-mock-5', escola: 'Escola Municipal Dorcelina Folador', status_carteirinha: 'Em análise' }
+  ];
+
   async function loadEscolas() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // 1. Busca as escolas do banco de dados
+      const { data: escolasDB, error: escolasError } = await supabase
         .from('escolas')
         .select('id, nome, endereco, turnos')
         .order('nome', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        setEscolas(data as Escola[]);
+      // 2. Busca os alunos em análise
+      const { data: alunosDB, error: alunosError } = await supabase
+        .from('alunos')
+        .select('id, escola, escola_id, status_carteirinha')
+        .eq('status_carteirinha', 'Em análise');
+
+      if (!escolasError && escolasDB && escolasDB.length > 0) {
+        setEscolas(escolasDB as Escola[]);
+        setAlunosEmAnalise(alunosDB || []);
         setUsandoMock(false);
       } else {
         setEscolas(ESCOLAS_MOCK);
+        setAlunosEmAnalise(ALUNOS_MOCK_EM_ANALISE);
         setUsandoMock(true);
       }
-    } catch {
+    } catch (err) {
+      console.warn('Erro ao carregar escolas/alunos do Supabase. Carregando dados fictícios.', err);
       setEscolas(ESCOLAS_MOCK);
+      setAlunosEmAnalise(ALUNOS_MOCK_EM_ANALISE);
       setUsandoMock(true);
     } finally {
       setLoading(false);
@@ -251,86 +271,119 @@ export default function EscolasPage() {
         )}
       </div>
 
-      {/* Tabela de Escolas */}
-      <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-slate-500 font-bold">Carregando escolas...</span>
-            </div>
-          ) : filteredEscolas.length === 0 ? (
-            <div className="py-20 text-center flex flex-col items-center gap-3">
-              <span className="text-3xl">🏫</span>
-              <h3 className="text-sm font-bold text-slate-900">Nenhuma escola cadastrada</h3>
-              <p className="text-xs text-slate-400 max-w-[280px] mx-auto leading-relaxed">
-                Adicione as escolas do município para que os responsáveis possam selecioná-las ao solicitar transporte escolar.
-              </p>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b bg-slate-50 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Nome da Escola</th>
-                  <th className="py-3 px-4">Endereço</th>
-                  <th className="py-3 px-4">Turnos Atendidos</th>
-                  <th className="py-3 px-4 text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredEscolas.map((escola) => (
-                  <tr key={escola.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
-                      <Building2 size={14} className="text-slate-400 shrink-0" />
-                      <span>{escola.nome}</span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      <div className="flex items-center gap-1">
-                        <MapPin size={12} className="text-slate-400" />
-                        <span>{escola.endereco}</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-wrap gap-1">
-                        {escola.turnos.map((turno) => (
-                          <span
-                            key={turno}
-                            className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/50"
-                          >
-                            <Clock size={8} />
-                            {turno}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            setNome(escola.nome);
-                            setEndereco(escola.endereco);
-                            setTurnos(escola.turnos);
-                            setModalEditar(escola);
-                          }}
-                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(escola.id)}
-                          className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors border border-transparent hover:border-rose-100"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {/* Grid de Cards de Escolas */}
+      {loading ? (
+        <div className="bg-white border rounded-2xl p-20 flex flex-col items-center justify-center gap-3 shadow-sm">
+          <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-500 font-bold">Carregando escolas...</span>
         </div>
-      </div>
+      ) : filteredEscolas.length === 0 ? (
+        <div className="bg-white border rounded-2xl p-20 text-center flex flex-col items-center gap-3 shadow-sm">
+          <span className="text-3xl">🏫</span>
+          <h3 className="text-sm font-bold text-slate-900">Nenhuma escola cadastrada</h3>
+          <p className="text-xs text-slate-400 max-w-[280px] mx-auto leading-relaxed">
+            Adicione as escolas do município para que os responsáveis possam selecioná-las ao solicitar transporte escolar.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEscolas.map((escola) => {
+            const countEmAnalise = usandoMock
+              ? ALUNOS_MOCK_EM_ANALISE.filter(a => a.escola === escola.nome).length
+              : alunosEmAnalise.filter(a => a.escola_id === schoolIdOrName(escola) || a.escola === escola.nome).length;
+
+            function schoolIdOrName(esc: Escola) {
+              return esc.id;
+            }
+
+            return (
+              <div
+                key={escola.id}
+                onClick={() => router.push(`/dashboard/admin/escolas/detalhes?escola=${encodeURIComponent(escola.nome)}&id=${escola.id}`)}
+                className="group relative bg-white border border-slate-200 hover:border-slate-350 hover:-translate-y-0.5 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
+              >
+                {/* Badge por Escola (quantidade de alunos em análise) */}
+                {countEmAnalise > 0 && (
+                  <div 
+                    className="absolute top-4 right-4 flex items-center justify-center bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full shadow-sm animate-pulse z-10" 
+                    title={`${countEmAnalise} alunos com pendência de aprovação`}
+                  >
+                    {countEmAnalise}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  {/* Ícone e Título da Escola */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-3 bg-amber-50 rounded-2xl text-amber-500 group-hover:bg-amber-100 transition-colors shrink-0">
+                      <Building2 size={18} />
+                    </div>
+                    <div className="flex-1 pr-6">
+                      <h3 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-amber-600 transition-colors">
+                        {escola.nome}
+                      </h3>
+                      <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block mt-1">
+                        Arapongas — SEMED
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Endereço */}
+                  <div className="flex items-start gap-1.5 text-slate-650 text-xs mt-1.5">
+                    <MapPin size={13} className="text-slate-400 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{escola.endereco}</span>
+                  </div>
+
+                  {/* Turnos */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {escola.turnos.map((turno) => (
+                      <span
+                        key={turno}
+                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/50"
+                      >
+                        <Clock size={8} />
+                        {turno}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer do Card / Ações */}
+                <div className="flex items-center justify-between border-t border-slate-100 mt-5 pt-3.5">
+                  <span className="text-[10px] font-bold text-amber-600 group-hover:underline">
+                    Ver alunos →
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNome(escola.nome);
+                        setEndereco(escola.endereco);
+                        setTurnos(escola.turnos);
+                        setModalEditar(escola);
+                      }}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
+                      title="Editar Escola"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(escola.id);
+                      }}
+                      className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors border border-transparent hover:border-rose-100"
+                      title="Excluir Escola"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* MODAL: NOVA ESCOLA */}
       {modalNovo && (

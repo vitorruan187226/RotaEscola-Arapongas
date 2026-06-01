@@ -145,19 +145,18 @@ export default function EscolaDetalhesPage() {
   async function loadAlunosDaEscola() {
     setLoading(true);
     try {
-      const isUuid = escolaId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(escolaId);
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, serie, status, rota_id, created_at');
+        .select('id, nome, escola, serie, status, rota_id, created_at')
+        .eq('escola', escolaNome);
 
-      if (isUuid) {
-        query = query.eq('escola_id', escolaId);
-      } else {
-        query = query.eq('escola', escolaNome);
+      if (error) {
+        console.error('--- ERRO DETALHADO DO SUPABASE (Alunos da Escola) ---');
+        console.error('Mensagem:', error.message);
+        console.error('Detalhes:', error.details);
+        console.error('Dica (Hint):', error.hint);
+        console.error('---------------------------------');
       }
-
-      const { data, error } = await query;
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAuditoria[] = data.map((a: any) => ({
@@ -253,7 +252,11 @@ export default function EscolaDetalhesPage() {
           .eq('id', id);
 
         if (error) {
-          console.error(error);
+          console.error('--- ERRO DETALHADO DO SUPABASE (Aprovação Aluno) ---');
+          console.error('Mensagem:', error.message);
+          console.error('Detalhes:', error.details);
+          console.error('Dica (Hint):', error.hint);
+          console.error('---------------------------------');
           alert('Erro ao salvar aprovação no banco de dados: ' + error.message);
           throw error;
         }
@@ -314,7 +317,11 @@ export default function EscolaDetalhesPage() {
           .eq('id', id);
 
         if (error) {
-          console.error(error);
+          console.error('--- ERRO DETALHADO DO SUPABASE (Rejeição Aluno) ---');
+          console.error('Mensagem:', error.message);
+          console.error('Detalhes:', error.details);
+          console.error('Dica (Hint):', error.hint);
+          console.error('---------------------------------');
           alert('Erro ao salvar rejeição no banco de dados: ' + error.message);
           throw error;
         }
@@ -352,8 +359,12 @@ export default function EscolaDetalhesPage() {
           .eq('id', id);
 
         if (error) {
-          console.error(error);
-          alert('Erro ao reavaliar estudante no banco de dados!');
+          console.error('--- ERRO DETALHADO DO SUPABASE (Reavaliação Aluno) ---');
+          console.error('Mensagem:', error.message);
+          console.error('Detalhes:', error.details);
+          console.error('Dica (Hint):', error.hint);
+          console.error('---------------------------------');
+          alert('Erro ao reavaliar estudante no banco de dados: ' + error.message);
           throw error;
         }
       }

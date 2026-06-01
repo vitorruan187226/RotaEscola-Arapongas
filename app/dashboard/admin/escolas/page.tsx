@@ -75,7 +75,16 @@ export default function EscolasPage() {
               .from('alunos')
               .select('*', { count: 'exact', head: true })
               .eq('status', 'Em análise')
-              .eq('escola_id', schoolIdOrName(escola));
+              .eq('escola', escola.nome);
+
+            if (error) {
+              console.error('--- ERRO DETALHADO DO SUPABASE (Contagem de Escolas) ---');
+              console.error('Mensagem:', error.message);
+              console.error('Detalhes:', error.details);
+              console.error('Dica (Hint):', error.hint);
+              console.error('---------------------------------');
+            }
+
             counts[escola.id] = !error && count !== null ? count : 0;
           })
         );

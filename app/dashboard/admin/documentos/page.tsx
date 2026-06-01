@@ -86,6 +86,14 @@ export default function DocumentosPage() {
         .select('id, nome, escola, serie, status')
         .eq('status', 'Em análise');
 
+      if (error) {
+        console.error('--- ERRO DETALHADO DO SUPABASE (Alunos em Análise) ---');
+        console.error('Mensagem:', error.message);
+        console.error('Detalhes:', error.details);
+        console.error('Dica (Hint):', error.hint);
+        console.error('---------------------------------');
+      }
+
       if (!error && data && data.length > 0) {
         const mapped: AlunoAnalise[] = data.map((a: any) => ({
           id: a.id,
@@ -171,7 +179,11 @@ export default function DocumentosPage() {
           .eq('id', id);
 
         if (error) {
-          console.error(error);
+          console.error('--- ERRO DETALHADO DO SUPABASE (Aprovação Documentos) ---');
+          console.error('Mensagem:', error.message);
+          console.error('Detalhes:', error.details);
+          console.error('Dica (Hint):', error.hint);
+          console.error('---------------------------------');
           alert('Erro ao salvar aprovação no banco de dados: ' + error.message);
           throw error;
         }
@@ -202,7 +214,11 @@ export default function DocumentosPage() {
           .eq('id', id);
 
         if (error) {
-          console.error(error);
+          console.error('--- ERRO DETALHADO DO SUPABASE (Rejeição Documentos) ---');
+          console.error('Mensagem:', error.message);
+          console.error('Detalhes:', error.details);
+          console.error('Dica (Hint):', error.hint);
+          console.error('---------------------------------');
           alert('Erro ao salvar rejeição no banco de dados: ' + error.message);
           throw error;
         }

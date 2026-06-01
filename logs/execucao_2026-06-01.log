@@ -20,3 +20,7 @@
 [2026-06-01 19:36:10] [INFO] Identificado problema de sintaxe na tabela `rotas` (colunas 'nome_rota', 'turno', 'ativa' inexistentes) e no cast automático de UUID de escolas com IDs fictícios de mock ('escola-mock-2').
 [2026-06-01 19:37:05] [INFO] Refatorado e corrigido o arquivo `app/dashboard/admin/escolas/detalhes/page.tsx` para adequação da query de rotas e blindagem regex contra UUIDs inválidos na seleção de escolas e alunos.
 [2026-06-01 19:37:12] [INFO] Replicada a mesma correção da query de rotas no arquivo de auditoria cadastral `app/dashboard/admin/documentos/page.tsx`.
+[2026-06-01 19:43:00] [INFO] Executando análise detalhada e forçada do Erro 400 em bancos Supabase via inspeção Swagger de OpenAPI e scripts Node locais de teste de colunas.
+[2026-06-01 19:44:00] [INFO] Mapeamento corretivo aplicado para migrar filtros de 'escola_id' (UUID) para 'escola' (nome textual), contornando conflitos de UUID mocks e cache de PostgREST.
+[2026-06-01 19:45:00] [INFO] Implementado log explícito e estruturado de erros ('console.error' com mensagem, detalhes e hint) em todas as funções de chamadas ao Supabase das telas de escolas, alunos e documentos.
+[2026-06-01 19:45:30] [INFO] Criada nova migração local '20260601194500_add_status_column_alunos.sql' na pasta 'supabase/migrations/' para suporte robusto ao campo 'status' de Arapongas.

@@ -27,7 +27,7 @@ interface AlunoAuditoria {
   nome: string;
   escola: string;
   serie: string;
-  statusCarteirinha: 'Em análise' | 'Aprovado' | 'Pendente';
+  status: 'Em análise' | 'Aprovado' | 'Rejeitado' | 'Pendente';
   enviadoEm: string;
   rotaId?: string;
 }
@@ -37,7 +37,15 @@ interface DocumentoAnexo {
   url: string;
 }
 
-const ALUNOS_MOCK_AUDITORIA: AlunoAuditoria[] = ALUNOS_MOCK_GLOBAL;
+const ALUNOS_MOCK_AUDITORIA: AlunoAuditoria[] = ALUNOS_MOCK_GLOBAL.map(a => ({
+  id: a.id,
+  nome: a.nome,
+  escola: a.escola,
+  serie: a.serie,
+  status: a.statusCarteirinha === 'Pendente' ? 'Rejeitado' as const : a.statusCarteirinha,
+  rotaId: a.rotaId,
+  enviadoEm: new Date().toLocaleDateString('pt-BR')
+}));
 
 export default function EscolaDetalhesPage() {
   const router = useRouter();
@@ -141,7 +149,7 @@ export default function EscolaDetalhesPage() {
       
       let query = supabase
         .from('alunos')
-        .select('id, nome, escola, serie, status_carteirinha, rota_id, created_at');
+        .select('id, nome, escola, serie, status, rota_id, created_at');
 
       if (isUuid) {
         query = query.eq('escola_id', escolaId);
@@ -157,7 +165,7 @@ export default function EscolaDetalhesPage() {
           nome: a.nome,
           escola: a.escola,
           serie: a.serie ?? '—',
-          statusCarteirinha: (a.status_carteirinha as AlunoAuditoria['statusCarteirinha']) ?? 'Pendente',
+          status: (a.status as AlunoAuditoria['status']) ?? 'Pendente',
           enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
           rotaId: a.rota_id ?? undefined
         }));
@@ -235,24 +243,28 @@ export default function EscolaDetalhesPage() {
 
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase
-        const { error } = await supabase
+        // Persistência Real no Supabase com campo status
+        const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status_carteirinha: 'Aprovado',
+            status: 'Aprovado',
             rota_id: selectedRotaId 
           })
           .eq('id', id);
 
-        if (error) throw error;
+        if (error) {
+          console.error(error);
+          alert('Erro ao salvar aprovação no banco de dados: ' + error.message);
+          throw error;
+        }
       }
       
       // SÓ altera o estado do front-end e badges após confirmação de sucesso
       let proximo: AlunoAuditoria | undefined = undefined;
       setAlunos(prev => {
-        const updated = prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Aprovado' as const, rotaId: selectedRotaId } : a);
+        const updated = prev.map(a => a.id === id ? { ...a, status: 'Aprovado' as const, rotaId: selectedRotaId } : a);
         if (fluxoContinuo) {
-          proximo = updated.find(a => a.statusCarteirinha === 'Em análise');
+          proximo = updated.find(a => a.status === 'Em análise');
         }
         return updated;
       });
@@ -281,8 +293,6 @@ export default function EscolaDetalhesPage() {
       }
     } catch (err) {
       console.error('Falha de persistência ao aprovar estudante:', err);
-      // Impede qualquer alteração visual no front-end e exibe o alerta de erro crítico
-      showToast('Erro ao salvar alterações no banco de dados', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -294,32 +304,34 @@ export default function EscolaDetalhesPage() {
 
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase
-        const { error } = await supabase
+        // Persistência Real no Supabase com campo status
+        const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status_carteirinha: 'Pendente',
+            status: 'Rejeitado',
             rota_id: null 
           })
           .eq('id', id);
 
-        if (error) throw error;
+        if (error) {
+          console.error(error);
+          alert('Erro ao salvar rejeição no banco de dados: ' + error.message);
+          throw error;
+        }
       }
 
       // SÓ altera o estado do front-end e badges após confirmação de sucesso
-      setAlunos(prev => prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Pendente' as const, rotaId: undefined } : a));
+      setAlunos(prev => prev.map(a => a.id === id ? { ...a, status: 'Rejeitado' as const, rotaId: undefined } : a));
       
       if (isMockAluno) {
         showToast('Rejeição simulada com sucesso!', 'success');
       } else {
-        showToast('Solicitação REJEITADA. Cadastro retornado ao status Pendente.', 'success');
+        showToast('Solicitação REJEITADA. Cadastro retornado ao status Rejeitado.', 'success');
       }
       
       if (selectedAluno?.id === id) setSelectedAluno(null);
     } catch (err) {
       console.error('Falha de persistência ao rejeitar estudante:', err);
-      // Impede qualquer alteração visual no front-end e exibe o alerta de erro crítico
-      showToast('Erro ao salvar alterações no banco de dados', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -331,19 +343,23 @@ export default function EscolaDetalhesPage() {
 
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase
-        const { error } = await supabase
+        // Persistência Real no Supabase com campo status
+        const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status_carteirinha: 'Em análise' 
+            status: 'Em análise' 
           })
           .eq('id', id);
 
-        if (error) throw error;
+        if (error) {
+          console.error(error);
+          alert('Erro ao reavaliar estudante no banco de dados!');
+          throw error;
+        }
       }
 
       // SÓ altera o estado do front-end e badges após confirmação de sucesso
-      setAlunos(prev => prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Em análise' as const } : a));
+      setAlunos(prev => prev.map(a => a.id === id ? { ...a, status: 'Em análise' as const } : a));
       
       if (isMockAluno) {
         showToast('Reavaliação simulada com sucesso!', 'success');
@@ -352,8 +368,6 @@ export default function EscolaDetalhesPage() {
       }
     } catch (err) {
       console.error('Falha de persistência ao reavaliar estudante:', err);
-      // Impede qualquer alteração visual no front-end e exibe o alerta de erro crítico
-      showToast('Erro ao salvar alterações no banco de dados', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -372,18 +386,18 @@ export default function EscolaDetalhesPage() {
   // Filtragem local baseada na aba ativa
   const filteredAlunos = alunos.filter((aluno) => {
     if (activeTab === 'pendentes') {
-      return aluno.statusCarteirinha === 'Em análise';
+      return aluno.status === 'Em análise';
     } else if (activeTab === 'aprovados') {
-      return aluno.statusCarteirinha === 'Aprovado';
+      return aluno.status === 'Aprovado';
     } else {
       // Rejeitados / Pendentes de documentação
-      return aluno.statusCarteirinha === 'Pendente';
+      return aluno.status === 'Rejeitado' || aluno.status === 'Pendente';
     }
   });
 
-  const countPendentes = alunos.filter(a => a.statusCarteirinha === 'Em análise').length;
-  const countAprovados = alunos.filter(a => a.statusCarteirinha === 'Aprovado').length;
-  const countRejeitados = alunos.filter(a => a.statusCarteirinha === 'Pendente').length;
+  const countPendentes = alunos.filter(a => a.status === 'Em análise').length;
+  const countAprovados = alunos.filter(a => a.status === 'Aprovado').length;
+  const countRejeitados = alunos.filter(a => a.status === 'Rejeitado' || a.status === 'Pendente').length;
 
   return (
     <div className="flex flex-col gap-6 relative font-sans">
@@ -549,16 +563,16 @@ export default function EscolaDetalhesPage() {
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        a.statusCarteirinha === 'Aprovado'
+                        a.status === 'Aprovado'
                           ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                          : a.statusCarteirinha === 'Em análise'
+                          : a.status === 'Em análise'
                           ? 'bg-blue-50 border-blue-200 text-blue-700'
                           : 'bg-rose-50 border-rose-200 text-rose-700'
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
-                          a.statusCarteirinha === 'Aprovado' ? 'bg-emerald-500' : a.statusCarteirinha === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-rose-500'
+                          a.status === 'Aprovado' ? 'bg-emerald-500' : a.status === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-rose-500'
                         }`} />
-                        {a.statusCarteirinha === 'Pendente' ? 'Recusado' : a.statusCarteirinha}
+                        {a.status === 'Pendente' ? 'Recusado' : a.status}
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
@@ -573,7 +587,7 @@ export default function EscolaDetalhesPage() {
                         </button>
 
                         {/* 2. Ações para Pendentes (Em análise) */}
-                        {a.statusCarteirinha === 'Em análise' && (
+                        {a.status === 'Em análise' && (
                           <>
                             <button
                               disabled={loadingAction !== null}
@@ -607,7 +621,7 @@ export default function EscolaDetalhesPage() {
                         )}
 
                         {/* 3. Exibição para Aprovados (Remoção de botões, mostra Rota + botão discreto de Alterar Rota) */}
-                        {a.statusCarteirinha === 'Aprovado' && (
+                        {a.status === 'Aprovado' && (
                           <div className="flex items-center gap-2">
                             {(() => {
                               const rota = rotas.find(r => r.id === a.rotaId || r.codigo === a.rotaId);
@@ -629,8 +643,8 @@ export default function EscolaDetalhesPage() {
                           </div>
                         )}
 
-                        {/* 4. Ações para Rejeitados (Pendente) - Exibe apenas o botão 'Reavaliar' */}
-                        {a.statusCarteirinha === 'Pendente' && (
+                        {/* 4. Ações para Rejeitados (Pendente / Rejeitado) - Exibe apenas o botão 'Reavaliar' */}
+                        {(a.status === 'Rejeitado' || a.status === 'Pendente') && (
                           <button
                             disabled={loadingAction !== null}
                             onClick={() => handleReavaliar(a.id)}
@@ -738,7 +752,7 @@ export default function EscolaDetalhesPage() {
                 <CheckCircle2 size={14} />
                 <span>Aprovar Cadastro</span>
               </button>
-              {selectedAluno.statusCarteirinha === 'Em análise' && (
+              {selectedAluno.status === 'Em análise' && (
                 <button
                   disabled={loadingAction !== null}
                   onClick={() => {

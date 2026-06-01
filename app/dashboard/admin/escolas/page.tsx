@@ -24,7 +24,7 @@ export default function EscolasPage() {
   const supabase = createClient();
   
   const [escolas, setEscolas] = useState<Escola[]>([]);
-  const [alunosEmAnalise, setAlunosEmAnalise] = useState<any[]>([]);
+  const [escolasCounts, setEscolasCounts] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [usandoMock, setUsandoMock] = useState(false);
@@ -63,29 +63,53 @@ export default function EscolasPage() {
         .select('id, nome, endereco, turnos')
         .order('nome', { ascending: true });
 
-      // 2. Busca os alunos em análise
-      const { data: alunosDB, error: alunosError } = await supabase
-        .from('alunos')
-        .select('id, escola, escola_id, status_carteirinha')
-        .eq('status_carteirinha', 'Em análise');
-
       if (!escolasError && escolasDB && escolasDB.length > 0) {
         setEscolas(escolasDB as Escola[]);
-        setAlunosEmAnalise(alunosDB || []);
         setUsandoMock(false);
+
+        // 2. Busca as pendências reais via agregação real no Supabase
+        const counts: { [key: string]: number } = {};
+        await Promise.all(
+          escolasDB.map(async (escola) => {
+            const { count, error } = await supabase
+              .from('alunos')
+              .select('*', { count: 'exact', head: true })
+              .eq('status', 'Em análise')
+              .eq('escola_id', schoolIdOrName(escola));
+            counts[escola.id] = !error && count !== null ? count : 0;
+          })
+        );
+        setEscolasCounts(counts);
       } else {
         setEscolas(ESCOLAS_MOCK);
-        setAlunosEmAnalise(ALUNOS_MOCK_EM_ANALISE);
         setUsandoMock(true);
+        // Contagem mockada
+        const countsMock: { [key: string]: number } = {};
+        ESCOLAS_MOCK.forEach(e => {
+          countsMock[e.id] = ALUNOS_MOCK_GLOBAL.filter(
+            a => a.escola === e.nome && a.statusCarteirinha === 'Em análise'
+          ).length;
+        });
+        setEscolasCounts(countsMock);
       }
     } catch (err) {
-      console.warn('Erro ao carregar escolas/alunos do Supabase. Carregando dados fictícios.', err);
+      console.warn('Erro ao carregar escolas do Supabase. Carregando dados fictícios.', err);
       setEscolas(ESCOLAS_MOCK);
-      setAlunosEmAnalise(ALUNOS_MOCK_EM_ANALISE);
       setUsandoMock(true);
+      const countsMock: { [key: string]: number } = {};
+      ESCOLAS_MOCK.forEach(e => {
+        countsMock[e.id] = ALUNOS_MOCK_GLOBAL.filter(
+          a => a.escola === e.nome && a.statusCarteirinha === 'Em análise'
+        ).length;
+      });
+      setEscolasCounts(countsMock);
     } finally {
       setLoading(false);
     }
+  }
+
+  function schoolIdOrName(esc: Escola) {
+    return esc.id;
   }
 
   const toggleTurno = (turno: string) => {
@@ -284,15 +308,9 @@ export default function EscolasPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {filteredEscolas.map((escola) => {
-            const countEmAnalise = usandoMock
-              ? ALUNOS_MOCK_EM_ANALISE.filter(a => a.escola === escola.nome).length
-              : alunosEmAnalise.filter(a => a.escola_id === schoolIdOrName(escola) || a.escola === escola.nome).length;
-
-            function schoolIdOrName(esc: Escola) {
-              return esc.id;
-            }
+            const countEmAnalise = escolasCounts[escola.id] || 0;
 
             return (
               <div

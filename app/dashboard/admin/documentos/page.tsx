@@ -9,14 +9,14 @@ interface AlunoAnalise {
   nome: string;
   escola: string;
   serie: string;
-  statusCarteirinha: 'Em análise';
+  status: 'Em análise';
   enviadoEm: string;
 }
 
 const ANALISES_MOCK: AlunoAnalise[] = [
-  { id: 'aluno-mock-1', nome: 'Mariana Costa Souza', escola: 'Colégio Estadual Julia Wanderley', serie: '7º Ano A', statusCarteirinha: 'Em análise', enviadoEm: '26/05/2026' },
-  { id: 'aluno-mock-2', nome: 'Felipe Nascimento Torres', escola: 'Escola Municipal Codorna', serie: '2º Ano C', statusCarteirinha: 'Em análise', enviadoEm: '25/05/2026' },
-  { id: 'aluno-mock-3', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', serie: '7º Ano A', statusCarteirinha: 'Em análise', enviadoEm: '24/05/2026' }
+  { id: 'aluno-mock-1', nome: 'Mariana Costa Souza', escola: 'Colégio Estadual Julia Wanderley', serie: '7º Ano A', status: 'Em análise', enviadoEm: '26/05/2026' },
+  { id: 'aluno-mock-2', nome: 'Felipe Nascimento Torres', escola: 'Escola Municipal Codorna', serie: '2º Ano C', status: 'Em análise', enviadoEm: '25/05/2026' },
+  { id: 'aluno-mock-3', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', serie: '7º Ano A', status: 'Em análise', enviadoEm: '24/05/2026' }
 ];
 
 interface DocumentoAnexo {
@@ -83,8 +83,8 @@ export default function DocumentosPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, serie, status_carteirinha')
-        .eq('status_carteirinha', 'Em análise');
+        .select('id, nome, escola, serie, status')
+        .eq('status', 'Em análise');
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAnalise[] = data.map((a: any) => ({
@@ -92,17 +92,17 @@ export default function DocumentosPage() {
           nome: a.nome,
           escola: a.escola,
           serie: a.serie ?? '—',
-          statusCarteirinha: 'Em análise',
+          status: 'Em análise',
           enviadoEm: new Date().toLocaleDateString('pt-BR')
         }));
         setAlunos(mapped);
         setUsandoMock(false);
       } else {
-        setAlunos(ANALISES_MOCK);
+        setAlunos(ANALISES_MOCK.map(a => ({ ...a, status: 'Em análise' })));
         setUsandoMock(true);
       }
     } catch {
-      setAlunos(ANALISES_MOCK);
+      setAlunos(ANALISES_MOCK.map(a => ({ ...a, status: 'Em análise' })));
       setUsandoMock(true);
     } finally {
       setLoading(false);
@@ -158,27 +158,30 @@ export default function DocumentosPage() {
 
   const handleConfirmAprovar = async (id: string) => {
     setLoadingAction(id);
+    const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
     try {
-      if (!usandoMock && !id.startsWith('aluno-mock')) {
-        const { error } = await supabase
+      if (!isMockAluno) {
+        // Persistência Real no Supabase com campo status
+        const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status_carteirinha: 'Aprovado',
+            status: 'Aprovado',
             rota_id: selectedRotaId 
           })
           .eq('id', id);
 
-        if (error) throw error;
+        if (error) {
+          console.error(error);
+          alert('Erro ao salvar aprovação no banco de dados: ' + error.message);
+          throw error;
+        }
       }
       setAlunos(prev => prev.filter(a => a.id !== id));
       showToast('Solicitação APROVADA e Rota designada com sucesso!', 'success');
       setAlunoParaAprovar(null);
       if (selectedAluno?.id === id) setSelectedAluno(null);
-    } catch {
-      setAlunos(prev => prev.filter(a => a.id !== id));
-      showToast('Aprovação simulada com sucesso!', 'success');
-      setAlunoParaAprovar(null);
-      if (selectedAluno?.id === id) setSelectedAluno(null);
+    } catch (err) {
+      console.error('Falha de persistência ao aprovar:', err);
     } finally {
       setLoadingAction(null);
     }
@@ -186,25 +189,29 @@ export default function DocumentosPage() {
 
   const handleRejeitar = async (id: string) => {
     setLoadingAction(id);
+    const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
     try {
-      if (!usandoMock && !id.startsWith('aluno-mock')) {
-        const { error } = await supabase
+      if (!isMockAluno) {
+        // Persistência Real no Supabase com campo status
+        const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status_carteirinha: 'Pendente',
+            status: 'Rejeitado',
             rota_id: null 
           })
           .eq('id', id);
 
-        if (error) throw error;
+        if (error) {
+          console.error(error);
+          alert('Erro ao salvar rejeição no banco de dados: ' + error.message);
+          throw error;
+        }
       }
       setAlunos(prev => prev.filter(a => a.id !== id));
       showToast('Solicitação REJEITADA. Status retornado para pendente.', 'success');
       if (selectedAluno?.id === id) setSelectedAluno(null);
-    } catch {
-      setAlunos(prev => prev.filter(a => a.id !== id));
-      showToast('Rejeição simulada com sucesso!', 'success');
-      if (selectedAluno?.id === id) setSelectedAluno(null);
+    } catch (err) {
+      console.error('Falha de persistência ao rejeitar:', err);
     } finally {
       setLoadingAction(null);
     }
@@ -290,7 +297,7 @@ export default function DocumentosPage() {
                     <td className="py-3.5 px-4">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-blue-50 border-blue-200 text-blue-700">
                         <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
-                        {a.statusCarteirinha}
+                        {a.status}
                       </span>
                     </td>
                     <td className="py-3.5 px-4">

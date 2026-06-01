@@ -220,8 +220,11 @@ export default function EscolaDetalhesPage() {
 
   const handleConfirmAprovar = async (id: string) => {
     setLoadingAction(id);
+    const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
+
     try {
-      if (!usandoMock && !id.startsWith('aluno-mock')) {
+      if (!isMockAluno) {
+        // Persistência Real no Supabase
         const { error } = await supabase
           .from('alunos')
           .update({ 
@@ -233,6 +236,7 @@ export default function EscolaDetalhesPage() {
         if (error) throw error;
       }
       
+      // SÓ altera o estado do front-end e badges após confirmação de sucesso
       let proximo: AlunoAuditoria | undefined = undefined;
       setAlunos(prev => {
         const updated = prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Aprovado' as const, rotaId: selectedRotaId } : a);
@@ -242,7 +246,11 @@ export default function EscolaDetalhesPage() {
         return updated;
       });
 
-      showToast('Estudante APROVADO e Rota cadastrada com sucesso!', 'success');
+      if (isMockAluno) {
+        showToast('Aprovação simulada com sucesso!', 'success');
+      } else {
+        showToast('Estudante APROVADO e Rota cadastrada com sucesso!', 'success');
+      }
       
       if (fluxoContinuo) {
         if (proximo) {
@@ -260,34 +268,10 @@ export default function EscolaDetalhesPage() {
         setAlunoParaAprovar(null);
         if (selectedAluno?.id === id) setSelectedAluno(null);
       }
-    } catch {
-      let proximo: AlunoAuditoria | undefined = undefined;
-      setAlunos(prev => {
-        const updated = prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Aprovado' as const, rotaId: selectedRotaId } : a);
-        if (fluxoContinuo) {
-          proximo = updated.find(a => a.statusCarteirinha === 'Em análise');
-        }
-        return updated;
-      });
-
-      showToast('Aprovação simulada com sucesso!', 'success');
-      
-      if (fluxoContinuo) {
-        if (proximo) {
-          const prox = proximo as AlunoAuditoria;
-          setSelectedAluno(prox);
-          handleOpenDocs(prox);
-          setAlunoParaAprovar(null);
-        } else {
-          setSelectedAluno(null);
-          setAlunoParaAprovar(null);
-          showToast('Todos os documentos desta instituição foram analisados!', 'success');
-        }
-        setFluxoContinuo(false);
-      } else {
-        setAlunoParaAprovar(null);
-        if (selectedAluno?.id === id) setSelectedAluno(null);
-      }
+    } catch (err) {
+      console.error('Falha de persistência ao aprovar estudante:', err);
+      // Impede qualquer alteração visual no front-end e exibe o alerta de erro crítico
+      showToast('Erro ao salvar alterações no banco de dados', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -295,8 +279,11 @@ export default function EscolaDetalhesPage() {
 
   const handleRejeitar = async (id: string) => {
     setLoadingAction(id);
+    const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
+
     try {
-      if (!usandoMock && !id.startsWith('aluno-mock')) {
+      if (!isMockAluno) {
+        // Persistência Real no Supabase
         const { error } = await supabase
           .from('alunos')
           .update({ 
@@ -307,13 +294,21 @@ export default function EscolaDetalhesPage() {
 
         if (error) throw error;
       }
+
+      // SÓ altera o estado do front-end e badges após confirmação de sucesso
       setAlunos(prev => prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Pendente' as const, rotaId: undefined } : a));
-      showToast('Solicitação REJEITADA. Cadastro retornado ao status Pendente.', 'success');
+      
+      if (isMockAluno) {
+        showToast('Rejeição simulada com sucesso!', 'success');
+      } else {
+        showToast('Solicitação REJEITADA. Cadastro retornado ao status Pendente.', 'success');
+      }
+      
       if (selectedAluno?.id === id) setSelectedAluno(null);
-    } catch {
-      setAlunos(prev => prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Pendente' as const, rotaId: undefined } : a));
-      showToast('Rejeição simulada com sucesso!', 'success');
-      if (selectedAluno?.id === id) setSelectedAluno(null);
+    } catch (err) {
+      console.error('Falha de persistência ao rejeitar estudante:', err);
+      // Impede qualquer alteração visual no front-end e exibe o alerta de erro crítico
+      showToast('Erro ao salvar alterações no banco de dados', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -321,8 +316,11 @@ export default function EscolaDetalhesPage() {
 
   const handleReavaliar = async (id: string) => {
     setLoadingAction(id);
+    const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
+
     try {
-      if (!usandoMock && !id.startsWith('aluno-mock')) {
+      if (!isMockAluno) {
+        // Persistência Real no Supabase
         const { error } = await supabase
           .from('alunos')
           .update({ 
@@ -332,11 +330,19 @@ export default function EscolaDetalhesPage() {
 
         if (error) throw error;
       }
+
+      // SÓ altera o estado do front-end e badges após confirmação de sucesso
       setAlunos(prev => prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Em análise' as const } : a));
-      showToast('Solicitação de estudante enviada de volta para análise.', 'success');
-    } catch {
-      setAlunos(prev => prev.map(a => a.id === id ? { ...a, statusCarteirinha: 'Em análise' as const } : a));
-      showToast('Reavaliação simulada com sucesso!', 'success');
+      
+      if (isMockAluno) {
+        showToast('Reavaliação simulada com sucesso!', 'success');
+      } else {
+        showToast('Solicitação de estudante enviada de volta para análise.', 'success');
+      }
+    } catch (err) {
+      console.error('Falha de persistência ao reavaliar estudante:', err);
+      // Impede qualquer alteração visual no front-end e exibe o alerta de erro crítico
+      showToast('Erro ao salvar alterações no banco de dados', 'error');
     } finally {
       setLoadingAction(null);
     }

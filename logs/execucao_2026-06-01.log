@@ -1,0 +1,1 @@
+[2026-06-01 15:24:00] INFO: Auditoria e Checklist: Realizada varredura de tabelas e RLS no Supabase remoto via MCP, identificados gaps de tabelas e buckets ausentes, sugeridas melhorias de usabilidade/sincronizacao offline e gerado o checklist mestre do app.

@@ -74,7 +74,7 @@ export default function EscolasPage() {
             const { count, error } = await supabase
               .from('alunos')
               .select('*', { count: 'exact', head: true })
-              .eq('status', 'Em análise')
+              .eq('status_carteirinha', 'Em análise')
               .eq('escola', escola.nome);
 
             if (error) {

@@ -123,9 +123,10 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('rotas')
-        .select('id, codigo, nome, status');
+        .select('id, codigo, nome');
       if (!error && data) {
-        setRotas(data.filter((r: any) => r.status === 'Ativo'));
+        const rotasComStatus = data.map((r: any) => ({ ...r, status: r.status ?? 'Ativo' }));
+        setRotas(rotasComStatus.filter((r: any) => r.status === 'Ativo'));
       } else {
         setRotas([
           { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
@@ -147,7 +148,7 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, status, rota_id, created_at')
+        .select('id, nome, escola, status_carteirinha, rota_id, created_at')
         .eq('escola', escolaNome);
 
       if (error) {
@@ -164,7 +165,7 @@ export default function EscolaDetalhesPage() {
           nome: a.nome,
           escola: a.escola,
           serie: '—',
-          status: (a.status as AlunoAuditoria['status']) ?? 'Pendente',
+          status: (a.status_carteirinha === 'Pendente' ? 'Rejeitado' as const : a.status_carteirinha as AlunoAuditoria['status']) ?? 'Pendente',
           enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
           rotaId: a.rota_id ?? undefined
         }));
@@ -242,11 +243,11 @@ export default function EscolaDetalhesPage() {
 
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase com campo status
+        // Persistência Real no Supabase com campo status_carteirinha
         const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status: 'Aprovado',
+            status_carteirinha: 'Aprovado',
             rota_id: selectedRotaId 
           })
           .eq('id', id);
@@ -307,11 +308,11 @@ export default function EscolaDetalhesPage() {
 
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase com campo status
+        // Persistência Real no Supabase com campo status_carteirinha
         const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status: 'Rejeitado',
+            status_carteirinha: 'Pendente',
             rota_id: null 
           })
           .eq('id', id);
@@ -350,11 +351,11 @@ export default function EscolaDetalhesPage() {
 
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase com campo status
+        // Persistência Real no Supabase com campo status_carteirinha
         const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status: 'Em análise' 
+            status_carteirinha: 'Em análise' 
           })
           .eq('id', id);
 

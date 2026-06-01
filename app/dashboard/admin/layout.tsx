@@ -104,7 +104,7 @@ export default function AdminLayout({
           const { count, error } = await supabase
             .from('alunos')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'Em análise');
+            .eq('status_carteirinha', 'Em análise');
 
           if (!error && count !== null) {
             setEmAnaliseCount(count);

@@ -59,9 +59,10 @@ export default function DocumentosPage() {
     try {
       const { data, error } = await supabase
         .from('rotas')
-        .select('id, codigo, nome, status');
+        .select('id, codigo, nome');
       if (!error && data) {
-        setRotas(data.filter((r: any) => r.status === 'Ativo'));
+        const rotasComStatus = data.map((r: any) => ({ ...r, status: r.status ?? 'Ativo' }));
+        setRotas(rotasComStatus.filter((r: any) => r.status === 'Ativo'));
       } else {
         setRotas([
           { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
@@ -83,8 +84,8 @@ export default function DocumentosPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, status')
-        .eq('status', 'Em análise');
+        .select('id, nome, escola, status_carteirinha')
+        .eq('status_carteirinha', 'Em análise');
 
       if (error) {
         console.error('--- ERRO DETALHADO DO SUPABASE (Alunos em Análise) ---');
@@ -169,11 +170,11 @@ export default function DocumentosPage() {
     const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase com campo status
+        // Persistência Real no Supabase com campo status_carteirinha
         const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status: 'Aprovado',
+            status_carteirinha: 'Aprovado',
             rota_id: selectedRotaId 
           })
           .eq('id', id);
@@ -204,11 +205,11 @@ export default function DocumentosPage() {
     const isMockAluno = id.startsWith('aluno-mock') || usandoMock;
     try {
       if (!isMockAluno) {
-        // Persistência Real no Supabase com campo status
+        // Persistência Real no Supabase com campo status_carteirinha
         const { data, error } = await supabase
           .from('alunos')
           .update({ 
-            status: 'Rejeitado',
+            status_carteirinha: 'Pendente',
             rota_id: null 
           })
           .eq('id', id);

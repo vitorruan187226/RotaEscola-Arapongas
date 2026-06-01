@@ -10,19 +10,19 @@
 ## Arquitetura do Módulo
 ```
 app/dashboard/admin/
-├── layout.tsx          ← Layout com Sidebar + Topbar (use client)
+├── layout.tsx          ← Layout com Sidebar + Topbar (use client) + Badge Dinâmico em Escolas
 ├── page.tsx            ← Dashboard principal (KPIs + Mapa + Tabela)
 ├── frota/
 │   └── page.tsx        ← Gestão de Veículos
 ├── alunos/
 │   └── page.tsx        ← Gestão de Alunos
 ├── documentos/
-│   └── page.tsx        ← Aprovação de Documentos
+│   └── page.tsx        ← Análise Cadastral (Oculto da navegação lateral)
 └── rotas/
     └── page.tsx        ← Rotas e Itinerários
 ```
 > [!NOTE]
-> O painel principal do administrador consolidou todas as funcionalidades e o design do antigo painel da secretaria municipal, concentrando a gestão operacional em um único local.
+> O painel principal do administrador consolidou todas as funcionalidades e o design do antigo painel da secretaria municipal, concentrando a gestão operacional em um único local. A tela de aprovação de documentos (`documentos/page.tsx`) agora é acessada por caminhos contextuais de gestão e está oculta da sidebar para simplificar a navegação.
 
 ## Layout (layout.tsx)
 
@@ -34,13 +34,13 @@ app/dashboard/admin/
 | `<main class="admin-content">` | Conteúdo da página filha, max-width 1200px |
 
 ### Navegação Sidebar
-| Rota | Ícone | Rótulo |
-|---|---|---|
-| `/dashboard/admin` | `LayoutDashboard` | Visão Geral |
-| `/dashboard/admin/frota` | `Bus` | Frota e Veículos |
-| `/dashboard/admin/alunos` | `Users` | Gestão de Alunos |
-| `/dashboard/admin/documentos` | `FileCheck` | Aprovação de Documentos |
-| `/dashboard/admin/rotas` | `MapPin` | Rotas e Itinerários |
+| Rota | Ícone | Rótulo | Indicador (Badge) |
+|---|---|---|---|
+| `/dashboard/admin` | `LayoutDashboard` | Visão Geral | — |
+| `/dashboard/admin/escolas` | `Building2` | Entidades Escolares | 🔴 Número total de alunos com status `'Em análise'` de Arapongas (oculta se for 0) |
+| `/dashboard/admin/frota` | `Bus` | Frota e Veículos | — |
+| `/dashboard/admin/alunos` | `Users` | Gestão de Alunos | — |
+| `/dashboard/admin/rotas` | `MapPin` | Rotas e Itinerários | — |
 
 ### Responsividade
 - **Desktop (≥1024px):** Sidebar visível permanentemente à esquerda
@@ -103,9 +103,10 @@ interface AtividadeRecente {
 | Módulo | Arquivo | Status | Tabela Supabase |
 |---|---|---|---|
 | Visão Geral | `page.tsx` | ✅ Ativo (KPIs mock) | — |
+| Entidades Escolares | `escolas/page.tsx` | ✅ Ativo | `escolas` |
 | Gestão de Alunos | `alunos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` |
 | Frota e Veículos | `frota/page.tsx` | ✅ Ativo (CRUD real) | `veiculos` |
-| Aprovação de Docs | `documentos/page.tsx` | ✅ Ativo (Aprovação + Rota Dinâmica) | `alunos` + `rotas` + Storage |
+| Análise de Docs | `documentos/page.tsx` | ✅ Ativo (Acessado por atalho / Oculto na sidebar) | `alunos` + `rotas` + Storage |
 | Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real) | `rotas` |
 
 ## Novo Fluxo de Aprovação e Designação de Rota
@@ -121,5 +122,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | Sprint 2 — Painel Admin | Criação do layout.tsx com sidebar + topbar; reescrita completa do page.tsx com KPIs, mapa e tabela; criação das sub-rotas frota, alunos, documentos, rotas |
 | 2026-05-27 | **Ativação completa:** todos os 4 módulos convertidos de mock estático para integração real Supabase com CRUD, busca, KPIs, modais e fallback inteligente. Commit `71de8e6`. |
 | 2026-05-30 | **Fase II - Designação Dinâmica:** Modificação da ação de aprovação para exigir a designação da rota escolar ao aluno (tabela `alunos` campo `rota_id`), limpando a associação em caso de rejeição. |
+| 2026-06-01 | **Ajuste de Navegação Global:** Ocultação do item "Aprovação de Documentos" do menu lateral e implementação de badge dinâmico inteligente no botão "Entidades Escolares", exibindo o total de alunos com status `'Em análise'` de Arapongas. |I - Designação Dinâmica:** Modificação da ação de aprovação para exigir a designação da rota escolar ao aluno (tabela `alunos` campo `rota_id`), limpando a associação em caso de rejeição. |
 
 

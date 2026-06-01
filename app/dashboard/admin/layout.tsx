@@ -40,11 +40,6 @@ const NAV_ITEMS = [
     icon: Users,
   },
   {
-    label: 'Aprovação de Documentos',
-    href: '/dashboard/admin/documentos',
-    icon: FileCheck,
-  },
-  {
     label: 'Rotas e Itinerários',
     href: '/dashboard/admin/rotas',
     icon: MapPin,
@@ -56,10 +51,12 @@ function SidebarLink({
   item,
   active,
   onClick,
+  badgeCount,
 }: {
   item: (typeof NAV_ITEMS)[0];
   active: boolean;
   onClick?: () => void;
+  badgeCount?: number;
 }) {
   return (
     <Link
@@ -69,6 +66,11 @@ function SidebarLink({
     >
       <item.icon size={18} className="sidebar-nav-icon" />
       <span>{item.label}</span>
+      {badgeCount !== undefined && badgeCount > 0 && (
+        <span className="sidebar-nav-badge">
+          {badgeCount}
+        </span>
+      )}
       {active && <ChevronRight size={14} className="sidebar-nav-chevron" />}
     </Link>
   );
@@ -83,6 +85,30 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [emAnaliseCount, setEmAnaliseCount] = useState<number>(0);
+
+  // Busca e escuta a contagem global de alunos com status 'Em análise'
+  useState(() => {
+    async function fetchEmAnaliseCount() {
+      try {
+        const supabase = createClient();
+        const { count, error } = await supabase
+          .from('alunos')
+          .select('*', { count: 'exact', head: true })
+          .eq('status_carteirinha', 'Em análise');
+
+        if (!error && count !== null) {
+          setEmAnaliseCount(count);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar total de alunos em análise:', err);
+      }
+    }
+
+    fetchEmAnaliseCount();
+    const interval = setInterval(fetchEmAnaliseCount, 20000); // pooling leve de 20s
+    return () => clearInterval(interval);
+  });
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -126,14 +152,18 @@ export default function AdminLayout({
 
         {/* Links de navegação */}
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
-            <SidebarLink
-              key={item.href}
-              item={item}
-              active={pathname === item.href}
-              onClick={() => setSidebarOpen(false)}
-            />
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const isEscolas = item.label === 'Entidades Escolares';
+            return (
+              <SidebarLink
+                key={item.href}
+                item={item}
+                active={pathname === item.href}
+                onClick={() => setSidebarOpen(false)}
+                badgeCount={isEscolas ? emAnaliseCount : undefined}
+              />
+            );
+          })}
         </nav>
 
         {/* Rodapé da sidebar */}
@@ -328,6 +358,21 @@ export default function AdminLayout({
         }
         .sidebar-nav-icon { flex-shrink: 0; }
         .sidebar-nav-chevron { margin-left: auto; opacity: 0.6; }
+        .sidebar-nav-badge {
+          background-color: #EF4444;
+          color: #ffffff;
+          font-size: 0.68rem;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          margin-left: 8px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 18px;
+          height: 18px;
+          line-height: 1;
+        }
 
         /* Rodapé sidebar */
         .sidebar-footer {

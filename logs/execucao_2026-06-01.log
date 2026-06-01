@@ -1,1 +1,2 @@
 [2026-06-01 15:24:00] INFO: Auditoria e Checklist: Realizada varredura de tabelas e RLS no Supabase remoto via MCP, identificados gaps de tabelas e buckets ausentes, sugeridas melhorias de usabilidade/sincronizacao offline e gerado o checklist mestre do app.
+[2026-06-01 15:51:00] INFO: Navegacao Global: Removida a opcao 'Aprovacao de Documentos' do menu lateral administrativo e adicionado badge de alerta em vermelho (ocultável se 0) ao lado de 'Entidades Escolares' representando o total dinamico de alunos 'Em analise' do municipio.

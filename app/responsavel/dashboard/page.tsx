@@ -128,7 +128,7 @@ export default function ResponsavelDashboard() {
             setUserCpf('');
           }
 
-          // Busca os alunos reais no Supabase com JOIN multinível para motorista e ônibus
+          // Busca os alunos reais no Supabase com JOIN multinível para motorista e ônibus ajustado
           const { data: alunosDB, error: alunosErr } = await supabase
             .from('alunos')
             .select(`
@@ -136,12 +136,12 @@ export default function ResponsavelDashboard() {
               rotas (
                 id,
                 nome,
-                motoristas_perfil (
+                perfis (
                   id,
-                  placa_veiculo,
-                  modelo_veiculo,
-                  perfis (
-                    nome
+                  nome,
+                  motoristas_perfil (
+                    placa_veiculo,
+                    modelo_veiculo
                   )
                 )
               )
@@ -151,10 +151,11 @@ export default function ResponsavelDashboard() {
           if (!alunosErr && alunosDB) {
             const mapeados: Filho[] = (alunosDB as any[]).map((a: any) => {
               const rota = a.rotas;
-              const motoristaPerfil = rota?.motoristas_perfil;
-              const motoristaNome = motoristaPerfil?.perfis?.nome || 'Aguardando Atribuição';
-              const veiculoNumero = motoristaPerfil 
-                ? `${motoristaPerfil.placa_veiculo} (${motoristaPerfil.modelo_veiculo || 'Ônibus'})` 
+              const motoristaPerfil = rota?.perfis;
+              const motoristaNome = motoristaPerfil?.nome || 'Aguardando Atribuição';
+              const veiculoInfo = motoristaPerfil?.motoristas_perfil;
+              const veiculoNumero = veiculoInfo 
+                ? `${veiculoInfo.placa_veiculo} (${veiculoInfo.modelo_veiculo || 'Ônibus'})` 
                 : 'Aguardando Atribuição';
 
               return {

@@ -530,6 +530,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           .maybeSingle();
 
         if (insertError) {
+          console.error('Erro na primeira tentativa de insert de aluno:', insertError);
           // Retry de resiliência caso schema difira
           const { data: retryData, error: retryError } = await supabase
             .from('alunos')
@@ -545,7 +546,10 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
             .select('id')
             .maybeSingle();
 
-          if (retryError) throw retryError;
+          if (retryError) {
+            console.error('Erro no retry de insert de aluno:', retryError);
+            throw new Error(`Falha ao salvar o estudante no banco de dados: ${retryError.message}`);
+          }
           if (retryData?.id) alunoSalvoId = retryData.id;
         } else if (insertData?.id) {
           alunoSalvoId = insertData.id;
@@ -569,53 +573,64 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
                 .from('documentos-alunos')
                 .upload(`documentos/${fileName}`, item.file, { upsert: true });
                 
+              if (storageError) {
+                console.error(`Erro no storage ao subir arquivo ${item.tipo}:`, storageError.message);
+              }
+
               if (!storageError) {
                 const publicUrl = supabase.storage
                   .from('documentos-alunos')
                   .getPublicUrl(`documentos/${fileName}`).data.publicUrl;
                   
-                await supabase.from('documentos_aluno').insert({
+                const { error: docInsertError } = await supabase.from('documentos_aluno').insert({
                   aluno_id: alunoSalvoId,
                   tipo_documento: item.tipo,
                   url_documento: publicUrl
                 });
+
+                if (docInsertError) {
+                  console.error(`Erro ao salvar referência do documento ${item.tipo}:`, docInsertError.message);
+                }
               }
             } catch (err) {
               console.warn(`Falha no upload do documento ${item.tipo}`, err);
             }
           }
         }
+        
+        // Conclui retornando o objeto reativo real
+        const novoFilho: Filho = {
+          id: alunoSalvoId,
+          nome: nomeAluno,
+          escola: escolaAluno,
+          serie: serieAluno,
+          statusCarteirinha: 'Em análise',
+          rotaId: 'Aguardando Atribuição',
+          fotoUrl: undefined,
+          motorista_nome: 'Aguardando Atribuição',
+          veiculo_numero: 'Aguardando Atribuição'
+        };
+
+        onSuccess(novoFilho);
+      } else {
+        // Modo Demonstração (Sem Usuário Logado)
+        console.log('Realizando cadastro em modo demonstração local');
+        const novoFilho: Filho = {
+          id: `aluno-new-${Date.now()}`,
+          nome: nomeAluno,
+          escola: escolaAluno,
+          serie: serieAluno,
+          statusCarteirinha: 'Em análise',
+          rotaId: 'Aguardando Atribuição',
+          fotoUrl: undefined,
+          motorista_nome: 'Aguardando Atribuição',
+          veiculo_numero: 'Aguardando Atribuição'
+        };
+        onSuccess(novoFilho);
       }
-
-      // Conclui retornando o objeto reativo
-      const novoFilho: Filho = {
-        id: alunoSalvoId,
-        nome: nomeAluno,
-        escola: escolaAluno,
-        serie: serieAluno,
-        statusCarteirinha: 'Em análise',
-        rotaId: 'Aguardando Atribuição',
-        fotoUrl: undefined,
-        motorista_nome: 'Aguardando Atribuição',
-        veiculo_numero: 'Aguardando Atribuição'
-      };
-
-      onSuccess(novoFilho);
     } catch (err: any) {
-      console.log('Realizando simulação de cadastro reativo local:', err.message);
-      // Fallback local
-      const novoFilho: Filho = {
-        id: `aluno-new-${Date.now()}`,
-        nome: nomeAluno,
-        escola: escolaAluno,
-        serie: serieAluno,
-        statusCarteirinha: 'Em análise',
-        rotaId: 'Aguardando Atribuição',
-        fotoUrl: undefined,
-        motorista_nome: 'Aguardando Atribuição',
-        veiculo_numero: 'Aguardando Atribuição'
-      };
-      onSuccess(novoFilho);
+      console.error('Erro detectado no fluxo do cadastro:', err);
+      onError(err.message || 'Erro ao realizar cadastro do aluno no Supabase. Verifique a conexão.');
     } finally {
       setLoading(false);
     }

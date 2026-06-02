@@ -95,11 +95,11 @@ export default function AdminLayout({
         const supabase = createClient();
         
         // 1. Verifica se existem escolas no banco para determinar se estamos em simulação ou produção real
-        const { data: escolasDB, error: escolasErr } = await supabase
+        const { count: escolasCount, error: escolasErr } = await supabase
           .from('escolas')
           .select('id', { count: 'exact', head: true });
 
-        if (!escolasErr && escolasDB && escolasDB.length > 0) {
+        if (!escolasErr && escolasCount !== null && escolasCount > 0) {
           // Produção Real: executa a contagem direta no banco
           const { count, error } = await supabase
             .from('alunos')

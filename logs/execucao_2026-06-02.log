@@ -9,4 +9,4 @@
 [2026-06-02 16:25:00] [INFO] Corrigido erro de Scan do GoTrue (Supabase Auth) na tabela auth.users. Definidos os campos de tokens de nulo para string vazia ('') nas contas mock para permitir a autenticação correta.
 [2026-06-02 16:28:00] [INFO] Corrigida recursão infinita (Infinite Recursion) na política RLS da tabela public.perfis. Atualizadas as políticas de perfis, rotas e veiculos para utilizar auth.jwt() em vez de subqueries recursivas.
 [2026-06-02 16:36:00] [INFO] Corrigida a persistência de auditoria de alunos (Aprovar/Rejeitar). As políticas de RLS na tabela public.alunos impediam SELECT e UPDATE por administradores. Aplicadas novas políticas de RLS liberando SELECT, UPDATE, INSERT e DELETE para admins e mantendo segurança de select para responsáveis.
-
+[2026-06-02 16:42:00] [INFO] Corrigida a contagem do badge vermelho de pendências na sidebar (layout.tsx). O check de banco de dados ativo falhava ao validar escolasDB.length com head: true. Corrigido para validar a propriedade count retornada, fazendo o badge zerar quando não há mais alunos com status 'Em análise'.

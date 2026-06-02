@@ -125,4 +125,4 @@ Fallback de localização: `{ latitude: -23.4178, longitude: -51.4269, foraDeTur
 | 27/05/2026 | AntiGravity | Carteirinha: QR Code real com qrcode.react |
 | 27/05/2026 | AntiGravity | Rastreio: localização GPS do banco + overlay fora de turno |
 | 27/05/2026 | AntiGravity | Migration SQL: status_carteirinha + tabela localizacao_veiculo |
-| 02/06/2026 | AntiGravity | Correção no cadastro de filhos: adição de data_nascimento no banco e exibição de erro real no frontend |
+| 02/06/2026 | AntiGravity | Correção no cadastro de filhos: data_nascimento, exibição de erro real no frontend e ajustes de RLS nas tabelas documentos_aluno e perfis (aluno aprovado sumir) |

@@ -6,6 +6,7 @@ indice.txt
 - [_docs/0101_Design_System.md](_docs/0101_Design_System.md)
 - [_docs/0102_Auditoria_Relatorio.md](_docs/0102_Auditoria_Relatorio.md)
 - [_docs/0103_Auditoria_Banco_Checklist.md](_docs/0103_Auditoria_Banco_Checklist.md)
+- [_docs/0104_Status_Sistema_Arapongas.md](_docs/0104_Status_Sistema_Arapongas.md)
 
 
 ## [02XX] Telas e UI (Frontend)

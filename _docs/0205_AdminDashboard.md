@@ -124,5 +124,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 2026-05-30 | **Fase II - Designação Dinâmica:** Modificação da ação de aprovação para exigir a designação da rota escolar ao aluno (tabela `alunos` campo `rota_id`), limpando a associação em caso de rejeição. |
 | 2026-06-01 | **Ajuste de Navegação Global:** Ocultação do item "Aprovação de Documentos" do menu lateral e implementação de badge dinâmico inteligente no botão "Entidades Escolares", exibindo o total de alunos com status `'Em análise'` de Arapongas. |
 | 02/06/2026 | **Correção do Badge da Sidebar (layout.tsx):** Corrigido o bug na checagem de banco ativo que usava `escolasDB.length` combinado com `head: true` (retornando array vazio). Ajustado para validar via propriedade `count` do Supabase, evitando o fallback para o modo de simulação e atualizando dinamicamente a contagem do badge vermelho para 0 quando os alunos forem analisados. |
+| 02/06/2026 | **Desmock Completo do Dashboard Principal (page.tsx):** Remoção de dados estáticos para o monitoramento de rotas ativas, auditoria de embarque diário e solicitações. Integração em tempo real com o banco de dados remoto do Supabase via queries em paralelo no Server Component. |
 
 

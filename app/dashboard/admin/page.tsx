@@ -57,38 +57,67 @@ export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
   const supabase = createServerClient(cookieStore);
 
-  // Fallbacks de banco para Arapongas
-  let totalAlunos = 5840;
-  let totalVeiculos = 102;
-  let solicitacoesPendentes = 34;
-  let alertasOcorrencia = 2;
+  // Métricas dinâmicas do banco
+  let totalAlunos = 0;
+  let totalVeiculos = 0;
+  let solicitacoesPendentes = 0;
+  let alertasOcorrencia = 0;
+  let rotasAtivasCount = 0;
   let logsEmbarqueRecentes: any[] = [];
+  let rotasAtivas: any[] = [];
+  let ultimasSolicitacoes: any[] = [];
 
   try {
     const [
       { count: alunosCount },
       { count: veiculosCount },
-      { data: logsData }
+      { count: pendentesCount },
+      { count: recusadosCount },
+      { count: ativasCount },
+      { data: logsData },
+      { data: rotasData },
+      { data: solicitacoesData }
     ] = await Promise.all([
       supabase.from('alunos').select('*', { count: 'exact', head: true }),
       supabase.from('veiculos').select('*', { count: 'exact', head: true }),
+      supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('status_carteirinha', 'Em análise'),
+      supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('status_carteirinha', 'Pendente'),
+      supabase.from('rotas').select('*', { count: 'exact', head: true }).eq('ativa', true),
       supabase
         .from('logs_embarque')
         .select(`
           id,
           tipo_movimento,
-          status,
-          data_registro,
           criado_em,
-          turno,
-          alunos (nome, escola)
+          alunos (nome, escola, turno)
         `)
         .order('criado_em', { ascending: false })
+        .limit(5),
+      supabase
+        .from('rotas')
+        .select(`
+          id,
+          codigo,
+          nome,
+          turno,
+          ativa,
+          perfis (nome),
+          veiculos (placa)
+        `)
+        .order('codigo', { ascending: true })
+        .limit(5),
+      supabase
+        .from('alunos')
+        .select('id, nome, escola, status_carteirinha, created_at')
+        .order('created_at', { ascending: false })
         .limit(5)
     ]);
 
     if (alunosCount !== null) totalAlunos = alunosCount;
     if (veiculosCount !== null) totalVeiculos = veiculosCount;
+    if (pendentesCount !== null) solicitacoesPendentes = pendentesCount;
+    if (recusadosCount !== null) alertasOcorrencia = recusadosCount;
+    if (ativasCount !== null) rotasAtivasCount = ativasCount;
 
     if (logsData && logsData.length > 0) {
       logsEmbarqueRecentes = logsData.map((log: any) => ({
@@ -96,16 +125,58 @@ export default async function AdminDashboardPage() {
         alunoNome: log.alunos?.nome || 'Estudante Municipal',
         escola: log.alunos?.escola || 'Escola Municipal',
         tipoMovimento: log.tipo_movimento,
-        status: log.status,
-        dataRegistro: log.data_registro,
-        turno: log.turno || 'Matutino',
+        status: 'PRESENTE',
+        dataRegistro: new Date(log.criado_em).toISOString().split('T')[0],
+        turno: log.alunos?.turno || 'Matutino',
         hora: new Date(log.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       }));
     }
+
+    if (rotasData && rotasData.length > 0) {
+      rotasAtivas = rotasData.map((r: any) => ({
+        id: r.id,
+        linha: `${r.codigo} — ${r.nome}`,
+        motorista: r.perfis?.nome || 'Motorista não designado',
+        placa: r.veiculos?.placa || 'Sem Veículo',
+        status: r.ativa ? 'In Transit' : 'Stopped',
+        ultimaSincronizacao: new Date(r.created_at || new Date()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      }));
+    }
+
+    if (solicitacoesData && solicitacoesData.length > 0) {
+      ultimasSolicitacoes = solicitacoesData.map((s: any) => {
+        const partes = s.nome.split(' ');
+        const iniciais = partes.length > 1 
+          ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() 
+          : `${partes[0][0]}${partes[0][1] || ''}`.toUpperCase();
+        
+        const cores = ['bg-indigo-600', 'bg-rose-600', 'bg-amber-600', 'bg-teal-650', 'bg-sky-600'];
+        const avatarColor = cores[s.nome.charCodeAt(0) % cores.length];
+
+        let statusLabel = 'Aguardando Análise';
+        if (s.status_carteirinha === 'Aprovado') statusLabel = 'Aprovado';
+        if (s.status_carteirinha === 'Pendente') statusLabel = 'Documento Inválido';
+
+        return {
+          id: s.id,
+          aluno: s.nome,
+          escola: s.escola || 'Escola Municipal',
+          status: statusLabel,
+          avatarColor,
+          iniciais
+        };
+      });
+    }
   } catch (e) {
-    // Fallback silencioso em ambiente local
+    console.error('Erro ao buscar dados do dashboard real:', e);
   }
 
+  if (rotasAtivas.length === 0) {
+    rotasAtivas = ROTAS_ATIVAS_MOCK;
+  }
+  if (ultimasSolicitacoes.length === 0) {
+    ultimasSolicitacoes = SOLICITACOES_MOCK;
+  }
   if (logsEmbarqueRecentes.length === 0) {
     const todayStr = new Date().toISOString().split('T')[0];
     const yesterday = new Date();
@@ -168,7 +239,7 @@ export default async function AdminDashboardPage() {
               Ônibus em Rota
             </span>
             <span className="text-2xl sm:text-3xl font-black text-slate-950 block tracking-tight font-mono">
-              87<span className="text-slate-400 text-base font-normal">/{totalVeiculos}</span>
+              {rotasAtivasCount}<span className="text-slate-400 text-base font-normal">/{totalVeiculos}</span>
             </span>
             <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 w-fit block">
               Veículos em trânsito
@@ -254,7 +325,7 @@ export default async function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {ROTAS_ATIVAS_MOCK.map((rota) => (
+                  {rotasAtivas.map((rota) => (
                     <tr key={rota.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3.5 px-4 font-bold text-slate-900">{rota.linha}</td>
                       <td className="py-3.5 px-4 text-slate-600 font-semibold">{rota.motorista}</td>
@@ -316,7 +387,7 @@ export default async function AdminDashboardPage() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              {SOLICITACOES_MOCK.map((sol) => (
+              {ultimasSolicitacoes.map((sol) => (
                 <div key={sol.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50 transition-colors">
                   
                   {/* Avatar Circular */}

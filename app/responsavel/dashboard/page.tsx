@@ -135,7 +135,7 @@ export default function ResponsavelDashboard() {
               id, nome, escola, serie, status_carteirinha, foto_url, rota_id,
               rotas (
                 id,
-                nome_rota,
+                nome,
                 motoristas_perfil (
                   id,
                   placa_veiculo,
@@ -163,7 +163,7 @@ export default function ResponsavelDashboard() {
                 escola:            a.escola,
                 serie:             a.serie ?? '—',
                 statusCarteirinha: mapStatus(a.status_carteirinha),
-                rotaId:            rota?.nome_rota ?? 'Aguardando Atribuição',
+                rotaId:            rota?.nome ?? 'Aguardando Atribuição',
                 fotoUrl:           a.foto_url ?? undefined,
                 motorista_nome:    motoristaNome,
                 veiculo_numero:    veiculoNumero,

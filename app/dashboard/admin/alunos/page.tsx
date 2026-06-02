@@ -12,6 +12,7 @@ interface AlunoAdmin {
   serie: string;
   rotaId: string;
   statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
+  rotaNome?: string;
 }
 
 const ALUNOS_MOCK: AlunoAdmin[] = [
@@ -27,6 +28,7 @@ export default function AlunosPage() {
   
   const [alunos, setAlunos] = useState<AlunoAdmin[]>([]);
   const [escolas, setEscolas] = useState<any[]>([]);
+  const [rotas, setRotas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [usandoMock, setUsandoMock] = useState(false);
@@ -41,7 +43,7 @@ export default function AlunosPage() {
   const [escola, setEscola] = useState('Escola Municipal Dorcelina Folador');
   const [escolaId, setEscolaId] = useState('');
   const [serie, setSerie] = useState('');
-  const [rotaId, setRotaId] = useState('Rota 04');
+  const [rotaId, setRotaId] = useState('');
   const [status, setStatus] = useState<'Pendente' | 'Em análise' | 'Aprovado'>('Pendente');
 
   // Estado de Toast
@@ -55,12 +57,13 @@ export default function AlunosPage() {
   useEffect(() => {
     loadAlunos();
     loadEscolas();
+    loadRotas();
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const escolaParam = params.get('escola');
-      if (escolaParam) {
-        setSearchTerm(escolaParam);
+      const schoolParam = params.get('escola');
+      if (schoolParam) {
+        setSearchTerm(schoolParam);
       }
     }
   }, []);
@@ -89,12 +92,40 @@ export default function AlunosPage() {
     }
   }
 
+  async function loadRotas() {
+    try {
+      const { data, error } = await supabase
+        .from('rotas')
+        .select('id, nome, codigo');
+      if (!error && data) {
+        setRotas(data);
+      } else {
+        setRotas([
+          { id: '9d0f2832-7288-4682-9642-17cb25e36928', nome: 'Rota 04 — Zona Rural', codigo: 'RT-04' },
+          { id: 'b63e2840-7288-4682-9642-17cb25e36004', nome: 'Rota 22 — Centro', codigo: 'RT-22' }
+        ]);
+      }
+    } catch {
+      setRotas([
+        { id: '9d0f2832-7288-4682-9642-17cb25e36928', nome: 'Rota 04 — Zona Rural', codigo: 'RT-04' },
+        { id: 'b63e2840-7288-4682-9642-17cb25e36004', nome: 'Rota 22 — Centro', codigo: 'RT-22' }
+      ]);
+    }
+  }
+
   async function loadAlunos() {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, escola_id, rota_id, status_carteirinha');
+        .select(`
+          id, nome, escola, escola_id, rota_id, status_carteirinha, serie,
+          rotas (
+            id,
+            nome,
+            codigo
+          )
+        `);
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAdmin[] = data.map((a: any) => ({
@@ -102,9 +133,10 @@ export default function AlunosPage() {
           nome: a.nome,
           escola: a.escola,
           escolaId: a.escola_id ?? undefined,
-          serie: '—',
-          rotaId: a.rota_id ?? 'Aguardando Atribuição',
-          statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente'
+          serie: a.serie ?? '—',
+          rotaId: a.rota_id ?? '',
+          statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente',
+          rotaNome: a.rotas ? `${a.rotas.codigo || 'RT'} — ${a.rotas.nome}` : undefined
         }));
         setAlunos(mapped);
         setUsandoMock(false);
@@ -304,6 +336,7 @@ export default function AlunosPage() {
               setEscolaId('');
               setEscola('Escola Municipal Dorcelina Folador');
             }
+            setRotaId(rotas.length > 0 ? rotas[0].id : '');
             setModalNovo(true);
           }}
           className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
@@ -366,7 +399,7 @@ export default function AlunosPage() {
                     <td className="py-3.5 px-4 font-bold text-slate-900">{aluno.nome}</td>
                     <td className="py-3.5 px-4 text-slate-600">{aluno.escola}</td>
                     <td className="py-3.5 px-4 text-slate-500 font-mono">{aluno.serie}</td>
-                    <td className="py-3.5 px-4 text-slate-600 font-semibold">{aluno.rotaId}</td>
+                    <td className="py-3.5 px-4 text-slate-600 font-semibold">{aluno.rotaNome || aluno.rotaId || 'Aguardando Atribuição'}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                         aluno.statusCarteirinha === 'Aprovado'
@@ -475,11 +508,10 @@ export default function AlunosPage() {
                   onChange={(e) => setRotaId(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="Rota 04">Rota 04 — Zona Rural</option>
-                  <option value="Rota 07">Rota 07 — Norte</option>
-                  <option value="Rota 22">Rota 22 — Centro</option>
-                  <option value="Rota 14">Rota 14 — Sul</option>
-                  <option value="Rota 19">Rota 19 — Leste</option>
+                  <option value="">-- Sem Rota --</option>
+                  {rotas.map((r) => (
+                    <option key={r.id} value={r.id}>{r.codigo || 'RT'} — {r.nome}</option>
+                  ))}
                 </select>
               </div>
 
@@ -581,11 +613,10 @@ export default function AlunosPage() {
                   onChange={(e) => setRotaId(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="Rota 04">Rota 04 — Zona Rural</option>
-                  <option value="Rota 07">Rota 07 — Norte</option>
-                  <option value="Rota 22">Rota 22 — Centro</option>
-                  <option value="Rota 14">Rota 14 — Sul</option>
-                  <option value="Rota 19">Rota 19 — Leste</option>
+                  <option value="">-- Sem Rota --</option>
+                  {rotas.map((r) => (
+                    <option key={r.id} value={r.id}>{r.codigo || 'RT'} — {r.nome}</option>
+                  ))}
                 </select>
               </div>
 

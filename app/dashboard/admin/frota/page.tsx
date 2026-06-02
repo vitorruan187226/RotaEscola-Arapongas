@@ -45,6 +45,16 @@ export default function FrotaPage() {
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Estados dos motoristas reais
+  const [motoristasReal, setMotoristasReal] = useState<any[]>([]);
+  const [modalMotorista, setModalMotorista] = useState(false);
+  const [motNome, setMotNome] = useState('');
+  const [motCpf, setMotCpf] = useState('');
+  const [motTelefone, setMotTelefone] = useState('');
+  const [motPlaca, setMotPlaca] = useState('');
+  const [motModelo, setMotModelo] = useState('');
+  const [motCapacidade, setMotCapacidade] = useState(15);
+
   const showToast = (text: string, type: 'success' | 'error') => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 3000);
@@ -57,33 +67,92 @@ export default function FrotaPage() {
   async function loadVeiculos() {
     setLoading(true);
     try {
+      // 1. Busca motoristas reais cadastrados no banco
+      const { data: motData, error: motError } = await supabase
+        .from('perfis')
+        .select('id, nome')
+        .eq('tipo_usuario', 'Motorista')
+        .order('nome', { ascending: true });
+
+      const listMots = motData || [];
+      setMotoristasReal(listMots);
+
+      // 2. Busca veículos cadastrados no banco
       const { data, error } = await supabase
         .from('veiculos')
         .select('*');
 
       if (!error && data && data.length > 0) {
-        const mapped: VeiculoAdmin[] = data.map((v: any) => ({
-          id: v.id,
-          placa: v.placa,
-          modelo: v.modelo,
-          capacidade: v.capacidade,
-          motorista: v.motorista_id ?? 'Motorista não atribuído',
-          tipo: (v.tipo as any) ?? 'Próprio',
-          status: (v.status as any) ?? 'Ativo'
-        }));
+        const mapped: VeiculoAdmin[] = data.map((v: any) => {
+          // De-para de UUID para Nome do motorista
+          const motEncontrado = listMots.find((m: any) => m.id === v.motorista_id);
+          return {
+            id: v.id,
+            placa: v.placa,
+            modelo: v.modelo,
+            capacidade: v.capacidade,
+            motorista: motEncontrado ? motEncontrado.nome : (v.motorista_id ?? 'Motorista não atribuído'),
+            tipo: (v.tipo as any) ?? 'Próprio',
+            status: (v.status as any) ?? 'Ativo'
+          };
+        });
         setVeiculos(mapped);
         setUsandoMock(false);
       } else {
         setVeiculos(VEICULOS_MOCK);
         setUsandoMock(true);
       }
-    } catch {
+    } catch (err) {
+      console.error('Erro ao buscar dados de frota:', err);
       setVeiculos(VEICULOS_MOCK);
       setUsandoMock(true);
     } finally {
       setLoading(false);
     }
   }
+
+  // Ação para criar motorista no Auth + Banco via API Route
+  const handleCreateMotorista = async () => {
+    if (!motNome.trim() || !motCpf.trim()) return;
+    setLoadingAction(true);
+    try {
+      const res = await fetch('/api/admin/motoristas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: motNome,
+          cpf: motCpf,
+          telefone: motTelefone,
+          placa: motPlaca,
+          modelo: motModelo,
+          capacidade: Number(motCapacidade)
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao cadastrar motorista.');
+      }
+
+      showToast(data.message || 'Motorista cadastrado com sucesso!', 'success');
+      setModalMotorista(false);
+      
+      // Limpa formulário
+      setMotNome('');
+      setMotCpf('');
+      setMotTelefone('');
+      setMotPlaca('');
+      setMotModelo('');
+      
+      // Recarrega
+      await loadVeiculos();
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Erro ao realizar cadastro.', 'error');
+    } finally {
+      setLoadingAction(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!placa.trim() || !modelo.trim() || !motorista.trim()) return;
@@ -198,6 +267,20 @@ export default function FrotaPage() {
         <div className="flex gap-2">
           <button
             onClick={() => {
+              setMotNome('');
+              setMotCpf('');
+              setMotTelefone('');
+              setMotPlaca('');
+              setMotModelo('');
+              setModalMotorista(true);
+            }}
+            className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border shadow-sm"
+          >
+            <Plus size={14} className="text-amber-500" />
+            <span>Novo Motorista</span>
+          </button>
+          <button
+            onClick={() => {
               setPlaca('');
               setModelo('');
               setMotorista('');
@@ -305,6 +388,115 @@ export default function FrotaPage() {
         </div>
       </div>
 
+      {/* MODAL: NOVO MOTORISTA */}
+      {modalMotorista && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn">
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm">Registrar Motorista Real</h3>
+                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase font-mono">SEMED Arapongas</span>
+              </div>
+              <button onClick={() => setModalMotorista(false)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                <X size={15} />
+              </button>
+            </div>
+            
+            <div className="p-5 flex flex-col gap-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nome Completo</label>
+                <input
+                  type="text"
+                  value={motNome}
+                  onChange={(e) => setMotNome(e.target.value)}
+                  placeholder="Nome do motorista"
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">CPF (Somente Números - Login)</label>
+                <input
+                  type="text"
+                  value={motCpf}
+                  onChange={(e) => setMotCpf(e.target.value)}
+                  placeholder="Ex: 12345678900"
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Telefone (Opcional)</label>
+                <input
+                  type="text"
+                  value={motTelefone}
+                  onChange={(e) => setMotTelefone(e.target.value)}
+                  placeholder="Ex: 43999998888"
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
+                />
+              </div>
+
+              <div className="border-t border-dashed my-2 pt-2">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-2">Vínculo de Veículo (Opcional)</span>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Placa do Veículo</label>
+                    <input
+                      type="text"
+                      value={motPlaca}
+                      onChange={(e) => setMotPlaca(e.target.value)}
+                      placeholder="Ex: AAA-1234"
+                      className="w-full px-3 py-2 rounded-lg border text-[11px] font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Modelo do Veículo</label>
+                    <input
+                      type="text"
+                      value={motModelo}
+                      onChange={(e) => setMotModelo(e.target.value)}
+                      placeholder="Ex: Van Renault"
+                      className="w-full px-3 py-2 rounded-lg border text-[11px] font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Capacidade (Lugares)</label>
+                  <input
+                    type="number"
+                    value={motCapacidade}
+                    onChange={(e) => setMotCapacidade(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg border text-[11px] font-bold text-slate-850 focus:outline-none focus:border-slate-900 transition-all font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
+              <button
+                disabled={loadingAction}
+                onClick={() => setModalMotorista(false)}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!motNome.trim() || !motCpf.trim() || loadingAction}
+                onClick={handleCreateMotorista}
+                className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
+                  motNome.trim() && motCpf.trim() && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
+                }`}
+              >
+                {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Salvar Motorista'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: NOVO VEÍCULO */}
       {modalNovo && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -355,13 +547,16 @@ export default function FrotaPage() {
 
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Motorista Atribuído</label>
-                <input
-                  type="text"
+                <select
                   value={motorista}
                   onChange={(e) => setMotorista(e.target.value)}
-                  placeholder="Nome do motorista"
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
-                />
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="">-- Selecione o Motorista --</option>
+                  {motoristasReal.map((mot) => (
+                    <option key={mot.id} value={mot.id}>{mot.nome}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

@@ -107,7 +107,7 @@ interface AtividadeRecente {
 | Gestão de Alunos | `alunos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` |
 | Frota e Veículos | `frota/page.tsx` | ✅ Ativo (CRUD real) | `veiculos` |
 | Análise de Docs | `documentos/page.tsx` | ✅ Ativo (Acessado por atalho / Oculto na sidebar) | `alunos` + `rotas` + Storage |
-| Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real) | `rotas` |
+| Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real + Motorista Designado) | `rotas` + `perfis` |
 
 ## Novo Fluxo de Aprovação e Designação de Rota
 No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimentada em tempo real com registros no status `'Em análise'`. 
@@ -125,5 +125,7 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 2026-06-01 | **Ajuste de Navegação Global:** Ocultação do item "Aprovação de Documentos" do menu lateral e implementação de badge dinâmico inteligente no botão "Entidades Escolares", exibindo o total de alunos com status `'Em análise'` de Arapongas. |
 | 02/06/2026 | **Correção do Badge da Sidebar (layout.tsx):** Corrigido o bug na checagem de banco ativo que usava `escolasDB.length` combinado com `head: true` (retornando array vazio). Ajustado para validar via propriedade `count` do Supabase, evitando o fallback para o modo de simulação e atualizando dinamicamente a contagem do badge vermelho para 0 quando os alunos forem analisados. |
 | 02/06/2026 | **Desmock Completo do Dashboard Principal (page.tsx):** Remoção de dados estáticos para o monitoramento de rotas ativas, auditoria de embarque diário e solicitações. Integração em tempo real com o banco de dados remoto do Supabase via queries em paralelo no Server Component. |
+| 02/06/2026 | **Cadastro Real de Motoristas (frota/page.tsx + /api/admin/motoristas):** Criada API Route com Service Role para criar motoristas no Supabase Auth + tabelas `perfis` e `motoristas_perfil`. Modal de cadastro adicionado ao painel de Frota. Select de motoristas reais adicionado ao formulário de criação de veículos. |
+| 02/06/2026 | **Designação de Motorista nas Rotas (rotas/page.tsx):** Adicionado campo "Motorista Designado" (dropdown) no modal de criação e edição de rotas. Motoristas buscados da tabela `perfis` (tipo_usuario = 'Motorista') com join em `motoristas_perfil`. `motorista_id` (uuid) persistido na coluna `rotas.motorista_id` → FK para `perfis.id`. Coluna "Motorista" exibida na tabela de listagem. Build validado: 19/19 páginas sem erros. |
 
 

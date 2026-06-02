@@ -15,6 +15,8 @@ interface Rota {
   nome: string;
   veiculo_id?: string | null;
   veiculo_placa?: string | null;
+  motorista_id?: string | null;
+  motorista_nome?: string | null;
   horario_saida?: string | null;
   horario_fim?: string | null;
   ativa?: boolean;
@@ -23,10 +25,17 @@ interface Rota {
   created_at?: string | null;
 }
 
+interface Motorista {
+  id: string;
+  nome: string;
+  placa_veiculo?: string | null;
+}
+
 interface RotaForm {
   codigo: string;
   nome: string;
   veiculo_id: string;
+  motorista_id: string;
   horario_inicio: string;
   horario_fim: string;
   ativa: boolean;
@@ -37,6 +46,7 @@ const EMPTY_FORM: RotaForm = {
   codigo: '',
   nome: '',
   veiculo_id: '',
+  motorista_id: '',
   horario_inicio: '06:30',
   horario_fim: '12:30',
   ativa: true,
@@ -88,13 +98,14 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
 
 /* ─── Modal ─────────────────────────────────────────── */
 function RotaModal({
-  open, onClose, onSave, editData, veiculos,
+  open, onClose, onSave, editData, veiculos, motoristas,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (form: RotaForm, id?: string) => Promise<void>;
   editData?: Rota | null;
   veiculos: any[];
+  motoristas: Motorista[];
 }) {
   const [form, setForm] = useState<RotaForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -105,6 +116,7 @@ function RotaModal({
         codigo: editData.codigo ?? '',
         nome: editData.nome ?? '',
         veiculo_id: editData.veiculo_id ?? '',
+        motorista_id: editData.motorista_id ?? '',
         horario_inicio: editData.horario_saida ?? '06:30',
         horario_fim: editData.horario_fim ?? '12:30',
         ativa: editData.ativa ?? (editData.status === 'Ativo'),
@@ -231,6 +243,34 @@ function RotaModal({
             </select>
           </div>
 
+          {/* Motorista dropdown */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Motorista Designado
+            </label>
+            <select
+              value={form.motorista_id}
+              onChange={e => setForm(p => ({ ...p, motorista_id: e.target.value }))}
+              style={{
+                padding: '10px 14px', borderRadius: '10px',
+                border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
+                outline: 'none', background: '#F8FAFC', color: '#0F172A', cursor: 'pointer',
+              }}
+            >
+              <option value="">-- Sem Motorista --</option>
+              {motoristas.map(m => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}{m.placa_veiculo ? ` — ${m.placa_veiculo}` : ''}
+                </option>
+              ))}
+            </select>
+            {motoristas.length === 0 && (
+              <span style={{ fontSize: '0.72rem', color: '#F59E0B', fontWeight: 600 }}>
+                ⚠ Nenhum motorista cadastrado. Acesse "Frota e Veículos" para cadastrar.
+              </span>
+            )}
+          </div>
+
           {/* Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -285,6 +325,7 @@ export default function RotasPage() {
 
   const [rotas, setRotas] = useState<Rota[]>([]);
   const [veiculos, setVeiculos] = useState<any[]>([]);
+  const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [filtered, setFiltered] = useState<Rota[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -309,6 +350,28 @@ export default function RotasPage() {
     }
   }, [supabase]);
 
+  /* ── Fetch Motoristas ── */
+  const fetchMotoristas = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('perfis')
+        .select('id, nome, motoristas_perfil(placa_veiculo)')
+        .eq('tipo_usuario', 'Motorista')
+        .order('nome', { ascending: true });
+      if (!error && data) {
+        setMotoristas(
+          (data as any[]).map(m => ({
+            id: m.id,
+            nome: m.nome,
+            placa_veiculo: m.motoristas_perfil?.[0]?.placa_veiculo ?? null,
+          }))
+        );
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar motoristas para rotas:', err);
+    }
+  }, [supabase]);
+
   /* ── Fetch Rotas ── */
   const fetchRotas = useCallback(async () => {
     setLoading(true);
@@ -316,11 +379,15 @@ export default function RotasPage() {
       const { data, error } = await supabase
         .from('rotas')
         .select(`
-          id, codigo, nome, horario_inicio, horario_fim, ativa, turno, veiculo_id, created_at,
+          id, codigo, nome, horario_inicio, horario_fim, ativa, turno, veiculo_id, motorista_id, created_at,
           veiculos (
             id,
             placa,
             tipo
+          ),
+          perfis (
+            id,
+            nome
           )
         `)
         .order('codigo', { ascending: true });
@@ -333,6 +400,8 @@ export default function RotasPage() {
         nome: r.nome || 'Rota Geral',
         veiculo_id: r.veiculo_id ?? null,
         veiculo_placa: r.veiculos?.placa ?? '—',
+        motorista_id: r.motorista_id ?? null,
+        motorista_nome: r.perfis?.nome ?? null,
         horario_saida: r.horario_inicio ? r.horario_inicio.substring(0, 5) : '00:00',
         horario_fim: r.horario_fim ? r.horario_fim.substring(0, 5) : '00:00',
         ativa: r.ativa,
@@ -355,7 +424,8 @@ export default function RotasPage() {
   useEffect(() => { 
     fetchRotas(); 
     fetchVeiculos();
-  }, [fetchRotas, fetchVeiculos]);
+    fetchMotoristas();
+  }, [fetchRotas, fetchVeiculos, fetchMotoristas]);
 
   /* ── Search filter ── */
   useEffect(() => {
@@ -413,6 +483,7 @@ export default function RotasPage() {
         codigo: form.codigo,
         nome: form.nome,
         veiculo_id: form.veiculo_id || null,
+        motorista_id: form.motorista_id || null,
         horario_inicio: form.horario_inicio ? `${form.horario_inicio}:00` : null,
         horario_fim: form.horario_fim ? `${form.horario_fim}:00` : null,
         ativa: form.ativa,
@@ -588,7 +659,7 @@ export default function RotasPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: '#F8FAFC' }}>
-                    {['Código', 'Nome da Rota', 'Veículo', 'Horário', 'Status', 'Ações'].map(h => (
+                    {['Código', 'Nome da Rota', 'Veículo', 'Motorista', 'Horário', 'Status', 'Ações'].map(h => (
                       <th key={h} style={{
                         padding: '12px 16px', fontSize: '0.72rem', fontWeight: 700,
                         textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -615,6 +686,12 @@ export default function RotasPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Bus size={13} style={{ color: '#94A3B8' }} />
                             {r.veiculo_placa ?? '—'}
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 16px', color: '#475569', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Users size={13} style={{ color: '#94A3B8' }} />
+                            {r.motorista_nome ?? <span style={{ color: '#CBD5E1', fontStyle: 'italic', fontSize: '0.8rem' }}>Sem motorista</span>}
                           </div>
                         </td>
                         <td style={{ padding: '14px 16px', color: '#475569', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
@@ -697,6 +774,7 @@ export default function RotasPage() {
         onSave={handleSave}
         editData={editRota}
         veiculos={veiculos}
+        motoristas={motoristas}
       />
 
       {/* ── Toast ── */}

@@ -70,3 +70,4 @@ interface Aluno {
 |---|---|
 | 27/05/2026 | Reconstrução total com design premium estilo iOS/Android nativo |
 | 28/05/2026 | Refinamento do checklist (ciclo de 3 estados, reset automático, data e turno no lote Supabase) |
+| 02/06/2026 | Correção no carregamento de dados (loadData): mapeamento correto das colunas id (em vez de auth_user_id), nome (em vez de nome_rota) e filtro de motorista_id |

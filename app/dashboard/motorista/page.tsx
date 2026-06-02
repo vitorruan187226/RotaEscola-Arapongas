@@ -131,58 +131,57 @@ export default function MotoristaDashboardPage() {
         const { data: perfil } = await supabase
           .from('perfis')
           .select('id, nome')
-          .eq('auth_user_id', user.id)
-          .single();
+          .eq('id', user.id)
+          .maybeSingle();
           
         if (perfil) {
           const { data: driverPerfil } = await supabase
             .from('motoristas_perfil')
             .select('id, placa_veiculo, modelo_veiculo')
             .eq('perfil_id', perfil.id)
-            .single();
+            .maybeSingle();
 
-          if (driverPerfil) {
-            const { data: dbRotas } = await supabase
-              .from('rotas')
-              .select('id, nome_rota, turno')
-              .eq('motorista_id', driverPerfil.id);
+          // Na tabela public.rotas, a coluna motorista_id referencia public.perfis.id
+          const { data: dbRotas } = await supabase
+            .from('rotas')
+            .select('id, nome, codigo, turno')
+            .eq('motorista_id', perfil.id);
 
-            if (dbRotas && dbRotas.length > 0) {
-              const mappedRotas: RotaConfig[] = [];
-              
-              for (const r of dbRotas) {
-                const { data: dbAlunos } = await supabase
-                  .from('alunos')
-                  .select('id, nome, escola, foto_url, responsavel_id')
-                  .eq('rota_id', r.id)
-                  .eq('turno', turno);
+          if (dbRotas && dbRotas.length > 0) {
+            const mappedRotas: RotaConfig[] = [];
+            
+            for (const r of dbRotas) {
+              const { data: dbAlunos } = await supabase
+                .from('alunos')
+                .select('id, nome, escola, foto_url, responsavel_id')
+                .eq('rota_id', r.id)
+                .eq('turno', turno === 'Manhã' ? 'Manhã' : turno === 'Tarde' ? 'Tarde' : 'Noite');
 
-                mappedRotas.push({
-                  id: r.id,
-                  codigo: r.nome_rota.includes('—') ? r.nome_rota.split('—')[0].trim() : 'Rota',
-                  nome: r.nome_rota.includes('—') ? r.nome_rota.split('—')[1].trim() : r.nome_rota,
-                  placa: driverPerfil.placa_veiculo || 'SEM PLACA',
-                  veiculo: driverPerfil.modelo_veiculo || 'Veículo',
-                  alunos: (dbAlunos || []).map((aluno) => ({
-                    id: aluno.id,
-                    nome: aluno.nome,
-                    escola: aluno.escola || 'Escola Municipal',
-                    nee: false,
-                    aBordo: false,
-                    statusLocal: 'pendente',
-                    fotoUrl: aluno.foto_url || undefined,
-                    responsavelId: aluno.responsavel_id || undefined
-                  }))
-                });
-              }
-
-              setRotas(mappedRotas);
-              if (mappedRotas.length > 0 && !mappedRotas.some(r => r.id === selectedRotaId)) {
-                setSelectedRotaId(mappedRotas[0].id);
-              }
-              setLoading(false);
-              return;
+              mappedRotas.push({
+                id: r.id,
+                codigo: r.codigo || 'RT',
+                nome: r.nome || 'Rota sem Nome',
+                placa: driverPerfil?.placa_veiculo || 'SEM PLACA',
+                veiculo: driverPerfil?.modelo_veiculo || 'Veículo',
+                alunos: (dbAlunos || []).map((aluno) => ({
+                  id: aluno.id,
+                  nome: aluno.nome,
+                  escola: aluno.escola || 'Escola Municipal',
+                  nee: false,
+                  aBordo: false,
+                  statusLocal: 'pendente',
+                  fotoUrl: aluno.foto_url || undefined,
+                  responsavelId: aluno.responsavel_id || undefined
+                }))
+              });
             }
+
+            setRotas(mappedRotas);
+            if (mappedRotas.length > 0 && !mappedRotas.some(r => r.id === selectedRotaId)) {
+              setSelectedRotaId(mappedRotas[0].id);
+            }
+            setLoading(false);
+            return;
           }
         }
       }

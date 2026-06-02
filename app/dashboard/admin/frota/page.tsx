@@ -146,6 +146,28 @@ export default function FrotaPage() {
     }
   };
 
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const novoStatus = currentStatus === 'Ativo' ? 'Manutenção' : 'Ativo';
+    const isMock = id.startsWith('v-mock-') || id.startsWith('v-gen-') || id.startsWith('v1') || id.startsWith('v2') || id.startsWith('v3') || id.startsWith('v4') || id.startsWith('v5') || usandoMock;
+
+    try {
+      if (!isMock) {
+        const { error } = await supabase
+          .from('veiculos')
+          .update({ status: novoStatus })
+          .eq('id', id);
+
+        if (error) throw error;
+      }
+
+      setVeiculos(prev => prev.map(v => v.id === id ? { ...v, status: novoStatus } : v));
+      showToast('Status do veículo atualizado com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao alternar status do veículo:', err);
+      showToast('Erro ao atualizar status no banco.', 'error');
+    }
+  };
+
   const filteredVeiculos = veiculos.filter(v => {
     if (filterType === 'Todos') return true;
     if (filterType === 'Manutenção') return v.status === 'Manutenção';
@@ -242,6 +264,7 @@ export default function FrotaPage() {
                   <th className="py-3 px-4">Motorista Atribuído</th>
                   <th className="py-3 px-4">Tipo</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -265,6 +288,14 @@ export default function FrotaPage() {
                         <span className={`w-1 h-1 rounded-full ${v.status === 'Ativo' ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`} />
                         {v.status}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <button
+                        onClick={() => handleToggleStatus(v.id, v.status)}
+                        className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border shadow-sm"
+                      >
+                        Alternar Status
+                      </button>
                     </td>
                   </tr>
                 ))}

@@ -53,3 +53,5 @@ create table if not exists public.veiculos (
 | Data | Alteração |
 |---|---|
 | 02/06/2026 | **Criação do Bloquinho e Ajuste de DDL:** Provisionamento das colunas `modelo` e `motorista_id` para suportar a inserção direta do front-end na tabela `veiculos`, evitando erros de sintaxe SQL e sumiço de dados ao recarregar a tela. |
+| 02/06/2026 | **Implementação de Botão de Status (Ações):** Inclusão da coluna de ações e do botão "Alternar Status" na tabela de frota de veículos, acionando a query de UPDATE de status no Supabase de `'Ativo'` para `'Manutenção'` e vice-versa de forma persistente. |
+

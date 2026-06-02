@@ -97,7 +97,10 @@ export default function FrotaPage() {
           .insert({
             placa: placa.toUpperCase(),
             modelo,
-            capacidade: Number(capacidade)
+            capacidade: Number(capacidade),
+            motorista_id: motorista,
+            tipo,
+            status
           })
           .select('id')
           .maybeSingle();

@@ -5,6 +5,8 @@
 [2026-06-02 16:15:00] [INFO] Lógica de usandoMock/usingMock corrigida nas páginas de rotas e alunos do dashboard admin, garantindo a persistência real dos dados mesmo com listas vazias no banco.
 [2026-06-02 16:17:00] [INFO] Criada documentação técnica _docs/0405_Persistencia_Rotas_Autenticacao.md e adicionada ao índice principal.
 [2026-06-02 16:20:00] [INFO] Executado build de produção ('npm run build') localmente com sucesso completo: 100% das páginas geradas sem erros. Tarefa de persistência de rotas concluída.
-
-
+[2026-06-02 16:23:00] [INFO] Corrigida ausência da coluna created_at nas tabelas public.rotas e public.alunos no Supabase remoto, resolvendo o erro 400.
+[2026-06-02 16:25:00] [INFO] Corrigido erro de Scan do GoTrue (Supabase Auth) na tabela auth.users. Definidos os campos de tokens de nulo para string vazia ('') nas contas mock para permitir a autenticação correta.
+[2026-06-02 16:28:00] [INFO] Corrigida recursão infinita (Infinite Recursion) na política RLS da tabela public.perfis. Atualizadas as políticas de perfis, rotas e veiculos para utilizar auth.jwt() em vez de subqueries recursivas.
+[2026-06-02 16:36:00] [INFO] Corrigida a persistência de auditoria de alunos (Aprovar/Rejeitar). As políticas de RLS na tabela public.alunos impediam SELECT e UPDATE por administradores. Aplicadas novas políticas de RLS liberando SELECT, UPDATE, INSERT e DELETE para admins e mantendo segurança de select para responsáveis.
 

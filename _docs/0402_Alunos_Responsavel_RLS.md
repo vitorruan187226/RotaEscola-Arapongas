@@ -17,17 +17,72 @@ Garantimos que a tabela alunos tenha as restrições de RLS ativadas antes de ap
 alter table alunos enable row level security;
 ```
 
-### 3. Política de Segurança RLS
-Criamos uma regra dedicada que restringe consultas do tipo `SELECT` baseando-se no ID do usuário atualmente autenticado (`auth.uid()`):
-- **Nome da política:** `"Pais podem ver apenas os dados do próprio filho"`
-- **Ação:** `SELECT`
-- **Condição:** `auth.uid() = responsavel_id`
+###### 3. Políticas de Segurança RLS Robustas
+Para atender os diferentes papéis de acesso na rede municipal (SEMED/Administradores, Motoristas e Responsáveis), configuramos as seguintes regras de segurança na tabela `alunos`:
 
+#### A. Leitura (SELECT)
+Permite acesso total a administradores (SEMED) e motoristas, e restringe os responsáveis à visualização exclusiva dos próprios filhos:
 ```sql
-create policy "Pais podem ver apenas os dados do próprio filho"
-  on alunos
-  for select
-  using (auth.uid() = responsavel_id);
+CREATE POLICY "Usuarios leem alunos de acordo com seu papel"
+  ON public.alunos
+  FOR SELECT
+  TO authenticated
+  USING (
+    -- Admins têm acesso total
+    ((auth.jwt() -> 'user_metadata' ->> 'role') IN ('Admin', 'admin')) OR
+    ((auth.jwt() -> 'user_metadata' ->> 'tipo_usuario') IN ('Admin', 'admin')) OR
+    -- Motoristas têm acesso total para checagem de QR Code e chamada
+    ((auth.jwt() -> 'user_metadata' ->> 'role') IN ('Motorista', 'motorista')) OR
+    ((auth.jwt() -> 'user_metadata' ->> 'tipo_usuario') IN ('Motorista', 'motorista')) OR
+    -- Responsáveis (Pais) veem apenas seus próprios filhos
+    (auth.uid() = responsavel_id)
+  );
+```
+
+#### B. Atualização (UPDATE)
+Permite que administradores modifiquem quaisquer registros (como aprovar/rejeitar e designar rota), e responsáveis atualizem registros dos próprios filhos (ex: atualizar fotos ou documentos):
+```sql
+CREATE POLICY "Usuarios atualizam alunos de acordo com seu papel"
+  ON public.alunos
+  FOR UPDATE
+  TO authenticated
+  USING (
+    ((auth.jwt() -> 'user_metadata' ->> 'role') IN ('Admin', 'admin')) OR
+    ((auth.jwt() -> 'user_metadata' ->> 'tipo_usuario') IN ('Admin', 'admin')) OR
+    (auth.uid() = responsavel_id)
+  )
+  WITH CHECK (
+    ((auth.jwt() -> 'user_metadata' ->> 'role') IN ('Admin', 'admin')) OR
+    ((auth.jwt() -> 'user_metadata' ->> 'tipo_usuario') IN ('Admin', 'admin')) OR
+    (auth.uid() = responsavel_id)
+  );
+```
+
+#### C. Inserção (INSERT)
+Administradores podem inserir novos alunos, e os responsáveis podem inserir novos registros de alunos desde que vinculados a si mesmos (`responsavel_id` igual ao seu `auth.uid()`):
+```sql
+CREATE POLICY "Usuarios inserem alunos de acordo com seu papel"
+  ON public.alunos
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    ((auth.jwt() -> 'user_metadata' ->> 'role') IN ('Admin', 'admin')) OR
+    ((auth.jwt() -> 'user_metadata' ->> 'tipo_usuario') IN ('Admin', 'admin')) OR
+    (auth.uid() = responsavel_id)
+  );
+```
+
+#### D. Exclusão (DELETE)
+Restrito exclusivamente aos administradores da Secretaria de Educação (SEMED):
+```sql
+CREATE POLICY "Admins excluem alunos"
+  ON public.alunos
+  FOR DELETE
+  TO authenticated
+  USING (
+    ((auth.jwt() -> 'user_metadata' ->> 'role') IN ('Admin', 'admin')) OR
+    ((auth.jwt() -> 'user_metadata' ->> 'tipo_usuario') IN ('Admin', 'admin'))
+  );
 ```
 
 ## Como aplicar no console do Supabase
@@ -35,10 +90,11 @@ create policy "Pais podem ver apenas os dados do próprio filho"
 2. Selecione o projeto **RotaEscola Arapongas**.
 3. Navegue até a seção **SQL Editor** na barra lateral.
 4. Clique em **New Query** (Nova consulta).
-5. Copie e cole as instruções contidas no arquivo de migração: [20260527161200_fix_alunos_responsavel_rls.sql](file:///c:/Users/NOSSA%20WEBTV/Documents/GitHub/RotaEscola-Arapongas/supabase/migrations/20260527161200_fix_alunos_responsavel_rls.sql).
+5. Copie e cole as instruções de reestruturação de RLS de alunos.
 6. Clique em **Run** (Executar) para aplicar.
 
 ## Histórico de Modificações
 | Data | Alteração |
 |---|---|
 | 27/05/2026 | Item 6 — Criação do script de migração e ativação da política RLS no banco de dados |
+| 02/06/2026 | **Expansão do RLS para Auditoria Admin:** Substituída a política única de SELECT por políticas granulares de SELECT, INSERT, UPDATE e DELETE. Adicionada permissão total para a equipe admin (SEMED) e motoristas, corrigindo o erro de gravação e visualização que forçava a interface a cair no Modo Simulação. |

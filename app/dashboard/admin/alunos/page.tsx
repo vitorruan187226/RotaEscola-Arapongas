@@ -127,24 +127,23 @@ export default function AlunosPage() {
           )
         `);
 
-      if (!error && data && data.length > 0) {
-        const mapped: AlunoAdmin[] = data.map((a: any) => ({
-          id: a.id,
-          nome: a.nome,
-          escola: a.escola,
-          escolaId: a.escola_id ?? undefined,
-          serie: a.serie ?? '—',
-          rotaId: a.rota_id ?? '',
-          statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente',
-          rotaNome: a.rotas ? `${a.rotas.codigo || 'RT'} — ${a.rotas.nome}` : undefined
-        }));
-        setAlunos(mapped);
-        setUsandoMock(false);
-      } else {
-        setAlunos(ALUNOS_MOCK);
-        setUsandoMock(true);
-      }
-    } catch {
+      if (error) throw error;
+
+      const mapped: AlunoAdmin[] = (data ?? []).map((a: any) => ({
+        id: a.id,
+        nome: a.nome,
+        escola: a.escola,
+        escolaId: a.escola_id ?? undefined,
+        serie: a.serie ?? '—',
+        rotaId: a.rota_id ?? '',
+        statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente',
+        rotaNome: a.rotas ? `${a.rotas.codigo || 'RT'} — ${a.rotas.nome}` : undefined
+      }));
+
+      setAlunos(mapped);
+      setUsandoMock(false);
+    } catch (err) {
+      console.warn('Erro ao carregar alunos do Supabase, caindo no mock:', err);
       setAlunos(ALUNOS_MOCK);
       setUsandoMock(true);
     } finally {

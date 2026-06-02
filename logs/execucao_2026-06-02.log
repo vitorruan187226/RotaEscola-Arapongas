@@ -1,0 +1,10 @@
+[2026-06-02 16:10:00] [INFO] Iniciando execução das tarefas de persistência de rotas e autenticação.
+[2026-06-02 16:11:30] [INFO] Executado DDL no Supabase Remoto: colunas cpf e telefone adicionadas a public.perfis, index idx_perfis_cpf criado, trigger handle_new_user e trigger on_auth_user_created recriados.
+[2026-06-02 16:11:45] [INFO] Contas mock físicas criadas com sucesso na tabela auth.users e perfis associados populados na tabela public.perfis.
+[2026-06-02 16:13:00] [INFO] Integrado signInWithPassword na API de login mock (route.ts) para gerar sessão ativa de usuário.
+[2026-06-02 16:15:00] [INFO] Lógica de usandoMock/usingMock corrigida nas páginas de rotas e alunos do dashboard admin, garantindo a persistência real dos dados mesmo com listas vazias no banco.
+[2026-06-02 16:17:00] [INFO] Criada documentação técnica _docs/0405_Persistencia_Rotas_Autenticacao.md e adicionada ao índice principal.
+[2026-06-02 16:20:00] [INFO] Executado build de produção ('npm run build') localmente com sucesso completo: 100% das páginas geradas sem erros. Tarefa de persistência de rotas concluída.
+
+
+

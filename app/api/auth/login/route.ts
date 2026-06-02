@@ -21,28 +21,49 @@ export async function POST(req: NextRequest) {
     console.log('[API Login] CPF tratado (somente numeros):', cleanCpf);
 
     // 1. Verificação de Usuários Mocks (Desenvolvimento)
-    if (cleanCpf === '22222222222' && senha === 'responsavelsenha') {
-      console.log('[API Login] Login mock detectado: Responsavel');
-      const response = NextResponse.json({ success: true, tipoUsuario: 'Responsável', isMock: true });
-      response.cookies.set('sb-mock-login', 'responsavel', { path: '/' });
-      return response;
-    }
-    if (cleanCpf === '33333333333' && senha === 'motoristasenha') {
-      console.log('[API Login] Login mock detectado: Motorista');
-      const response = NextResponse.json({ success: true, tipoUsuario: 'Motorista', isMock: true });
-      response.cookies.set('sb-mock-login', 'motorista', { path: '/' });
-      return response;
-    }
-    if (cleanCpf === '99999999999' && senha === 'adminisenha') {
-      console.log('[API Login] Login mock detectado: Admin');
-      const response = NextResponse.json({ success: true, tipoUsuario: 'Admin', isMock: true });
-      response.cookies.set('sb-mock-login', 'admin', { path: '/' });
-      return response;
-    }
-    if (cleanCpf === '11111111111' && senha === 'secretariasenha') {
-      console.log('[API Login] Login mock detectado: Secretaria');
-      const response = NextResponse.json({ success: true, tipoUsuario: 'Secretaria', isMock: true });
-      response.cookies.set('sb-mock-login', 'secretaria', { path: '/' });
+    if (
+      (cleanCpf === '22222222222' && senha === 'responsavelsenha') ||
+      (cleanCpf === '33333333333' && senha === 'motoristasenha') ||
+      (cleanCpf === '99999999999' && senha === 'adminisenha') ||
+      (cleanCpf === '11111111111' && senha === 'secretariasenha')
+    ) {
+      console.log('[API Login] Login mock detectado para CPF:', cleanCpf);
+      
+      const roleMap: Record<string, string> = {
+        '22222222222': 'Responsável',
+        '33333333333': 'Motorista',
+        '99999999999': 'Admin',
+        '11111111111': 'Secretaria'
+      };
+      const cookieMap: Record<string, string> = {
+        '22222222222': 'responsavel',
+        '33333333333': 'motorista',
+        '99999999999': 'admin',
+        '11111111111': 'secretaria'
+      };
+
+      const tipoUsuario = roleMap[cleanCpf];
+      const cookieVal = cookieMap[cleanCpf];
+
+      // Efetua login real no Supabase para obter a sessão e os cookies de RLS
+      const cookieStore = await cookies();
+      const supabase = createClient(cookieStore);
+      const email = `${cleanCpf}@rotaescola.com`;
+
+      console.log('[API Login] Efetuando signInWithPassword para usuário mock:', email);
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
+
+      if (authError) {
+        console.error('[API Login] Erro ao autenticar no Supabase para login mock:', authError.message);
+      } else {
+        console.log('[API Login] Autenticado no Supabase com sucesso para login mock');
+      }
+
+      const response = NextResponse.json({ success: true, tipoUsuario, isMock: true });
+      response.cookies.set('sb-mock-login', cookieVal, { path: '/' });
       return response;
     }
 

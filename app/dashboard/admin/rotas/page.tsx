@@ -13,8 +13,12 @@ interface Rota {
   id: string;
   codigo: string;
   nome: string;
+  veiculo_id?: string | null;
   veiculo_placa?: string | null;
   horario_saida?: string | null;
+  horario_fim?: string | null;
+  ativa?: boolean;
+  turno?: string | null;
   status?: string | null;
   created_at?: string | null;
 }
@@ -22,26 +26,30 @@ interface Rota {
 interface RotaForm {
   codigo: string;
   nome: string;
-  veiculo_placa: string;
-  horario_saida: string;
-  status: string;
+  veiculo_id: string;
+  horario_inicio: string;
+  horario_fim: string;
+  ativa: boolean;
+  turno: string;
 }
 
 const EMPTY_FORM: RotaForm = {
   codigo: '',
   nome: '',
-  veiculo_placa: '',
-  horario_saida: '',
-  status: 'Ativo',
+  veiculo_id: '',
+  horario_inicio: '06:30',
+  horario_fim: '12:30',
+  ativa: true,
+  turno: 'Manhã',
 };
 
 /* ─── Mocks fallback (demonstração) ────────────────── */
 const MOCK_ROTAS: Rota[] = [
-  { id: '1', codigo: 'RT-07', nome: 'Região Norte',  veiculo_placa: 'AAA-1234', horario_saida: '06:30', status: 'Ativo' },
-  { id: '2', codigo: 'RT-14', nome: 'Zona Rural',    veiculo_placa: 'BBB-5678', horario_saida: '06:00', status: 'Ativo' },
-  { id: '3', codigo: 'RT-22', nome: 'Centro',         veiculo_placa: 'CCC-9012', horario_saida: '07:00', status: 'Manutenção' },
-  { id: '4', codigo: 'RT-03', nome: 'Região Sul',    veiculo_placa: 'DDD-3456', horario_saida: '06:45', status: 'Ativo' },
-  { id: '5', codigo: 'RT-19', nome: 'Leste',          veiculo_placa: 'EEE-7890', horario_saida: '07:15', status: 'Ativo' },
+  { id: '1', codigo: 'RT-07', nome: 'Região Norte',  veiculo_placa: 'AAA-1234', horario_saida: '06:30', horario_fim: '12:30', status: 'Ativo', ativa: true, turno: 'Manhã' },
+  { id: '2', codigo: 'RT-14', nome: 'Zona Rural',    veiculo_placa: 'BBB-5678', horario_saida: '06:00', horario_fim: '12:00', status: 'Ativo', ativa: true, turno: 'Manhã' },
+  { id: '3', codigo: 'RT-22', nome: 'Centro',         veiculo_placa: 'CCC-9012', horario_saida: '07:00', horario_fim: '13:00', status: 'Manutenção', ativa: false, turno: 'Tarde' },
+  { id: '4', codigo: 'RT-03', nome: 'Região Sul',    veiculo_placa: 'DDD-3456', horario_saida: '06:45', horario_fim: '12:45', status: 'Ativo', ativa: true, turno: 'Manhã' },
+  { id: '5', codigo: 'RT-19', nome: 'Leste',          veiculo_placa: 'EEE-7890', horario_saida: '07:15', horario_fim: '13:15', status: 'Ativo', ativa: true, turno: 'Tarde' },
 ];
 
 /* ─── Helpers ───────────────────────────────────────── */
@@ -80,12 +88,13 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
 
 /* ─── Modal ─────────────────────────────────────────── */
 function RotaModal({
-  open, onClose, onSave, editData,
+  open, onClose, onSave, editData, veiculos,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (form: RotaForm, id?: string) => Promise<void>;
   editData?: Rota | null;
+  veiculos: any[];
 }) {
   const [form, setForm] = useState<RotaForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -95,9 +104,11 @@ function RotaModal({
       setForm({
         codigo: editData.codigo ?? '',
         nome: editData.nome ?? '',
-        veiculo_placa: editData.veiculo_placa ?? '',
-        horario_saida: editData.horario_saida ?? '',
-        status: editData.status ?? 'Ativo',
+        veiculo_id: editData.veiculo_id ?? '',
+        horario_inicio: editData.horario_saida ?? '06:30',
+        horario_fim: editData.horario_fim ?? '12:30',
+        ativa: editData.ativa ?? (editData.status === 'Ativo'),
+        turno: editData.turno ?? 'Manhã',
       });
     } else {
       setForm(EMPTY_FORM);
@@ -113,7 +124,7 @@ function RotaModal({
       </label>
       <input
         type={type}
-        value={form[key]}
+        value={form[key] as string}
         onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
         placeholder={placeholder}
         style={{
@@ -172,19 +183,62 @@ function RotaModal({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {field('Código da Rota', 'codigo', 'Ex: RT-07')}
-            {field('Horário de Saída', 'horario_saida', '06:30', 'time')}
+            {field('Horário de Saída', 'horario_inicio', '06:30', 'time')}
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {field('Horário de Retorno', 'horario_fim', '12:30', 'time')}
+            {/* Turno */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Turno
+              </label>
+              <select
+                value={form.turno}
+                onChange={e => setForm(p => ({ ...p, turno: e.target.value }))}
+                style={{
+                  padding: '10px 14px', borderRadius: '10px',
+                  border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
+                  outline: 'none', background: '#F8FAFC', color: '#0F172A', cursor: 'pointer',
+                }}
+              >
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+              </select>
+            </div>
+          </div>
+          
           {field('Nome da Rota', 'nome', 'Ex: Região Norte / Zona Rural')}
-          {field('Placa do Veículo', 'veiculo_placa', 'Ex: AAA-0000')}
+
+          {/* Veículo dropdown */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Veículo Designado
+            </label>
+            <select
+              value={form.veiculo_id}
+              onChange={e => setForm(p => ({ ...p, veiculo_id: e.target.value }))}
+              style={{
+                padding: '10px 14px', borderRadius: '10px',
+                border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
+                outline: 'none', background: '#F8FAFC', color: '#0F172A', cursor: 'pointer',
+              }}
+            >
+              <option value="">-- Sem Veículo --</option>
+              {veiculos.map(v => (
+                <option key={v.id} value={v.id}>{v.placa} ({v.tipo})</option>
+              ))}
+            </select>
+          </div>
 
           {/* Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Status
+              Status da Rota
             </label>
             <select
-              value={form.status}
-              onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
+              value={form.ativa ? 'Ativo' : 'Inativo'}
+              onChange={e => setForm(p => ({ ...p, ativa: e.target.value === 'Ativo' }))}
               style={{
                 padding: '10px 14px', borderRadius: '10px',
                 border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
@@ -192,7 +246,6 @@ function RotaModal({
               }}
             >
               <option value="Ativo">Ativo</option>
-              <option value="Manutenção">Manutenção</option>
               <option value="Inativo">Inativo</option>
             </select>
           </div>
@@ -231,6 +284,7 @@ export default function RotasPage() {
   const supabase = createClient();
 
   const [rotas, setRotas] = useState<Rota[]>([]);
+  const [veiculos, setVeiculos] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<Rota[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -240,20 +294,57 @@ export default function RotasPage() {
   const [usingMock, setUsingMock] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  /* ── Fetch ── */
+  /* ── Fetch Veículos ── */
+  const fetchVeiculos = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('veiculos')
+        .select('id, placa, tipo')
+        .order('placa', { ascending: true });
+      if (!error && data) {
+        setVeiculos(data);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar veículos para rotas:', err);
+    }
+  }, [supabase]);
+
+  /* ── Fetch Rotas ── */
   const fetchRotas = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('rotas')
-        .select('id, codigo, nome, veiculo_placa, horario_saida, status, created_at')
+        .select(`
+          id, codigo, nome, horario_inicio, horario_fim, ativa, turno, veiculo_id, created_at,
+          veiculos (
+            id,
+            placa,
+            tipo
+          )
+        `)
         .order('codigo', { ascending: true });
 
       if (error) throw error;
-      const lista = (data ?? []) as Rota[];
-      setRotas(lista.length ? lista : MOCK_ROTAS);
-      setUsingMock(!lista.length);
-    } catch {
+      
+      const lista = (data ?? []).map((r: any) => ({
+        id: r.id,
+        codigo: r.codigo || 'RT-00',
+        nome: r.nome || 'Rota Geral',
+        veiculo_id: r.veiculo_id ?? null,
+        veiculo_placa: r.veiculos?.placa ?? '—',
+        horario_saida: r.horario_inicio ? r.horario_inicio.substring(0, 5) : '00:00',
+        horario_fim: r.horario_fim ? r.horario_fim.substring(0, 5) : '00:00',
+        ativa: r.ativa,
+        turno: r.turno ?? 'Manhã',
+        status: r.ativa ? 'Ativo' : 'Inativo',
+        created_at: r.created_at
+      })) as Rota[];
+
+      setRotas(lista);
+      setUsingMock(false);
+    } catch (err) {
+      console.warn('Erro ao carregar rotas do Supabase, caindo no mock:', err);
       setRotas(MOCK_ROTAS);
       setUsingMock(true);
     } finally {
@@ -261,7 +352,10 @@ export default function RotasPage() {
     }
   }, [supabase]);
 
-  useEffect(() => { fetchRotas(); }, [fetchRotas]);
+  useEffect(() => { 
+    fetchRotas(); 
+    fetchVeiculos();
+  }, [fetchRotas, fetchVeiculos]);
 
   /* ── Search filter ── */
   useEffect(() => {
@@ -282,10 +376,32 @@ export default function RotasPage() {
   async function handleSave(form: RotaForm, id?: string) {
     if (usingMock) {
       if (id) {
-        setRotas(prev => prev.map(r => r.id === id ? { ...r, ...form } : r));
+        setRotas(prev => prev.map(r => r.id === id ? { 
+          ...r, 
+          codigo: form.codigo,
+          nome: form.nome,
+          veiculo_id: form.veiculo_id,
+          veiculo_placa: veiculos.find(v => v.id === form.veiculo_id)?.placa ?? '—',
+          horario_saida: form.horario_inicio,
+          horario_fim: form.horario_fim,
+          status: form.ativa ? 'Ativo' : 'Inativo',
+          ativa: form.ativa,
+          turno: form.turno
+        } : r));
         setToast({ msg: 'Rota atualizada (modo demo)', type: 'success' });
       } else {
-        const nova: Rota = { id: String(Date.now()), ...form };
+        const nova: Rota = { 
+          id: String(Date.now()), 
+          codigo: form.codigo,
+          nome: form.nome,
+          veiculo_id: form.veiculo_id,
+          veiculo_placa: veiculos.find(v => v.id === form.veiculo_id)?.placa ?? '—',
+          horario_saida: form.horario_inicio,
+          horario_fim: form.horario_fim,
+          status: form.ativa ? 'Ativo' : 'Inativo',
+          ativa: form.ativa,
+          turno: form.turno
+        };
         setRotas(prev => [nova, ...prev]);
         setToast({ msg: 'Rota criada (modo demo)', type: 'success' });
       }
@@ -293,12 +409,22 @@ export default function RotasPage() {
     }
 
     try {
+      const payload = {
+        codigo: form.codigo,
+        nome: form.nome,
+        veiculo_id: form.veiculo_id || null,
+        horario_inicio: form.horario_inicio ? `${form.horario_inicio}:00` : null,
+        horario_fim: form.horario_fim ? `${form.horario_fim}:00` : null,
+        ativa: form.ativa,
+        turno: form.turno
+      };
+
       if (id) {
-        const { error } = await supabase.from('rotas').update(form).eq('id', id);
+        const { error } = await supabase.from('rotas').update(payload).eq('id', id);
         if (error) throw error;
         setToast({ msg: 'Rota atualizada com sucesso!', type: 'success' });
       } else {
-        const { error } = await supabase.from('rotas').insert(form);
+        const { error } = await supabase.from('rotas').insert(payload);
         if (error) throw error;
         setToast({ msg: 'Nova rota criada com sucesso!', type: 'success' });
       }
@@ -570,6 +696,7 @@ export default function RotasPage() {
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
         editData={editRota}
+        veiculos={veiculos}
       />
 
       {/* ── Toast ── */}

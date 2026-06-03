@@ -200,6 +200,13 @@ export default function MotoristaDashboardPage() {
             }
             setLoading(false);
             return;
+          } else {
+            // Perfil de motorista existe no banco, mas não tem rotas atribuídas.
+            // Limpa as rotas e retorna para evitar carregar o fallback mock de desenvolvimento.
+            setRotas([]);
+            setSelectedRotaId('');
+            setLoading(false);
+            return;
           }
         }
       }
@@ -283,6 +290,7 @@ export default function MotoristaDashboardPage() {
     setLastScannedId(scannedId);
     
     const activeRoute = rotaAtivaRef.current;
+    if (!activeRoute) return;
     const currentSelectedRotaId = selectedRotaIdRef.current;
     
     const alunoEncontrado = activeRoute.alunos.find(a => a.id.toString() === scannedId);
@@ -438,7 +446,7 @@ export default function MotoristaDashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       const todayDate = new Date().toISOString().split('T')[0];
 
-      if (user && selectedRotaId.length > 10) {
+      if (user && rotaAtiva && selectedRotaId.length > 10) {
         const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
 
         let dbTurno: 'Matutino' | 'Vespertino' | 'Noturno' = 'Matutino';
@@ -785,12 +793,17 @@ export default function MotoristaDashboardPage() {
                   value={selectedRotaId}
                   onChange={(e) => setSelectedRotaId(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none cursor-pointer pr-10 transition-colors"
+                  disabled={rotas.length === 0}
                 >
-                  {rotas.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.codigo} - {r.nome}
-                    </option>
-                  ))}
+                  {rotas.length === 0 ? (
+                    <option value="">Nenhuma rota vinculada</option>
+                  ) : (
+                    rotas.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {r.codigo} - {r.nome}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">
                   ▼
@@ -919,7 +932,11 @@ export default function MotoristaDashboardPage() {
             </div>
 
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden divide-y divide-slate-800/40">
-              {rotaAtiva && rotaAtiva.alunos.length > 0 ? (
+              {rotas.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                  Você não possui nenhuma rota vinculada ao seu perfil.
+                </div>
+              ) : rotaAtiva && rotaAtiva.alunos.length > 0 ? (
                 rotaAtiva.alunos.map((aluno) => (
                   <div
                     key={aluno.id}

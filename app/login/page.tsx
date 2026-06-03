@@ -11,12 +11,17 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMotorista, setIsMotorista] = useState(false);
   
   const router = useRouter();
 
   // Efeito de montagem para evitar erros de hidratação (Mismatch SSR/Client)
   useEffect(() => {
     setIsMounted(true);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setIsMotorista(params.get('role') === 'motorista');
+    }
   }, []);
 
   if (!isMounted) {
@@ -89,8 +94,8 @@ export default function LoginPage() {
       <div className="login-card card-premium">
         <div className="login-header">
           <span className="logo-badge">🚌</span>
-          <h2>RotaEscola</h2>
-          <p>Arapongas - PR</p>
+          <h2>{isMotorista ? 'Acesso do Motorista' : 'RotaEscola'}</h2>
+          <p>{isMotorista ? 'Primeiro Acesso ou Login' : 'Arapongas - PR'}</p>
         </div>
 
         {error && (
@@ -102,7 +107,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="form-group">
-            <label htmlFor="cpf">CPF do Responsável / Servidor</label>
+            <label htmlFor="cpf">{isMotorista ? 'CPF do Motorista' : 'CPF do Responsável / Servidor'}</label>
             <div className="input-with-icon">
               <User className="input-icon" size={18} />
               <input
@@ -117,13 +122,13 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="senha">Senha</label>
+            <label htmlFor="senha">Senha {isMotorista && '(Seu CPF no primeiro acesso)'}</label>
             <div className="input-with-icon">
               <Lock className="input-icon" size={18} />
               <input
                 id="senha"
                 type="password"
-                placeholder="Sua senha secreta"
+                placeholder={isMotorista ? 'Digite seu CPF (ou senha definitiva)' : 'Sua senha secreta'}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
@@ -132,13 +137,20 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? 'Acessando...' : 'Entrar no Sistema'}
+            {loading ? 'Acessando...' : isMotorista ? 'Ativar / Entrar no Sistema' : 'Entrar no Sistema'}
           </button>
 
           <div className="login-footer">
-            <Link href="/cadastro" className="text-link">
-              Não tem uma conta? Cadastre-se aqui
-            </Link>
+            {isMotorista ? (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', lineHeight: '1.5', display: 'block', maxWidth: '300px', margin: '0 auto', textAlign: 'center' }}>
+                O cadastro de motoristas é feito pela Secretaria de Educação (SEMED). 
+                No primeiro acesso, digite seu CPF nos campos de CPF e Senha para ativar sua conta.
+              </span>
+            ) : (
+              <Link href="/cadastro" className="text-link">
+                Não tem uma conta? Cadastre-se aqui
+              </Link>
+            )}
           </div>
         </form>
       </div>

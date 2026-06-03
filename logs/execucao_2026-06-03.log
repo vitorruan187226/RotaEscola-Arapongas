@@ -5,3 +5,4 @@
 [2026-06-03 16:19:10] [INFO] Executado script SQL corretivo para adicionar as colunas ausentes e expandir a restrição tipo_movimento.
 [2026-06-03 16:21:40] [INFO] Corrigida correspondência de IDs mock no componente OcorrenciasFilho de 'aluno-mock-2' para 'aluno-02' para garantir renderização local em modo de demonstração.
 [2026-06-03 16:25:00] [INFO] Substituído o botão 'Área da Secretaria' por 'Primeiro Acesso (Motorista)' na Hero Section da Landing Page (app/page.tsx) e atualizada a documentação (_docs/0201_Home.md).
+[2026-06-03 16:35:00] [INFO] Implementada diferenciação na tela de login (app/login/page.tsx) baseada no parâmetro 'role=motorista' para exibir textos e instruções personalizadas de primeiro acesso. Atualizados os links na Home (app/page.tsx) e a documentação (_docs/0204_Login.md).

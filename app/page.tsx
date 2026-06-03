@@ -228,7 +228,7 @@ export default function LandingPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="navy" size="lg" id="btn-hero-motorista">
-                  <Link href="/login">
+                  <Link href="/login?role=motorista">
                     Primeiro Acesso (Motorista)
                   </Link>
                 </Button>
@@ -519,7 +519,7 @@ export default function LandingPage() {
             <ul>
               <li><Link href="/login">Sou Responsável</Link></li>
               <li><Link href="/login">Sou da Secretaria</Link></li>
-              <li><Link href="/login">Sou Motorista</Link></li>
+              <li><Link href="/login?role=motorista">Sou Motorista</Link></li>
             </ul>
           </div>
         </div>

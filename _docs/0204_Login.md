@@ -5,6 +5,7 @@ Ponto de entrada autenticado do sistema RotaEscola Arapongas. Permite que respon
 
 ## Rota
 - `/login` → `app/login/page.tsx`
+- `/login?role=motorista` → Login personalizado para motoristas (Primeiro Acesso / Login de ativação)
 
 ## Modo de Renderização
 - `'use client'` — Contém estado React (`useState`) para CPF, senha, loading e erro.
@@ -54,3 +55,4 @@ Se as credenciais não baterem com os mocks:
 | Sprint 2 | Adição de 4 credenciais mock (admin, secretaria, responsável, motorista) |
 | Sprint 2 | Integração com Supabase Auth real (signInWithPassword + perfis) |
 | 28/05/2026 | Documentação criada (0204) |
+| 03/06/2026 | Implementação de customização visual para motoristas via `?role=motorista` com instruções específicas de primeiro acesso. |

@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     // Busca o perfil para redirecionamento correto
     const { data: perfil, error: perfilError } = await supabase
       .from('perfis')
-      .select('tipo_usuario')
+      .select('tipo_usuario, senha_alterada')
       .eq('id', authData.user.id)
       .maybeSingle();
 
@@ -113,9 +113,13 @@ export async function POST(req: NextRequest) {
       tipoUsuario = perfil.tipo_usuario;
     }
 
+    // Motoristas no primeiro acesso (senha ainda é o CPF padrão) devem trocar a senha
+    const primeiroAcesso = tipoUsuario === 'Motorista' && perfil?.senha_alterada === false;
+
     return NextResponse.json({
       success: true,
       tipoUsuario,
+      primeiroAcesso,
     });
 
   } catch (error: any) {

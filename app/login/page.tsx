@@ -66,10 +66,13 @@ export default function LoginPage() {
       }
 
       const role = data.tipoUsuario;
+      const primeiroAcesso = data.primeiroAcesso === true;
+
       if (role === 'Admin' || role === 'admin') {
         router.push('/dashboard/admin');
       } else if (role === 'Motorista' || role === 'motorista') {
-        router.push('/dashboard/motorista');
+        // Motorista no primeiro acesso → trocar senha obrigatoriamente
+        router.push(primeiroAcesso ? '/motorista/primeiro-acesso' : '/dashboard/motorista');
       } else if (role === 'Secretaria' || role === 'secretaria') {
         router.push('/dashboard/secretaria');
       } else {

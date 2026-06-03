@@ -12,4 +12,5 @@
 | 0602 | UploadDocsScreen | Flutter: Tela dos pais para envio de documentos ao Supabase Storage. |
 | 0209 | Cadastro | Tela de cadastro para novos responsáveis (familiares). |
 | 0210 | GestaoEscolas | Painel admin para o cadastro e controle operacional de escolas parceiras. |
+| 0211 | Ocorrências | Painel admin para visualização e encaminhamento de ocorrências disciplinares ao responsável. |
 

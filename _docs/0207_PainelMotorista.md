@@ -46,10 +46,35 @@ app/dashboard/motorista/
 - **Reset Automático:** Após 3 segundos da confirmação, limpa e reseta todos os status locais dos alunos para "Pendente", redefinindo a lista para a próxima viagem.
 - **Salvamento no Banco:** Registra a data atual do evento (`data_registro`) e mapeia o seletor 'Turno de Trabalho' (Manhã -> 'Matutino', Tarde -> 'Vespertino', Noite -> 'Noturno') na tabela `logs_embarque`.
 
-### 6. Menu Inferior de Ocorrências Rápidas
+### 6. Menu Inferior de Ações Rápidas
 - Barra flutuante com efeito blur de vidro (`backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60`).
 - Botões super arredondados com ícones Lucide minimalistas e rótulos curtos.
-- Botão **SOS** destacado com fundo vermelho escuro e borda suave (`bg-rose-950/20 border-rose-900/20`) e ícone vermelho pulsante.
+- Botão **Prestar Ocorrência** (substituiu o antigo "Trânsito") destacado em laranja (`bg-orange-950/20 border-orange-900/20`) com ícone `ShieldAlert` âmbar.
+  - Ao clicar, abre o **Modal de Ocorrência** (ver seção 7).
+- Botão **Mecânico** com ícone `Wrench` âmbar.
+- Botão **Vias** com ícone `Map` neutro.
+- Botão **SOS** destacado com fundo vermelho escuro e ícone `AlertOctagon` pulsante.
+
+### 7. Modal de Prestar Ocorrência (Fluxo 2 Estágios)
+Overlay completo sobre o painel (z-50), com dois estágios sequenciais:
+
+**Estágio 1 — Scan:**
+- Câmera abre via `html5-qrcode` (instância separada: `ocorrencia-reader`).
+- Laser laranja pulsante + cantoneiras laranjas no visor.
+- Banner informativo: "Aguardando leitura da carteirinha..."
+- Ao identificar o aluno, para o scanner e avança automaticamente para o Estágio 2.
+- Se o aluno não for encontrado, avisa por voz (pt-BR) e reinicia o scanner.
+
+**Estágio 2 — Descrição:**
+- Card com foto + nome + escola do aluno identificado (borda laranja).
+- `<textarea>` para o motorista descrever o ocorrido (mínimo 5 caracteres para habilitar envio).
+- Contador de caracteres em tempo real.
+- Botão **"Enviar Ocorrência"** com gradiente laranja → âmbar; desabilitado enquanto descrição for curta.
+- Ao confirmar: INSERT em `public.ocorrencias` → status `'pendente'`.
+
+**Confirmação:**
+- Tela de sucesso com ícone verde e texto: "Ocorrência Registrada! A secretaria foi notificada e tomará as devidas providências."
+- Modal fecha automaticamente após 2,5 segundos.
 
 ## Mocks Utilizados
 ```ts
@@ -71,3 +96,4 @@ interface Aluno {
 | 27/05/2026 | Reconstrução total com design premium estilo iOS/Android nativo |
 | 28/05/2026 | Refinamento do checklist (ciclo de 3 estados, reset automático, data e turno no lote Supabase) |
 | 02/06/2026 | Correção no carregamento de dados (loadData): mapeamento correto das colunas id (em vez de auth_user_id), nome (em vez de nome_rota) e filtro de motorista_id |
+| 03/06/2026 | Botão "Trânsito" substituído por "Prestar Ocorrência" (ShieldAlert laranja). Modal de 2 estágios: Scan QR → Descrição → Envio para `public.ocorrencias`. Veja `_docs/0211_Ocorrencias.md`. |

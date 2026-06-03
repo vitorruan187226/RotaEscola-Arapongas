@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Building2,
+  FileWarning,
 } from 'lucide-react';
 import { useState } from 'react';
 import { createClient } from '../../../utils/supabase/client';
@@ -44,6 +45,11 @@ const NAV_ITEMS = [
     label: 'Rotas e Itinerários',
     href: '/dashboard/admin/rotas',
     icon: MapPin,
+  },
+  {
+    label: 'Ocorrências',
+    href: '/dashboard/admin/ocorrencias',
+    icon: FileWarning,
   },
 ];
 
@@ -87,6 +93,7 @@ export default function AdminLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [emAnaliseCount, setEmAnaliseCount] = useState<number>(0);
+  const [ocorrenciasCount, setOcorrenciasCount] = useState<number>(0);
 
   // Busca e escuta a contagem global de alunos com status 'Em análise'
   useState(() => {
@@ -121,6 +128,25 @@ export default function AdminLayout({
 
     fetchEmAnaliseCount();
     const interval = setInterval(fetchEmAnaliseCount, 20000); // pooling leve de 20s
+    return () => clearInterval(interval);
+  });
+
+  // Busca contagem de ocorrências pendentes
+  useState(() => {
+    async function fetchOcorrenciasCount() {
+      try {
+        const supabase = createClient();
+        const { count, error } = await supabase
+          .from('ocorrencias')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pendente');
+        if (!error && count !== null) setOcorrenciasCount(count);
+      } catch (err) {
+        console.error('Erro ao buscar ocorrências pendentes:', err);
+      }
+    }
+    fetchOcorrenciasCount();
+    const interval = setInterval(fetchOcorrenciasCount, 20000);
     return () => clearInterval(interval);
   });
 
@@ -168,13 +194,18 @@ export default function AdminLayout({
         <nav className="sidebar-nav">
           {NAV_ITEMS.map((item) => {
             const isEscolas = item.label === 'Entidades Escolares';
+            const isOcorrencias = item.label === 'Ocorrências';
             return (
               <SidebarLink
                 key={item.href}
                 item={item}
                 active={pathname === item.href}
                 onClick={() => setSidebarOpen(false)}
-                badgeCount={isEscolas ? emAnaliseCount : undefined}
+                badgeCount={
+                  isEscolas ? emAnaliseCount
+                  : isOcorrencias ? ocorrenciasCount
+                  : undefined
+                }
               />
             );
           })}

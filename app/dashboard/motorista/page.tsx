@@ -12,7 +12,7 @@ import {
   AlertTriangle, 
   Clock, 
   Wrench, 
-  Map, 
+  Map,
   AlertOctagon, 
   Accessibility, 
   Check, 
@@ -21,7 +21,11 @@ import {
   User,
   Navigation,
   LogOut,
-  Calendar
+  Calendar,
+  ShieldAlert,
+  Send,
+  ScanLine,
+  X
 } from 'lucide-react';
 
 interface Aluno {
@@ -94,6 +98,15 @@ export default function MotoristaDashboardPage() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isSentSuccessfully, setIsSentSuccessfully] = useState(false);
+
+  // ── Estados do Modal de Ocorrência ─────────────────────────
+  const [showOcorrenciaModal, setShowOcorrenciaModal] = useState(false);
+  const [ocorrenciaStage, setOcorrenciaStage] = useState<'scan' | 'descricao'>('scan');
+  const [alunoOcorrencia, setAlunoOcorrencia] = useState<Aluno | null>(null);
+  const [descricaoOcorrencia, setDescricaoOcorrencia] = useState('');
+  const [enviandoOcorrencia, setEnviandoOcorrencia] = useState(false);
+  const [ocorrenciaEnviada, setOcorrenciaEnviada] = useState(false);
+  const ocorrenciaScannerRef = useRef<any>(null);
 
   // Rota ativa
   const rotaAtiva = rotas.find(r => r.id === selectedRotaId) || rotas[0];
@@ -501,8 +514,111 @@ export default function MotoristaDashboardPage() {
     }, 3000);
   };
 
-  const handleReportOcorrencia = (tipo: string) => {
-    alert(`Ocorrência de "${tipo}" enviada com sucesso à prefeitura!`);
+  // ── Abre o modal e inicia o scanner de ocorrência ──────────
+  const handleAbrirOcorrenciaModal = () => {
+    setShowOcorrenciaModal(true);
+    setOcorrenciaStage('scan');
+    setAlunoOcorrencia(null);
+    setDescricaoOcorrencia('');
+    setOcorrenciaEnviada(false);
+
+    // Inicia o scanner após o modal montar (pequeno delay)
+    setTimeout(async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const scanner = new Html5Qrcode('ocorrencia-reader');
+        ocorrenciaScannerRef.current = scanner;
+        await scanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 12,
+            qrbox: (w: number, h: number) => {
+              const s = Math.min(w, h) - 20;
+              return { width: s, height: s };
+            }
+          },
+          (decoded: string) => handleOcorrenciaScan(decoded),
+          () => {}
+        );
+      } catch (err) {
+        console.error('Erro ao iniciar scanner de ocorrência:', err);
+      }
+    }, 400);
+  };
+
+  // ── Para o scanner de ocorrência ────────────────────────────
+  const pararScannerOcorrencia = async () => {
+    if (ocorrenciaScannerRef.current?.isScanning) {
+      try { await ocorrenciaScannerRef.current.stop(); } catch(e) {}
+    }
+    ocorrenciaScannerRef.current = null;
+  };
+
+  // ── Fecha o modal e para o scanner ──────────────────────────
+  const handleFecharOcorrenciaModal = async () => {
+    await pararScannerOcorrencia();
+    setShowOcorrenciaModal(false);
+    setOcorrenciaStage('scan');
+    setAlunoOcorrencia(null);
+    setDescricaoOcorrencia('');
+    setOcorrenciaEnviada(false);
+  };
+
+  // ── Callback do scan no modal de ocorrência ─────────────────
+  const handleOcorrenciaScan = async (decoded: string) => {
+    const scannedId = decoded.trim();
+    // Busca o aluno em todas as rotas carregadas
+    let alunoEncontrado: Aluno | null = null;
+    for (const rota of rotas) {
+      const found = rota.alunos.find(a => a.id.toString() === scannedId);
+      if (found) { alunoEncontrado = found; break; }
+    }
+
+    await pararScannerOcorrencia();
+
+    if (alunoEncontrado) {
+      setAlunoOcorrencia(alunoEncontrado);
+      setOcorrenciaStage('descricao');
+      // Feedback vibratório
+      try { if (navigator.vibrate) navigator.vibrate(80); } catch(e) {}
+    } else {
+      // Aluno não encontrado — tenta de novo
+      try {
+        if (window.speechSynthesis) {
+          const msg = new SpeechSynthesisUtterance('Aluno não encontrado. Tente novamente.');
+          msg.lang = 'pt-BR';
+          window.speechSynthesis.speak(msg);
+        }
+      } catch(e) {}
+      // Reinicia o scanner
+      setTimeout(handleAbrirOcorrenciaModal, 500);
+    }
+  };
+
+  // ── Envia a ocorrência ao Supabase ───────────────────────────
+  const handleEnviarOcorrencia = async () => {
+    if (!alunoOcorrencia || !descricaoOcorrencia.trim()) return;
+    setEnviandoOcorrencia(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('ocorrencias').insert({
+          aluno_id: alunoOcorrencia.id,
+          motorista_id: user.id,
+          descricao: descricaoOcorrencia.trim(),
+          status: 'pendente'
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao enviar ocorrência:', err);
+    }
+
+    setEnviandoOcorrencia(false);
+    setOcorrenciaEnviada(true);
+
+    // Fecha o modal após 2.5s
+    setTimeout(() => handleFecharOcorrenciaModal(), 2500);
   };
 
   const handleLogout = async () => {
@@ -897,20 +1013,162 @@ export default function MotoristaDashboardPage() {
           </div>
         </main>
 
+        {/* ══════════════════════════════════════════════════════
+            MODAL DE PRESTAR OCORRÊNCIA
+        ══════════════════════════════════════════════════════ */}
+        {showOcorrenciaModal && (
+          <div className="absolute inset-0 bg-slate-950/98 z-50 flex flex-col rounded-[36px] overflow-hidden">
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60 bg-slate-900/90">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-orange-500/15 flex items-center justify-center">
+                  <ShieldAlert size={16} className="text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-white tracking-tight">Prestar Ocorrência</h3>
+                  <p className="text-[9px] text-slate-400 mt-0.5">
+                    {ocorrenciaStage === 'scan' ? 'Aponte a câmera para a carteirinha do aluno' : 'Descreva o ocorrido'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleFecharOcorrenciaModal}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-5">
+
+              {/* ── ESTÁGIO 1: SCAN ─────────────────────────── */}
+              {ocorrenciaStage === 'scan' && (
+                <div className="flex flex-col items-center gap-5">
+                  <div className="text-center">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estágio 1 de 2</p>
+                    <p className="text-xs text-white font-semibold mt-1">Escaneie a carteirinha do aluno</p>
+                  </div>
+
+                  {/* Visor do scanner */}
+                  <div className="relative w-52 h-52 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
+                    <div id="ocorrencia-reader" className="w-full h-full absolute inset-0 z-0" />
+                    {/* Laser */}
+                    <div className="absolute left-4 right-4 h-0.5 bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.8)] z-20 scanner-line pointer-events-none" />
+                    {/* Cantoneiras */}
+                    <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-orange-400 rounded-tl-md z-10 pointer-events-none" />
+                    <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-orange-400 rounded-tr-md z-10 pointer-events-none" />
+                    <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-orange-400 rounded-bl-md z-10 pointer-events-none" />
+                    <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-orange-400 rounded-br-md z-10 pointer-events-none" />
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3">
+                    <ScanLine size={14} className="text-orange-400 shrink-0" />
+                    <p className="text-[10px] text-orange-300 font-semibold leading-snug">
+                      Aguardando leitura da carteirinha...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ── ESTÁGIO 2: DESCRIÇÃO ────────────────────── */}
+              {ocorrenciaStage === 'descricao' && !ocorrenciaEnviada && (
+                <div className="flex flex-col gap-5">
+                  <div className="text-center">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estágio 2 de 2</p>
+                    <p className="text-xs text-white font-semibold mt-1">Aluno identificado</p>
+                  </div>
+
+                  {/* Card do Aluno */}
+                  {alunoOcorrencia && (
+                    <div className="flex items-center gap-3 bg-slate-900 border border-orange-500/20 rounded-xl p-3.5">
+                      <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-500">
+                        {alunoOcorrencia.fotoUrl ? (
+                          <img src={alunoOcorrencia.fotoUrl} alt={alunoOcorrencia.nome} className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={18} />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{alunoOcorrencia.nome}</p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">{alunoOcorrencia.escola}</p>
+                      </div>
+                      <span className="shrink-0 text-[9px] font-black px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/25 uppercase tracking-wide">
+                        Aluno
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Campo de Descrição */}
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                      O que aconteceu?
+                    </label>
+                    <textarea
+                      value={descricaoOcorrencia}
+                      onChange={(e) => setDescricaoOcorrencia(e.target.value)}
+                      placeholder="Ex: O aluno me xingou e está batendo nos colegas..."
+                      rows={5}
+                      className="w-full bg-slate-900 border border-slate-700 focus:border-orange-500/60 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:outline-none resize-none transition-colors leading-relaxed"
+                    />
+                    <p className="text-[9px] text-slate-600 mt-1.5 text-right">{descricaoOcorrencia.length}/500 caracteres</p>
+                  </div>
+
+                  {/* Botão Enviar */}
+                  <button
+                    onClick={handleEnviarOcorrencia}
+                    disabled={enviandoOcorrencia || descricaoOcorrencia.trim().length < 5}
+                    className={`w-full py-4 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-0 ${
+                      descricaoOcorrencia.trim().length >= 5 && !enviandoOcorrencia
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 shadow-[0_8px_20px_rgba(249,115,22,0.25)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(249,115,22,0.4)] active:translate-y-0 cursor-pointer'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {enviandoOcorrencia ? (
+                      <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={13} />
+                        <span>Enviar Ocorrência</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* ── CONFIRMAÇÃO DE ENVIO ─────────────────────── */}
+              {ocorrenciaEnviada && (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                    <CheckCircle2 size={32} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-emerald-400 uppercase tracking-widest">Ocorrência Registrada!</h4>
+                    <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                      A secretaria foi notificada e tomará as devidas providências.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
         {/* MENU INFERIOR DE OCORRÊNCIAS */}
         <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60 p-4 grid grid-cols-4 gap-3 z-40 rounded-b-[36px]">
           <button
-            onClick={() => handleReportOcorrencia('Trânsito Intenso')}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95 border-0"
+            onClick={handleAbrirOcorrenciaModal}
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-orange-950/20 hover:bg-orange-950/40 transition-all cursor-pointer border border-orange-900/20 active:scale-95"
           >
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-inner">
-              <Clock size={16} />
+            <div className="w-10 h-10 rounded-full bg-orange-500/15 flex items-center justify-center shadow-inner">
+              <ShieldAlert size={16} className="text-orange-400" />
             </div>
-            <span className="text-[9px] font-semibold text-slate-400">Trânsito</span>
+            <span className="text-[9px] font-bold text-orange-400">Ocorrência</span>
           </button>
 
           <button
-            onClick={() => handleReportOcorrencia('Problema Mecânico')}
+            onClick={() => alert('Ocorrência de "Problema Mecânico" enviada à prefeitura!')}
             className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95 border-0"
           >
             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 shadow-inner">
@@ -920,7 +1178,7 @@ export default function MotoristaDashboardPage() {
           </button>
 
           <button
-            onClick={() => handleReportOcorrencia('Via Interditada')}
+            onClick={() => alert('Ocorrência de "Via Interditada" enviada à prefeitura!')}
             className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95 border-0"
           >
             <div className="w-10 h-10 rounded-full bg-slate-800/40 flex items-center justify-center text-slate-300 shadow-inner">
@@ -930,7 +1188,7 @@ export default function MotoristaDashboardPage() {
           </button>
 
           <button
-            onClick={() => handleReportOcorrencia('Emergência')}
+            onClick={() => alert('Emergência reportada à prefeitura!')}
             className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-rose-950/20 hover:bg-rose-950/40 transition-all cursor-pointer border border-rose-900/20 active:scale-95 border-0"
           >
             <div className="w-10 h-10 rounded-full bg-rose-900/80 flex items-center justify-center text-rose-200 border border-rose-800/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">

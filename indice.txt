@@ -20,6 +20,7 @@ indice.txt
 - [_docs/0208_PortalPais.md](_docs/0208_PortalPais.md)
 - [_docs/0209_Cadastro.md](_docs/0209_Cadastro.md)
 - [_docs/0210_GestaoEscolas.md](_docs/0210_GestaoEscolas.md)
+- [_docs/0211_Ocorrencias.md](_docs/0211_Ocorrencias.md)
 
 
 ## [04XX] Supabase e Backend

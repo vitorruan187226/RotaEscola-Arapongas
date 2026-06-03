@@ -229,7 +229,15 @@ function RotaModal({
             </label>
             <select
               value={form.veiculo_id}
-              onChange={e => setForm(p => ({ ...p, veiculo_id: e.target.value }))}
+              onChange={e => {
+                const vId = e.target.value;
+                const v = veiculos.find(v => v.id === vId);
+                setForm(p => ({ 
+                  ...p, 
+                  veiculo_id: vId,
+                  motorista_id: (v && v.motorista_id) ? v.motorista_id : p.motorista_id
+                }));
+              }}
               style={{
                 padding: '10px 14px', borderRadius: '10px',
                 border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
@@ -340,7 +348,7 @@ export default function RotasPage() {
     try {
       const { data, error } = await supabase
         .from('veiculos')
-        .select('id, placa, tipo')
+        .select('id, placa, tipo, motorista_id')
         .order('placa', { ascending: true });
       if (!error && data) {
         setVeiculos(data);

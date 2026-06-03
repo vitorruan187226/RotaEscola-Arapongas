@@ -127,5 +127,7 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 02/06/2026 | **Desmock Completo do Dashboard Principal (page.tsx):** Remoção de dados estáticos para o monitoramento de rotas ativas, auditoria de embarque diário e solicitações. Integração em tempo real com o banco de dados remoto do Supabase via queries em paralelo no Server Component. |
 | 02/06/2026 | **Cadastro Real de Motoristas (frota/page.tsx + /api/admin/motoristas):** Criada API Route com Service Role para criar motoristas no Supabase Auth + tabelas `perfis` e `motoristas_perfil`. Modal de cadastro adicionado ao painel de Frota. Select de motoristas reais adicionado ao formulário de criação de veículos. |
 | 02/06/2026 | **Designação de Motorista nas Rotas (rotas/page.tsx):** Adicionado campo "Motorista Designado" (dropdown) no modal de criação e edição de rotas. Motoristas buscados da tabela `perfis` (tipo_usuario = 'Motorista') com join em `motoristas_perfil`. `motorista_id` (uuid) persistido na coluna `rotas.motorista_id` → FK para `perfis.id`. Coluna "Motorista" exibida na tabela de listagem. Build validado: 19/19 páginas sem erros. |
+| 03/06/2026 | **Seleção Inteligente de Motorista:** Adicionada a busca por `motorista_id` na lista de veículos e implementada auto-seleção automática do motorista no formulário do modal ao escolher um veículo que já possui vínculo na tabela `veiculos`. |
+
 
 

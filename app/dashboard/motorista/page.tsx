@@ -25,6 +25,9 @@ import {
   ShieldAlert,
   Send,
   ScanLine,
+  Search,
+  UserCheck,
+  ChevronRight,
   X
 } from 'lucide-react';
 
@@ -106,6 +109,8 @@ export default function MotoristaDashboardPage() {
   const [descricaoOcorrencia, setDescricaoOcorrencia] = useState('');
   const [enviandoOcorrencia, setEnviandoOcorrencia] = useState(false);
   const [ocorrenciaEnviada, setOcorrenciaEnviada] = useState(false);
+  const [mostrarSelecaoManual, setMostrarSelecaoManual] = useState(false);
+  const [buscaAlunoManual, setBuscaAlunoManual] = useState('');
   const ocorrenciaScannerRef = useRef<any>(null);
 
   // Rota ativa
@@ -514,16 +519,10 @@ export default function MotoristaDashboardPage() {
     }, 3000);
   };
 
-  // ── Abre o modal e inicia o scanner de ocorrência ──────────
-  const handleAbrirOcorrenciaModal = () => {
-    setShowOcorrenciaModal(true);
-    setOcorrenciaStage('scan');
-    setAlunoOcorrencia(null);
-    setDescricaoOcorrencia('');
-    setOcorrenciaEnviada(false);
-
-    // Inicia o scanner após o modal montar (pequeno delay)
+  // ── Inicia o scanner de ocorrência ──────────────────────────
+  const iniciarScannerOcorrencia = () => {
     setTimeout(async () => {
+      if (ocorrenciaScannerRef.current?.isScanning) return;
       try {
         const { Html5Qrcode } = await import('html5-qrcode');
         const scanner = new Html5Qrcode('ocorrencia-reader');
@@ -546,6 +545,19 @@ export default function MotoristaDashboardPage() {
     }, 400);
   };
 
+  // ── Abre o modal e inicia o scanner de ocorrência ──────────
+  const handleAbrirOcorrenciaModal = () => {
+    setShowOcorrenciaModal(true);
+    setOcorrenciaStage('scan');
+    setAlunoOcorrencia(null);
+    setDescricaoOcorrencia('');
+    setOcorrenciaEnviada(false);
+    setMostrarSelecaoManual(false);
+    setBuscaAlunoManual('');
+
+    iniciarScannerOcorrencia();
+  };
+
   // ── Para o scanner de ocorrência ────────────────────────────
   const pararScannerOcorrencia = async () => {
     if (ocorrenciaScannerRef.current?.isScanning) {
@@ -562,6 +574,8 @@ export default function MotoristaDashboardPage() {
     setAlunoOcorrencia(null);
     setDescricaoOcorrencia('');
     setOcorrenciaEnviada(false);
+    setMostrarSelecaoManual(false);
+    setBuscaAlunoManual('');
   };
 
   // ── Callback do scan no modal de ocorrência ─────────────────
@@ -1044,7 +1058,7 @@ export default function MotoristaDashboardPage() {
             <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-5">
 
               {/* ── ESTÁGIO 1: SCAN ─────────────────────────── */}
-              {ocorrenciaStage === 'scan' && (
+              {ocorrenciaStage === 'scan' && !mostrarSelecaoManual && (
                 <div className="flex flex-col items-center gap-5">
                   <div className="text-center">
                     <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estágio 1 de 2</p>
@@ -1063,12 +1077,119 @@ export default function MotoristaDashboardPage() {
                     <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-orange-400 rounded-br-md z-10 pointer-events-none" />
                   </div>
 
-                  <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3">
-                    <ScanLine size={14} className="text-orange-400 shrink-0" />
-                    <p className="text-[10px] text-orange-300 font-semibold leading-snug">
-                      Aguardando leitura da carteirinha...
-                    </p>
+                  <div className="flex flex-col items-center gap-4 w-full">
+                    <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-2.5">
+                      <ScanLine size={14} className="text-orange-400 shrink-0" />
+                      <p className="text-[10px] text-orange-300 font-semibold leading-snug">
+                        Aguardando leitura da carteirinha...
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center w-full gap-2 px-6 py-1">
+                      <div className="h-[1px] bg-slate-800/85 flex-1" />
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">ou</span>
+                      <div className="h-[1px] bg-slate-800/85 flex-1" />
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        pararScannerOcorrencia();
+                        setMostrarSelecaoManual(true);
+                      }}
+                      className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-300 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer w-full"
+                    >
+                      <UserCheck size={14} className="text-amber-400" />
+                      <span>Selecionar Aluno Manualmente</span>
+                    </button>
                   </div>
+                </div>
+              )}
+
+              {/* ── ESTÁGIO 1 (FALLBACK): SELEÇÃO MANUAL ─────────────────── */}
+              {ocorrenciaStage === 'scan' && mostrarSelecaoManual && (
+                <div className="flex flex-col gap-4 flex-1">
+                  <div className="text-center">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estágio 1 de 2</p>
+                    <p className="text-xs text-white font-semibold mt-1">Selecione o aluno manualmente</p>
+                  </div>
+
+                  {/* Campo de Busca */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={buscaAlunoManual}
+                      onChange={(e) => setBuscaAlunoManual(e.target.value)}
+                      placeholder="Pesquisar aluno pelo nome..."
+                      className="w-full bg-slate-900 border border-slate-800 focus:border-orange-500/60 rounded-xl px-4 py-3 pl-10 text-xs text-white placeholder:text-slate-650 focus:outline-none transition-colors"
+                    />
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                      <Search size={14} />
+                    </div>
+                    {buscaAlunoManual && (
+                      <button
+                        onClick={() => setBuscaAlunoManual('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs border-0 bg-transparent p-1 cursor-pointer"
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Lista de Alunos */}
+                  <div className="flex-1 overflow-y-auto max-h-72 pr-1 space-y-2 flex flex-col scrollbar-thin">
+                    {(() => {
+                      const filtrados = (rotaAtiva?.alunos || []).filter(aluno =>
+                        aluno.nome.toLowerCase().includes(buscaAlunoManual.toLowerCase())
+                      );
+
+                      if (filtrados.length === 0) {
+                        return (
+                          <div className="text-center py-6 text-slate-500 text-xs">
+                            Nenhum aluno encontrado nesta rota.
+                          </div>
+                        );
+                      }
+
+                      return filtrados.map(aluno => (
+                        <button
+                          key={aluno.id}
+                          onClick={() => {
+                            setAlunoOcorrencia(aluno);
+                            setOcorrenciaStage('descricao');
+                            setMostrarSelecaoManual(false);
+                            setBuscaAlunoManual('');
+                          }}
+                          className="flex items-center gap-3 bg-slate-900 border border-slate-800 hover:border-orange-500/40 rounded-xl p-3 text-left transition-colors cursor-pointer w-full"
+                        >
+                          <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-500 shrink-0 overflow-hidden">
+                            {aluno.fotoUrl ? (
+                              <img src={aluno.fotoUrl} alt={aluno.nome} className="w-full h-full object-cover" />
+                            ) : (
+                              <User size={14} />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-white truncate">{aluno.nome}</p>
+                            <p className="text-[9px] text-slate-400 truncate">{aluno.escola}</p>
+                          </div>
+                          <ChevronRight size={14} className="text-slate-650 shrink-0" />
+                        </button>
+                      ));
+                    })()}
+                  </div>
+
+                  {/* Botão Voltar para o Scanner */}
+                  <button
+                    onClick={async () => {
+                      setMostrarSelecaoManual(false);
+                      setBuscaAlunoManual('');
+                      iniciarScannerOcorrencia();
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-dashed border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer w-full bg-transparent"
+                  >
+                    <ScanLine size={13} className="text-slate-400" />
+                    <span>Voltar para o Scanner QR</span>
+                  </button>
                 </div>
               )}
 

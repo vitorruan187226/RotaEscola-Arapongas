@@ -64,6 +64,7 @@ Overlay completo sobre o painel (z-50), com dois estágios sequenciais:
 - Banner informativo: "Aguardando leitura da carteirinha..."
 - Ao identificar o aluno, para o scanner e avança automaticamente para o Estágio 2.
 - Se o aluno não for encontrado, avisa por voz (pt-BR) e reinicia o scanner.
+- **Fallback de Seleção Manual:** Botão "Selecionar Aluno Manualmente" que interrompe o scanner e exibe uma lista de busca dinâmica para o motorista selecionar o aluno pelo nome (dos cadastrados na rota/viagem ativa). Ao selecionar, avança para o Estágio 2.
 
 **Estágio 2 — Descrição:**
 - Card com foto + nome + escola do aluno identificado (borda laranja).

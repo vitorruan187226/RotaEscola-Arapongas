@@ -227,9 +227,9 @@ export default function LandingPage() {
                     <ArrowRight size={18} />
                   </Link>
                 </Button>
-                <Button asChild variant="navy" size="lg" id="btn-hero-secretaria">
+                <Button asChild variant="navy" size="lg" id="btn-hero-motorista">
                   <Link href="/login">
-                    Área da Secretaria
+                    Primeiro Acesso (Motorista)
                   </Link>
                 </Button>
               </div>

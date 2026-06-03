@@ -4,3 +4,4 @@
 [2026-06-03 16:18:25] [INFO] Detectada inconsistência de constraint no campo tipo_movimento (apenas 'Ida'/'Volta' permitidos, mas motorista enviava 'IDA'/'VOLTA').
 [2026-06-03 16:19:10] [INFO] Executado script SQL corretivo para adicionar as colunas ausentes e expandir a restrição tipo_movimento.
 [2026-06-03 16:21:40] [INFO] Corrigida correspondência de IDs mock no componente OcorrenciasFilho de 'aluno-mock-2' para 'aluno-02' para garantir renderização local em modo de demonstração.
+[2026-06-03 16:25:00] [INFO] Substituído o botão 'Área da Secretaria' por 'Primeiro Acesso (Motorista)' na Hero Section da Landing Page (app/page.tsx) e atualizada a documentação (_docs/0201_Home.md).

@@ -12,14 +12,24 @@ interface VeiculoAdmin {
   motorista: string;
   tipo: 'Próprio' | 'Terceirizado';
   status: 'Ativo' | 'Manutenção';
+  rota_id?: string | null;
+  rota_nome?: string | null;
 }
 
 const VEICULOS_MOCK: VeiculoAdmin[] = [
-  { id: 'v1', placa: 'AAA-1234', modelo: 'Microônibus Volare W9', capacidade: 28, motorista: 'Carlos Alberto Silva', tipo: 'Próprio', status: 'Ativo' },
-  { id: 'v2', placa: 'BBB-5678', modelo: 'Ônibus Mercedes-Benz OF-1721', capacidade: 52, motorista: 'Marcos Vinícius Souza', tipo: 'Terceirizado', status: 'Ativo' },
-  { id: 'v3', placa: 'CCC-9012', modelo: 'Van Renault Master', capacidade: 15, motorista: 'Ana Julia Santos', tipo: 'Próprio', status: 'Manutenção' },
-  { id: 'v4', placa: 'DDD-3456', modelo: 'Ônibus Volkswagen 17.230', capacidade: 46, motorista: 'Roberto Ferreira', tipo: 'Terceirizado', status: 'Ativo' },
-  { id: 'v5', placa: 'EEE-7890', modelo: 'Microônibus Iveco Daily', capacidade: 22, motorista: 'Sandra Aparecida Lima', tipo: 'Próprio', status: 'Ativo' }
+  { id: 'v1', placa: 'AAA-1234', modelo: 'Microônibus Volare W9', capacidade: 28, motorista: 'Carlos Alberto Silva', tipo: 'Próprio', status: 'Ativo', rota_id: 'r1', rota_nome: 'RT-07 - Região Norte' },
+  { id: 'v2', placa: 'BBB-5678', modelo: 'Ônibus Mercedes-Benz OF-1721', capacidade: 52, motorista: 'Marcos Vinícius Souza', tipo: 'Terceirizado', status: 'Ativo', rota_id: 'r2', rota_nome: 'RT-14 - Zona Rural' },
+  { id: 'v3', placa: 'CCC-9012', modelo: 'Van Renault Master', capacidade: 15, motorista: 'Ana Julia Santos', tipo: 'Próprio', status: 'Manutenção', rota_id: null, rota_nome: 'Nenhuma rota atribuída' },
+  { id: 'v4', placa: 'DDD-3456', modelo: 'Ônibus Volkswagen 17.230', capacidade: 46, motorista: 'Roberto Ferreira', tipo: 'Terceirizado', status: 'Ativo', rota_id: 'r4', rota_nome: 'RT-03 - Região Sul' },
+  { id: 'v5', placa: 'EEE-7890', modelo: 'Microônibus Iveco Daily', capacidade: 22, motorista: 'Sandra Aparecida Lima', tipo: 'Próprio', status: 'Ativo', rota_id: 'r5', rota_nome: 'RT-19 - Leste' }
+];
+
+const ROTAS_MOCK_DISPONIVEIS = [
+  { id: 'r1', codigo: 'RT-07', nome: 'Região Norte' },
+  { id: 'r2', codigo: 'RT-14', nome: 'Zona Rural' },
+  { id: 'r3', codigo: 'RT-22', nome: 'Centro' },
+  { id: 'r4', codigo: 'RT-03', nome: 'Região Sul' },
+  { id: 'r5', codigo: 'RT-19', nome: 'Leste' }
 ];
 
 export default function FrotaPage() {
@@ -33,6 +43,10 @@ export default function FrotaPage() {
   // Estados dos Modais
   const [modalNovo, setModalNovo] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
+  const [modalRota, setModalRota] = useState(false);
+  const [veiculoSelecionado, setVeiculoSelecionado] = useState<VeiculoAdmin | null>(null);
+  const [rotaSelecionada, setRotaSelecionada] = useState<string>('');
+  const [rotasDisponiveis, setRotasDisponiveis] = useState<any[]>([]);
 
   // Form Fields
   const [placa, setPlaca] = useState('');
@@ -77,6 +91,15 @@ export default function FrotaPage() {
       const listMots = motData || [];
       setMotoristasReal(listMots);
 
+      // 1.2 Busca rotas cadastradas no banco
+      const { data: dbRotas, error: rotasError } = await supabase
+        .from('rotas')
+        .select('id, codigo, nome, veiculo_id')
+        .order('nome', { ascending: true });
+
+      const listRotas = dbRotas || [];
+      setRotasDisponiveis(listRotas);
+
       // 2. Busca veículos cadastrados no banco
       const { data, error } = await supabase
         .from('veiculos')
@@ -86,6 +109,7 @@ export default function FrotaPage() {
         const mapped: VeiculoAdmin[] = data.map((v: any) => {
           // De-para de UUID para Nome do motorista
           const motEncontrado = listMots.find((m: any) => m.id === v.motorista_id);
+          const rotaAssociada = listRotas.find((r: any) => r.veiculo_id === v.id);
           return {
             id: v.id,
             placa: v.placa,
@@ -93,18 +117,22 @@ export default function FrotaPage() {
             capacidade: v.capacidade,
             motorista: motEncontrado ? motEncontrado.nome : (v.motorista_id ?? 'Motorista não atribuído'),
             tipo: (v.tipo as any) ?? 'Próprio',
-            status: (v.status as any) ?? 'Ativo'
+            status: (v.status as any) ?? 'Ativo',
+            rota_id: rotaAssociada ? rotaAssociada.id : null,
+            rota_nome: rotaAssociada ? `${rotaAssociada.codigo} - ${rotaAssociada.nome}` : 'Nenhuma rota atribuída'
           };
         });
         setVeiculos(mapped);
         setUsandoMock(false);
       } else {
         setVeiculos(VEICULOS_MOCK);
+        setRotasDisponiveis(ROTAS_MOCK_DISPONIVEIS);
         setUsandoMock(true);
       }
     } catch (err) {
       console.error('Erro ao buscar dados de frota:', err);
       setVeiculos(VEICULOS_MOCK);
+      setRotasDisponiveis(ROTAS_MOCK_DISPONIVEIS);
       setUsandoMock(true);
     } finally {
       setLoading(false);
@@ -237,6 +265,75 @@ export default function FrotaPage() {
     }
   };
 
+  const handleAbrirModalRota = (veiculo: VeiculoAdmin) => {
+    setVeiculoSelecionado(veiculo);
+    const rId = veiculo.rota_id ?? '';
+    setRotaSelecionada(rId);
+    setModalRota(true);
+  };
+
+  const handleSalvarVinculoRota = async () => {
+    if (!veiculoSelecionado) return;
+    setLoadingAction(true);
+    try {
+      const vId = veiculoSelecionado.id;
+      const rId = rotaSelecionada; // Pode ser '' (desvincular)
+
+      const isMock = vId.startsWith('v-mock-') || vId.startsWith('v-gen-') || vId.startsWith('v1') || vId.startsWith('v2') || vId.startsWith('v3') || vId.startsWith('v4') || vId.startsWith('v5') || usandoMock;
+
+      if (!isMock) {
+        // 1. Limpa o veiculo_id de qualquer rota que estava anteriormente vinculada a este veículo
+        await supabase
+          .from('rotas')
+          .update({ veiculo_id: null })
+          .eq('veiculo_id', vId);
+
+        // 2. Se selecionou uma nova rota, atualiza ela com o veiculo_id do veículo correspondente
+        if (rId) {
+          const { error } = await supabase
+            .from('rotas')
+            .update({ veiculo_id: vId })
+            .eq('id', rId);
+
+          if (error) throw error;
+        }
+      }
+
+      // Atualiza localmente o estado
+      setVeiculos(prev => prev.map(v => {
+        if (v.id === veiculoSelecionado.id) {
+          const rObj = rotasDisponiveis.find(r => r.id === rId);
+          return {
+            ...v,
+            rota_id: rId || null,
+            rota_nome: rObj ? `${rObj.codigo} - ${rObj.nome}` : 'Nenhuma rota atribuída'
+          };
+        }
+        // Se a rota selecionada for atribuída a este veículo, removemos o veículo das outras rotas localmente
+        if (rId && v.rota_id === rId && v.id !== veiculoSelecionado.id) {
+          return {
+            ...v,
+            rota_id: null,
+            rota_nome: 'Nenhuma rota atribuída'
+          };
+        }
+        return v;
+      }));
+
+      showToast('Vínculo de rota atualizado com sucesso!', 'success');
+      setModalRota(false);
+      // Se não for mock, recarrega para manter dados do banco consistentes
+      if (!isMock) {
+        await loadVeiculos();
+      }
+    } catch (err: any) {
+      console.error('Erro ao vincular rota:', err);
+      showToast('Erro ao atualizar vínculo no banco.', 'error');
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
   const filteredVeiculos = veiculos.filter(v => {
     if (filterType === 'Todos') return true;
     if (filterType === 'Manutenção') return v.status === 'Manutenção';
@@ -345,6 +442,7 @@ export default function FrotaPage() {
                   <th className="py-3 px-4">Modelo do Veículo</th>
                   <th className="py-3 px-4">Capacidade</th>
                   <th className="py-3 px-4">Motorista Atribuído</th>
+                  <th className="py-3 px-4">Rota Atribuída</th>
                   <th className="py-3 px-4">Tipo</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-center">Ações</th>
@@ -357,6 +455,7 @@ export default function FrotaPage() {
                     <td className="py-3.5 px-4 text-slate-600">{v.modelo}</td>
                     <td className="py-3.5 px-4 text-slate-500 font-mono">{v.capacidade} lugares</td>
                     <td className="py-3.5 px-4 text-slate-600 font-semibold">{v.motorista}</td>
+                    <td className="py-3.5 px-4 text-slate-600 font-semibold text-amber-600">{v.rota_nome ?? 'Nenhuma rota'}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold border uppercase tracking-wider ${
                         v.tipo === 'Próprio' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-orange-50 border-orange-200 text-orange-700'
@@ -372,12 +471,18 @@ export default function FrotaPage() {
                         {v.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center flex items-center justify-center gap-1.5">
                       <button
                         onClick={() => handleToggleStatus(v.id, v.status)}
                         className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border shadow-sm"
                       >
                         Alternar Status
+                      </button>
+                      <button
+                        onClick={() => handleAbrirModalRota(v)}
+                        className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors border-0 shadow-sm animate-pulse"
+                      >
+                        Vincular Rota
                       </button>
                     </td>
                   </tr>
@@ -600,6 +705,63 @@ export default function FrotaPage() {
                 }`}
               >
                 {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Registrar Veículo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VINCULAR ROTA */}
+      {modalRota && veiculoSelecionado && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn">
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm">Vincular Rota ao Veículo</h3>
+                <span className="text-[9px] text-amber-500 font-extrabold block mt-0.5 uppercase font-mono">
+                  Placa: {veiculoSelecionado.placa} ({veiculoSelecionado.modelo})
+                </span>
+              </div>
+              <button onClick={() => setModalRota(false)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                <X size={15} />
+              </button>
+            </div>
+            
+            <div className="p-5 flex flex-col gap-3">
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Selecione a Rota Escolar</label>
+                <select
+                  value={rotaSelecionada}
+                  onChange={(e) => setRotaSelecionada(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="">-- Nenhuma Rota (Desvincular) --</option>
+                  {rotasDisponiveis.map((rota) => (
+                    <option key={rota.id} value={rota.id}>
+                      {rota.codigo} - {rota.nome}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                  Ao vincular, esta rota será atribuída a este veículo e exibida no mapa e nos painéis operacionais do RotaEscola.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
+              <button
+                disabled={loadingAction}
+                onClick={() => setModalRota(false)}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={loadingAction}
+                onClick={handleSalvarVinculoRota}
+                className="py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+              >
+                {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Confirmar Vínculo'}
               </button>
             </div>
           </div>

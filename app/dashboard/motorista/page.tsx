@@ -650,19 +650,20 @@ export default function MotoristaDashboardPage() {
         .animate-slideDown {
           animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        #reader {
+        #reader, #ocorrencia-reader {
           width: 100% !important;
           height: 100% !important;
           border: none !important;
           background: transparent !important;
         }
-        #reader video {
+        #reader video, #ocorrencia-reader video {
           width: 100% !important;
           height: 100% !important;
           object-fit: cover !important;
           border-radius: 1rem;
         }
-        #reader img, #reader span, #reader a {
+        #reader img, #reader span, #reader a,
+        #ocorrencia-reader img, #ocorrencia-reader span, #ocorrencia-reader a {
           display: none !important;
         }
       `}</style>
@@ -1017,7 +1018,7 @@ export default function MotoristaDashboardPage() {
             MODAL DE PRESTAR OCORRÊNCIA
         ══════════════════════════════════════════════════════ */}
         {showOcorrenciaModal && (
-          <div className="absolute inset-0 bg-slate-950/98 z-50 flex flex-col rounded-[36px] overflow-hidden">
+          <div className="absolute inset-0 z-50 flex flex-col rounded-[36px] overflow-hidden" style={{ backgroundColor: '#020617' }}>
             {/* Header do Modal */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60 bg-slate-900/90">
               <div className="flex items-center gap-2.5">

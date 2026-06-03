@@ -13,14 +13,15 @@ interface AlunoAdmin {
   rotaId: string;
   statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
   rotaNome?: string;
+  turno?: 'Manhã' | 'Tarde' | 'Noite';
 }
 
 const ALUNOS_MOCK: AlunoAdmin[] = [
-  { id: 'aluno-mock-1', nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '4º Ano B', rotaId: 'Rota 04', statusCarteirinha: 'Aprovado' },
-  { id: 'aluno-mock-2', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '7º Ano A', rotaId: 'Rota 22', statusCarteirinha: 'Em análise' },
-  { id: 'aluno-mock-3', nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', escolaId: 'b73e2840-7288-4682-9642-17cb25e36003', serie: '2º Ano C', rotaId: 'Rota 14', statusCarteirinha: 'Pendente' },
-  { id: 'aluno-mock-4', nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '6º Ano B', rotaId: 'Rota 07', statusCarteirinha: 'Pendente' },
-  { id: 'aluno-mock-5', nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '3º Ano A', rotaId: 'Rota 04', statusCarteirinha: 'Em análise' }
+  { id: 'aluno-mock-1', nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '4º Ano B', rotaId: 'Rota 04', statusCarteirinha: 'Aprovado', turno: 'Manhã' },
+  { id: 'aluno-mock-2', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '7º Ano A', rotaId: 'Rota 22', statusCarteirinha: 'Em análise', turno: 'Tarde' },
+  { id: 'aluno-mock-3', nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', escolaId: 'b73e2840-7288-4682-9642-17cb25e36003', serie: '2º Ano C', rotaId: 'Rota 14', statusCarteirinha: 'Pendente', turno: 'Manhã' },
+  { id: 'aluno-mock-4', nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '6º Ano B', rotaId: 'Rota 07', statusCarteirinha: 'Pendente', turno: 'Manhã' },
+  { id: 'aluno-mock-5', nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '3º Ano A', rotaId: 'Rota 04', statusCarteirinha: 'Em análise', turno: 'Tarde' }
 ];
 
 export default function AlunosPage() {
@@ -45,6 +46,7 @@ export default function AlunosPage() {
   const [serie, setSerie] = useState('');
   const [rotaId, setRotaId] = useState('');
   const [status, setStatus] = useState<'Pendente' | 'Em análise' | 'Aprovado'>('Pendente');
+  const [turno, setTurno] = useState<'Manhã' | 'Tarde' | 'Noite'>('Manhã');
 
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -119,7 +121,7 @@ export default function AlunosPage() {
       const { data, error } = await supabase
         .from('alunos')
         .select(`
-          id, nome, escola, escola_id, rota_id, status_carteirinha, serie,
+          id, nome, escola, escola_id, rota_id, status_carteirinha, serie, turno,
           rotas (
             id,
             nome,
@@ -137,7 +139,8 @@ export default function AlunosPage() {
         serie: a.serie ?? '—',
         rotaId: a.rota_id ?? '',
         statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente',
-        rotaNome: a.rotas ? `${a.rotas.codigo || 'RT'} — ${a.rotas.nome}` : undefined
+        rotaNome: a.rotas ? `${a.rotas.codigo || 'RT'} — ${a.rotas.nome}` : undefined,
+        turno: (a.turno as AlunoAdmin['turno']) ?? 'Manhã'
       }));
 
       setAlunos(mapped);
@@ -166,7 +169,8 @@ export default function AlunosPage() {
             escola_id: escolaId || null,
             serie,
             status_carteirinha: status,
-            rota_id: rotaId
+            rota_id: rotaId,
+            turno: turno
           })
           .select('id')
           .maybeSingle();
@@ -181,7 +185,8 @@ export default function AlunosPage() {
               escola_id: escolaId || null,
               serie,
               status_carteirinha: status,
-              rota_id: rotaId
+              rota_id: rotaId,
+              turno: turno
             })
             .select('id')
             .maybeSingle();
@@ -200,7 +205,8 @@ export default function AlunosPage() {
         escolaId,
         serie,
         rotaId,
-        statusCarteirinha: status
+        statusCarteirinha: status,
+        turno: turno
       };
 
       setAlunos(prev => [novo, ...prev]);
@@ -217,7 +223,8 @@ export default function AlunosPage() {
         escolaId,
         serie,
         rotaId,
-        statusCarteirinha: status
+        statusCarteirinha: status,
+        turno: turno
       };
       setAlunos(prev => [mockNovo, ...prev]);
       setModalNovo(false);
@@ -242,7 +249,8 @@ export default function AlunosPage() {
             escola_id: escolaId || null,
             serie,
             status_carteirinha: status,
-            rota_id: rotaId
+            rota_id: rotaId,
+            turno: turno
           })
           .eq('id', modalEditar.id);
 
@@ -256,7 +264,8 @@ export default function AlunosPage() {
         escolaId,
         serie,
         rotaId,
-        statusCarteirinha: status
+        statusCarteirinha: status,
+        turno: turno
       } : a));
       
       setModalEditar(null);
@@ -387,6 +396,7 @@ export default function AlunosPage() {
                   <th className="py-3 px-4">Nome do Aluno</th>
                   <th className="py-3 px-4">Escola</th>
                   <th className="py-3 px-4">Ano/Turma</th>
+                  <th className="py-3 px-4">Turno</th>
                   <th className="py-3 px-4">Rota Vinculada</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-center">Ações</th>
@@ -398,6 +408,15 @@ export default function AlunosPage() {
                     <td className="py-3.5 px-4 font-bold text-slate-900">{aluno.nome}</td>
                     <td className="py-3.5 px-4 text-slate-600">{aluno.escola}</td>
                     <td className="py-3.5 px-4 text-slate-500 font-mono">{aluno.serie}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                        aluno.turno === 'Manhã' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                        aluno.turno === 'Tarde' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                        'bg-purple-50 border-purple-200 text-purple-700'
+                      }`}>
+                        {aluno.turno ?? 'Manhã'}
+                      </span>
+                    </td>
                     <td className="py-3.5 px-4 text-slate-600 font-semibold">{aluno.rotaNome || aluno.rotaId || 'Aguardando Atribuição'}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -423,6 +442,7 @@ export default function AlunosPage() {
                             setSerie(aluno.serie);
                             setRotaId(aluno.rotaId);
                             setStatus(aluno.statusCarteirinha);
+                            setTurno(aluno.turno ?? 'Manhã');
                             setModalEditar(aluno);
                           }}
                           className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
@@ -498,6 +518,19 @@ export default function AlunosPage() {
                   placeholder="Ex: 4º Ano B"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
                 />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turno Escolar</label>
+                <select
+                  value={turno}
+                  onChange={(e) => setTurno(e.target.value as any)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
+                </select>
               </div>
 
               <div>
@@ -603,6 +636,19 @@ export default function AlunosPage() {
                   placeholder="Ex: 4º Ano B"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 transition-all font-mono"
                 />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turno Escolar</label>
+                <select
+                  value={turno}
+                  onChange={(e) => setTurno(e.target.value as any)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
+                </select>
               </div>
 
               <div>

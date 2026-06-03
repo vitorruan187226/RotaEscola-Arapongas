@@ -1,0 +1,6 @@
+[2026-06-03 16:15:00] [INFO] Protocolo de Reconhecimento executado. Consultados: indice.txt, 0200_Indice_Telas.md, 0206_ResponsavelDashboard.md, 0208_PortalPais.md, 0211_Ocorrencias.md.
+[2026-06-03 16:16:12] [INFO] Verificado banco de dados Supabase (projeto lzzxivzkwtwifgvexuiy).
+[2026-06-03 16:17:30] [INFO] Detectado que a tabela logs_embarque não possuía as colunas status, data_registro e turno.
+[2026-06-03 16:18:25] [INFO] Detectada inconsistência de constraint no campo tipo_movimento (apenas 'Ida'/'Volta' permitidos, mas motorista enviava 'IDA'/'VOLTA').
+[2026-06-03 16:19:10] [INFO] Executado script SQL corretivo para adicionar as colunas ausentes e expandir a restrição tipo_movimento.
+[2026-06-03 16:21:40] [INFO] Corrigida correspondência de IDs mock no componente OcorrenciasFilho de 'aluno-mock-2' para 'aluno-02' para garantir renderização local em modo de demonstração.

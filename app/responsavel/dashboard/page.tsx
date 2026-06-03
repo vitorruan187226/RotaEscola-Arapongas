@@ -6,7 +6,7 @@ import { createClient } from '../../../utils/supabase/client';
 import {
   User, Shield, MapPin, UploadCloud, AlertCircle, FileText,
   CheckCircle, Clock, MessageCircle, X, Trash2, CalendarX,
-  RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus
+  RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus, ShieldAlert
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -359,6 +359,9 @@ export default function ResponsavelDashboard() {
 
               {/* Histórico de Embarque */}
               <HistoricoEmbarque alunoId={filho.id} usandoMock={usandoMock} />
+
+              {/* Ocorrências Disciplinares do Aluno */}
+              <OcorrenciasFilho alunoId={filho.id} usandoMock={usandoMock} />
 
               {/* Ações Rápidas */}
               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
@@ -1652,6 +1655,94 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
               <span className="font-extrabold uppercase text-[8px] tracking-wider shrink-0 ml-1">
                 {isPresente ? 'Presente' : 'Faltou'}
               </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── SUB-COMPONENTE: OCORRÊNCIAS DO FILHO ────────────────────────────────────
+interface Ocorrencia {
+  id: string;
+  descricao: string;
+  status: 'pendente' | 'enviada_ao_pai';
+  criado_em: string;
+}
+
+function OcorrenciasFilho({ alunoId, usandoMock }: { alunoId: string; usandoMock: boolean }) {
+  const supabase = createClient();
+  const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadOcorrencias() {
+      if (usandoMock || alunoId.startsWith('aluno-')) {
+        // No mock do pai, simulamos que o segundo filho tem uma ocorrência para demonstrar
+        if (alunoId === 'aluno-02' || alunoId === 'aluno-mock-2') {
+          setOcorrencias([
+            {
+              id: 'mock-occ-1',
+              descricao: 'O aluno se recusou a sentar e ficou andando no corredor com o ônibus em movimento.',
+              status: 'enviada_ao_pai',
+              criado_em: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
+            }
+          ]);
+        } else {
+          setOcorrencias([]);
+        }
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('ocorrencias')
+          .select('id, descricao, status, criado_em')
+          .eq('aluno_id', alunoId)
+          .eq('status', 'enviada_ao_pai')
+          .order('criado_em', { ascending: false });
+
+        if (!error && data) {
+          setOcorrencias(data as Ocorrencia[]);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar ocorrências do filho:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadOcorrencias();
+  }, [alunoId, usandoMock, supabase]);
+
+  if (loading) return null;
+  if (ocorrencias.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+      <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest block flex items-center gap-1">
+        <ShieldAlert size={10} /> Ocorrências Disciplinares Registradas
+      </span>
+      <div className="flex flex-col gap-1.5">
+        {ocorrencias.map((occ) => {
+          let dateStr = occ.criado_em;
+          if (dateStr.includes('T')) {
+            const datePart = dateStr.split('T')[0];
+            const parts = datePart.split('-');
+            dateStr = `${parts[2]}/${parts[1]}`;
+          }
+          return (
+            <div key={occ.id} className="bg-rose-50 border border-rose-150 rounded-xl p-3 text-[10px] text-rose-950 flex flex-col gap-1.5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-rose-200/50 pb-1">
+                <span className="font-extrabold uppercase text-[8px] tracking-wider text-rose-700 bg-rose-100/60 px-2 py-0.5 rounded-full">
+                  Notificado em {dateStr}
+                </span>
+              </div>
+              <p className="font-medium italic leading-relaxed text-slate-800">
+                "{occ.descricao}"
+              </p>
             </div>
           );
         })}

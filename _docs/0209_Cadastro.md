@@ -68,3 +68,4 @@ A API possui tratamento de erro try/catch detalhado. Se a criação de usuário 
 |---|---|
 | 28/05/2026 | Criação da tela de cadastro, migração de colunas `cpf`/`telefone`, RPCs de validação e documentação técnica inicial. |
 | 28/05/2026 | Ajuste Fino: Migração para cadastro via Admin Auth no servidor (`/api/auth/cadastro`) e enriquecimento de metadados para compatibilidade com trigger. |
+| 08/06/2026 | Testes: Desativada temporariamente a validação de algoritmo de CPF real no Client-side (`page.tsx`) a pedido do usuário para viabilizar testes com dados falsos. |

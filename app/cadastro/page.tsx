@@ -103,11 +103,13 @@ export default function CadastroPage() {
       return;
     }
 
+    /* DESATIVADO TEMPORARIAMENTE PARA TESTES (MOCK CPF)
     if (!validateCPF(cleanCpf)) {
       setError('CPF inválido. Verifique os dígitos informados.');
       setLoading(false);
       return;
     }
+    */
 
     try {
       const response = await fetch('/api/auth/cadastro', {

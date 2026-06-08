@@ -1,19 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bus, Plus, Filter, Download, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bus, Plus, Filter, Download, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
 
 interface VeiculoAdmin {
   id: string;
   placa: string;
   modelo: string;
-  capacidade: number;
+  capacidade: number | string;
   motorista: string;
-  tipo: 'Próprio' | 'Terceirizado';
-  status: 'Ativo' | 'Manutenção';
+  tipo: 'Próprio' | 'Terceirizado' | 'Pendente';
+  status: 'Ativo' | 'Manutenção' | 'Aguardando';
   rota_id?: string | null;
   rota_nome?: string | null;
+  is_motorista_avulso?: boolean;
 }
 
 const VEICULOS_MOCK: VeiculoAdmin[] = [
@@ -37,8 +38,12 @@ export default function FrotaPage() {
 
   const [veiculos, setVeiculos] = useState<VeiculoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<'Todos' | 'Próprio' | 'Terceirizado' | 'Manutenção'>('Todos');
+  const [filterType, setFilterType] = useState<'Todos' | 'Próprio' | 'Terceirizado' | 'Manutenção' | 'Pendente'>('Todos');
   const [usandoMock, setUsandoMock] = useState(false);
+
+  // Estados de Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Estados dos Modais
   const [modalNovo, setModalNovo] = useState(false);
@@ -122,7 +127,24 @@ export default function FrotaPage() {
             rota_nome: rotaAssociada ? `${rotaAssociada.codigo} - ${rotaAssociada.nome}` : 'Nenhuma rota atribuída'
           };
         });
-        setVeiculos(mapped);
+        
+        const motoristasComVeiculo = new Set(data.map((v: any) => v.motorista_id).filter(Boolean));
+        const avulsos: VeiculoAdmin[] = listMots
+          .filter((m: any) => !motoristasComVeiculo.has(m.id))
+          .map((m: any) => ({
+            id: `mot-${m.id}`,
+            placa: '—',
+            modelo: 'Aguardando Veículo',
+            capacidade: '—',
+            motorista: m.nome,
+            tipo: 'Pendente',
+            status: 'Aguardando',
+            rota_id: null,
+            rota_nome: 'Nenhuma rota',
+            is_motorista_avulso: true
+          }));
+
+        setVeiculos([...mapped, ...avulsos]);
         setUsandoMock(false);
       } else {
         setVeiculos(VEICULOS_MOCK);
@@ -340,6 +362,9 @@ export default function FrotaPage() {
     return v.tipo === filterType && v.status !== 'Manutenção';
   });
 
+  const totalPages = Math.ceil(filteredVeiculos.length / itemsPerPage);
+  const paginatedVeiculos = filteredVeiculos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <div className="flex flex-col gap-6 relative">
       
@@ -398,10 +423,10 @@ export default function FrotaPage() {
             <Filter size={14} className="text-amber-500" />
             <span>Filtrar Frota:</span>
             <div className="flex gap-1.5 ml-2">
-              {(['Todos', 'Próprio', 'Terceirizado', 'Manutenção'] as const).map((t) => (
+              {(['Todos', 'Próprio', 'Terceirizado', 'Manutenção', 'Pendente'] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setFilterType(t)}
+                  onClick={() => { setFilterType(t); setCurrentPage(1); }}
                   className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
                     filterType === t 
                       ? 'bg-slate-900 text-white' 
@@ -449,46 +474,112 @@ export default function FrotaPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredVeiculos.map((v) => (
+                {paginatedVeiculos.map((v) => (
                   <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{v.placa}</td>
                     <td className="py-3.5 px-4 text-slate-600">{v.modelo}</td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono">{v.capacidade} lugares</td>
+                    <td className="py-3.5 px-4 text-slate-500 font-mono">{v.capacidade} {v.capacidade !== '—' && 'lugares'}</td>
                     <td className="py-3.5 px-4 text-slate-600 font-semibold">{v.motorista}</td>
                     <td className="py-3.5 px-4 text-slate-600 font-semibold text-amber-600">{v.rota_nome ?? 'Nenhuma rota'}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold border uppercase tracking-wider ${
-                        v.tipo === 'Próprio' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-orange-50 border-orange-200 text-orange-700'
+                        v.tipo === 'Próprio' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 
+                        v.tipo === 'Terceirizado' ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                        'bg-slate-50 border-slate-200 text-slate-600'
                       }`}>
                         {v.tipo}
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        v.status === 'Ativo' ? 'bg-emerald-50 border-emerald-250 text-emerald-700' : 'bg-rose-50 border-rose-250 text-rose-700'
+                        v.status === 'Ativo' ? 'bg-emerald-50 border-emerald-250 text-emerald-700' : 
+                        v.status === 'Manutenção' ? 'bg-rose-50 border-rose-250 text-rose-700' :
+                        'bg-amber-50 border-amber-250 text-amber-700'
                       }`}>
-                        <span className={`w-1 h-1 rounded-full ${v.status === 'Ativo' ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`} />
+                        <span className={`w-1 h-1 rounded-full ${v.status === 'Ativo' ? 'bg-emerald-500' : v.status === 'Manutenção' ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'}`} />
                         {v.status}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-center flex items-center justify-center gap-1.5">
-                      <button
-                        onClick={() => handleToggleStatus(v.id, v.status)}
-                        className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border shadow-sm"
-                      >
-                        Alternar Status
-                      </button>
-                      <button
-                        onClick={() => handleAbrirModalRota(v)}
-                        className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors border-0 shadow-sm animate-pulse"
-                      >
-                        Vincular Rota
-                      </button>
+                      {!v.is_motorista_avulso ? (
+                        <>
+                          <button
+                            onClick={() => handleToggleStatus(v.id, v.status)}
+                            className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border shadow-sm"
+                          >
+                            Alternar Status
+                          </button>
+                          <button
+                            onClick={() => handleAbrirModalRota(v)}
+                            className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors border-0 shadow-sm animate-pulse"
+                          >
+                            Vincular Rota
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setPlaca('');
+                            setModelo('');
+                            setCapacidade(28);
+                            setMotorista(v.id.replace('mot-', ''));
+                            setTipo('Próprio');
+                            setStatus('Ativo');
+                            setModalNovo(true);
+                          }}
+                          className="py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white hover:bg-slate-800 transition-colors border-0 shadow-sm"
+                        >
+                          Atribuir Veículo
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            
+            {/* Controles de Paginação */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2 px-2">
+                <span className="text-[11px] text-slate-500 font-bold">
+                  Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredVeiculos.length)} de {filteredVeiculos.length} veículos
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`w-7 h-7 rounded-lg text-xs font-extrabold transition-colors ${
+                          currentPage === i + 1
+                            ? 'bg-slate-900 text-white shadow'
+                            : 'text-slate-600 hover:bg-slate-100 border border-slate-100'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           )}
         </div>
       </div>

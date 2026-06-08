@@ -128,6 +128,8 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 02/06/2026 | **Cadastro Real de Motoristas (frota/page.tsx + /api/admin/motoristas):** Criada API Route com Service Role para criar motoristas no Supabase Auth + tabelas `perfis` e `motoristas_perfil`. Modal de cadastro adicionado ao painel de Frota. Select de motoristas reais adicionado ao formulário de criação de veículos. |
 | 02/06/2026 | **Designação de Motorista nas Rotas (rotas/page.tsx):** Adicionado campo "Motorista Designado" (dropdown) no modal de criação e edição de rotas. Motoristas buscados da tabela `perfis` (tipo_usuario = 'Motorista') com join em `motoristas_perfil`. `motorista_id` (uuid) persistido na coluna `rotas.motorista_id` → FK para `perfis.id`. Coluna "Motorista" exibida na tabela de listagem. Build validado: 19/19 páginas sem erros. |
 | 03/06/2026 | **Seleção Inteligente de Motorista:** Adicionada a busca por `motorista_id` na lista de veículos e implementada auto-seleção automática do motorista no formulário do modal ao escolher um veículo que já possui vínculo na tabela `veiculos`. |
+| 08/06/2026 | **Paginação Inteligente na Frota:** Adicionada paginação (Google-like) na tabela de veículos (`frota/page.tsx`) com 5 itens por página para melhorar a experiência do usuário e impedir a quebra de layout de listas longas. |
+| 08/06/2026 | **Motoristas Avulsos na Frota:** Integração dos motoristas recém-criados e não atribuídos diretamente na lista principal de frota (`frota/page.tsx`), recebendo o status de 'Aguardando Veículo' e um atalho rápido para atribuição de veículo, melhorando a UX da secretaria. |
 
 
 

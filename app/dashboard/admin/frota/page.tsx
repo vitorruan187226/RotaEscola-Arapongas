@@ -110,7 +110,11 @@ export default function FrotaPage() {
         .from('veiculos')
         .select('*');
 
-      if (!error && data && data.length > 0) {
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
         const mapped: VeiculoAdmin[] = data.map((v: any) => {
           // De-para de UUID para Nome do motorista
           const motEncontrado = listMots.find((m: any) => m.id === v.motorista_id);
@@ -146,10 +150,6 @@ export default function FrotaPage() {
 
         setVeiculos([...mapped, ...avulsos]);
         setUsandoMock(false);
-      } else {
-        setVeiculos(VEICULOS_MOCK);
-        setRotasDisponiveis(ROTAS_MOCK_DISPONIVEIS);
-        setUsandoMock(true);
       }
     } catch (err) {
       console.error('Erro ao buscar dados de frota:', err);

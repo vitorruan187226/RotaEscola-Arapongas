@@ -157,9 +157,18 @@ export default function EscolaDetalhesPage() {
         console.error('Detalhes:', error.details);
         console.error('Dica (Hint):', error.hint);
         console.error('---------------------------------');
+        
+        console.warn('Erro ao consultar estudantes do banco. Carregando mock.', error);
+        const filtradoMock = ALUNOS_MOCK_AUDITORIA.filter(
+          a => a.escola.toLowerCase().includes(escolaNome.toLowerCase())
+        );
+        setAlunos(filtradoMock.length > 0 ? filtradoMock : ALUNOS_MOCK_AUDITORIA);
+        setUsandoMock(true);
+        return;
       }
 
-      if (!error && data && data.length > 0) {
+      // Se não houver erro, usa os dados do banco, mesmo que vazio
+      if (data) {
         const mapped: AlunoAuditoria[] = data.map((a: any) => ({
           id: a.id,
           nome: a.nome,
@@ -171,13 +180,6 @@ export default function EscolaDetalhesPage() {
         }));
         setAlunos(mapped);
         setUsandoMock(false);
-      } else {
-        // Filtrar o mock geral apenas para esta escola
-        const filtradoMock = ALUNOS_MOCK_AUDITORIA.filter(
-          a => a.escola.toLowerCase().includes(escolaNome.toLowerCase())
-        );
-        setAlunos(filtradoMock.length > 0 ? filtradoMock : ALUNOS_MOCK_AUDITORIA);
-        setUsandoMock(true);
       }
     } catch (err) {
       console.warn('Erro ao consultar estudantes do banco. Carregando mock.', err);

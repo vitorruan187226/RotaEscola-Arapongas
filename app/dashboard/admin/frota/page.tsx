@@ -460,7 +460,8 @@ export default function FrotaPage() {
               </p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse text-xs">
+            <div className="flex flex-col">
+              <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b bg-slate-50 text-slate-400 font-bold uppercase tracking-wider">
                   <th className="py-3 px-4">Placa</th>

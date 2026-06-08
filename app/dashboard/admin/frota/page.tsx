@@ -304,17 +304,26 @@ export default function FrotaPage() {
       const isMock = vId.startsWith('v-mock-') || vId.startsWith('v-gen-') || vId.startsWith('v1') || vId.startsWith('v2') || vId.startsWith('v3') || vId.startsWith('v4') || vId.startsWith('v5') || usandoMock;
 
       if (!isMock) {
-        // 1. Limpa o veiculo_id de qualquer rota que estava anteriormente vinculada a este veículo
+        // 1. Limpa o veiculo_id e o motorista_id de qualquer rota que estava vinculada a este veículo
         await supabase
           .from('rotas')
-          .update({ veiculo_id: null })
+          .update({ veiculo_id: null, motorista_id: null })
           .eq('veiculo_id', vId);
 
-        // 2. Se selecionou uma nova rota, atualiza ela com o veiculo_id do veículo correspondente
+        // 2. Se selecionou uma nova rota, atualiza o veiculo_id e puxa o motorista do veículo para a rota
         if (rId) {
+          const { data: vData } = await supabase
+            .from('veiculos')
+            .select('motorista_id')
+            .eq('id', vId)
+            .maybeSingle();
+
           const { error } = await supabase
             .from('rotas')
-            .update({ veiculo_id: vId })
+            .update({ 
+              veiculo_id: vId,
+              motorista_id: vData?.motorista_id || null
+            })
             .eq('id', rId);
 
           if (error) throw error;

@@ -41,6 +41,7 @@ interface Aluno {
   fotoUrl?: string;
   responsavelId?: string;
   statusLocal: 'pendente' | 'presente' | 'ausente';
+  qrCodeHash?: string;
 }
 
 interface RotaConfig {
@@ -171,7 +172,16 @@ export default function MotoristaDashboardPage() {
             for (const r of dbRotas) {
               const { data: dbAlunos } = await supabase
                 .from('alunos')
-                .select('id, nome, escola, foto_url, responsavel_id')
+                .select(`
+                  id, 
+                  nome, 
+                  escola, 
+                  foto_url, 
+                  responsavel_id,
+                  carteirinhas (
+                    qr_code_hash
+                  )
+                `)
                 .eq('rota_id', r.id)
                 .eq('turno', turno === 'Manhã' ? 'Manhã' : turno === 'Tarde' ? 'Tarde' : 'Noite');
 
@@ -181,16 +191,22 @@ export default function MotoristaDashboardPage() {
                 nome: r.nome || 'Rota sem Nome',
                 placa: driverPerfil?.placa_veiculo || 'SEM PLACA',
                 veiculo: driverPerfil?.modelo_veiculo || 'Veículo',
-                alunos: (dbAlunos || []).map((aluno) => ({
-                  id: aluno.id,
-                  nome: aluno.nome,
-                  escola: aluno.escola || 'Escola Municipal',
-                  nee: false,
-                  aBordo: false,
-                  statusLocal: 'pendente',
-                  fotoUrl: aluno.foto_url || undefined,
-                  responsavelId: aluno.responsavel_id || undefined
-                }))
+                alunos: (dbAlunos || []).map((aluno: any) => {
+                  const hash = (aluno.carteirinhas && aluno.carteirinhas.length > 0)
+                    ? aluno.carteirinhas[0].qr_code_hash
+                    : undefined;
+                  return {
+                    id: aluno.id,
+                    nome: aluno.nome,
+                    escola: aluno.escola || 'Escola Municipal',
+                    nee: false,
+                    aBordo: false,
+                    statusLocal: 'pendente',
+                    fotoUrl: aluno.foto_url || undefined,
+                    responsavelId: aluno.responsavel_id || undefined,
+                    qrCodeHash: hash
+                  };
+                })
               });
             }
 
@@ -293,7 +309,17 @@ export default function MotoristaDashboardPage() {
     if (!activeRoute) return;
     const currentSelectedRotaId = selectedRotaIdRef.current;
     
-    const alunoEncontrado = activeRoute.alunos.find(a => a.id.toString() === scannedId);
+    const alunoEncontrado = activeRoute.alunos.find(a => {
+      if (a.id.toString() === scannedId) return true;
+      if (a.qrCodeHash && a.qrCodeHash === scannedId) return true;
+      if (scannedId.startsWith('rotaescola_arapongas_') && scannedId.endsWith('_2026')) {
+        const extractedId = scannedId
+          .replace('rotaescola_arapongas_', '')
+          .replace('_2026', '');
+        if (a.id.toString() === extractedId) return true;
+      }
+      return false;
+    });
     
     if (alunoEncontrado) {
       // Marca como presente
@@ -303,7 +329,7 @@ export default function MotoristaDashboardPage() {
             return {
               ...r,
               alunos: r.alunos.map(a => 
-                a.id.toString() === scannedId ? { ...a, statusLocal: 'presente', aBordo: true } : a
+                a.id === alunoEncontrado.id ? { ...a, statusLocal: 'presente', aBordo: true } : a
               )
             };
           }
@@ -592,7 +618,17 @@ export default function MotoristaDashboardPage() {
     // Busca o aluno em todas as rotas carregadas
     let alunoEncontrado: Aluno | null = null;
     for (const rota of rotas) {
-      const found = rota.alunos.find(a => a.id.toString() === scannedId);
+      const found = rota.alunos.find(a => {
+        if (a.id.toString() === scannedId) return true;
+        if (a.qrCodeHash && a.qrCodeHash === scannedId) return true;
+        if (scannedId.startsWith('rotaescola_arapongas_') && scannedId.endsWith('_2026')) {
+          const extractedId = scannedId
+            .replace('rotaescola_arapongas_', '')
+            .replace('_2026', '');
+          if (a.id.toString() === extractedId) return true;
+        }
+        return false;
+      });
       if (found) { alunoEncontrado = found; break; }
     }
 

@@ -1,0 +1,4 @@
+[2026-06-09 19:50:00] [INFO] Protocolo de Reconhecimento executado. Consultados: indice.txt, _docs/0200_Indice_Telas.md, _docs/0207_PainelMotorista.md.
+[2026-06-09 19:51:30] [INFO] Identificado que o leitor de QR Code no painel do motorista (app/dashboard/motorista/page.tsx) comparava o hash completo do QR Code diretamente com o UUID do aluno.
+[2026-06-09 19:52:15] [INFO] Atualizado o Aluno interface, a consulta do banco de dados em loadData para buscar carteirinhas (qr_code_hash) e as funções handleQrCodeScanned e handleOcorrenciaScan para dar suporte robusto a hashes completos da tabela carteirinhas, bem como o formato fallback "rotaescola_arapongas_{id}_2026".
+[2026-06-09 19:53:00] [INFO] Elaborados comandos SQL para inserção de carteirinhas na tabela public.carteirinhas para os alunos cadastrados no banco de dados.

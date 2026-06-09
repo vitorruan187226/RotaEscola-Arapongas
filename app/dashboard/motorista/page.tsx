@@ -432,11 +432,7 @@ export default function MotoristaDashboardPage() {
         await html5QrCode.start(
           { facingMode: "environment" },
           {
-            fps: 15,
-            qrbox: (width: number, height: number) => {
-              const size = Math.min(width, height) - 20;
-              return { width: size, height: size };
-            }
+            fps: 15
           },
           (decodedText: string) => {
             handleQrCodeScanned(decodedText);
@@ -564,11 +560,7 @@ export default function MotoristaDashboardPage() {
         await scanner.start(
           { facingMode: 'environment' },
           {
-            fps: 12,
-            qrbox: (w: number, h: number) => {
-              const s = Math.min(w, h) - 20;
-              return { width: s, height: s };
-            }
+            fps: 12
           },
           (decoded: string) => handleOcorrenciaScan(decoded),
           () => {}

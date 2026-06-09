@@ -100,4 +100,6 @@ interface Aluno {
 | 03/06/2026 | Botão "Trânsito" substituído por "Prestar Ocorrência" (ShieldAlert laranja). Modal de 2 estágios: Scan QR → Descrição → Envio para `public.ocorrencias`. Veja `_docs/0211_Ocorrencias.md`. |
 | 03/06/2026 | Correção no loadData para evitar carregamento de fallback mock para motoristas reais cadastrados sem rotas atreladas, adicionando tratamento de estado vazio. |
 | 09/06/2026 | Correção no leitor de QR Code (handleQrCodeScanned e handleOcorrenciaScan) para permitir a validação tanto por UUID direto, hash customizado cadastrado ou formato fallback da carteirinha digital. |
+| 09/06/2026 | Otimização do escâner real com remoção da restrição de 'qrbox' para escanear a imagem completa e ajuste do aluno Carlos no banco de dados para a rota teste/turno manhã. |
+
 

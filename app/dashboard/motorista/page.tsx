@@ -322,6 +322,8 @@ export default function MotoristaDashboardPage() {
     });
     
     if (alunoEncontrado) {
+      if (alunoEncontrado.statusLocal === 'presente') return;
+
       // Marca como presente
       setRotas(prevRotas => 
         prevRotas.map(r => {

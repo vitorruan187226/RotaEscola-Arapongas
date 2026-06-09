@@ -6,3 +6,4 @@
 [2026-06-09 20:14:00] [INFO] Verificado que o aluno Carlos estava na rota RT-22 (do motorista Hélio) e turno Tarde, mas no login mock (Motorista Arapongas) a rota padrão selecionada é RT-TESTE (Noite/Manhã).
 [2026-06-09 20:14:50] [INFO] Atualizado o aluno Carlos no banco de dados Supabase para a rota RT-TESTE e turno Manhã, permitindo que ele apareça na lista de passageiros do motorista mock e seja validado no escaneamento.
 [2026-06-09 20:15:00] [INFO] Removido o parâmetro 'qrbox' do componente html5-qrcode para escanear a imagem completa, solucionando possíveis falhas de alinhamento por conta da estilização visual e garantindo escaneamento ágil.
+[2026-06-09 20:28:00] [INFO] Adicionada verificação preventiva no handleQrCodeScanned para ignorar leituras repetidas de alunos que já estão marcados com statusLocal "presente", eliminando o bug de beeps e leituras por voz em loop.

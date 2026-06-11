@@ -31,6 +31,8 @@ indice.txt
 - [_docs/0405_Persistencia_Rotas_Autenticacao.md](_docs/0405_Persistencia_Rotas_Autenticacao.md)
 - [_docs/0406_Table_Veiculos.md](_docs/0406_Table_Veiculos.md)
 - [_docs/0407_Table_Motoristas_Perfil.md](_docs/0407_Table_Motoristas_Perfil.md)
+- [_docs/0408_Table_Documentos_Aluno.md](_docs/0408_Table_Documentos_Aluno.md)
+
 
 
 ## [05XX] Deploy e Infra

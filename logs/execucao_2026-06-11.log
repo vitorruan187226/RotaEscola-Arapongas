@@ -2,3 +2,8 @@
 [2026-06-11 16:40:00] INFO: Identificado que o modal de criação/edição de Rotas ainda continha o select de 'Motorista Designado' e enviava o 'motorista_id' no payload de atualização das rotas. Isso causava conflito com a vinculação centralizada feita a partir da Frota de Veículos.
 [2026-06-11 16:42:00] INFO: Planejado remover o select de 'Motorista Designado' do modal de rotas e remover 'motorista_id' do payload real em handleSave para evitar sobrescrever a associação feita na tela de Frota.
 [2026-06-11 16:45:00] INFO: Usuário solicitou as credenciais de login. Consultada a documentação em _docs/0204_Login.md para extrair os logins de teste de desenvolvimento.
+[2026-06-11 17:15:00] INFO: Iniciada implementação da fila de auditoria da SEMED em app/dashboard/admin/documentos/page.tsx.
+[2026-06-11 17:18:00] INFO: Finalizado o agrupamento visual colapsável Escola -> Ano/Série -> Turma -> Turno no painel da secretaria.
+[2026-06-11 17:19:00] INFO: Adicionado fluxo e modal de feedback de solicitação de correção e persistência. Executado typechecking 'npx tsc --noEmit' com sucesso (0 erros). Criados arquivos de documentação técnica em _docs/0408_Table_Documentos_Aluno.md e atualizado indice.txt.
+[2026-06-11 17:21:00] INFO: Fornecidos ao usuário os scripts SQL completos das migrações (CNH de motoristas e fluxo de auditoria cadastral da SEMED).
+

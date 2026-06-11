@@ -15,8 +15,14 @@ interface Filho {
   id: string;
   nome: string;
   escola: string;
+  escola_id?: string;
   serie: string;
+  ano_serie?: string;
+  turma?: string;
   statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
+  status?: 'aguardando' | 'aprovado' | 'rejeitado' | 'pendente_correcao';
+  periodo?: 'manha' | 'tarde' | 'noite';
+  observacao_secretaria?: string | null;
   rotaId?: string;
   fotoUrl?: string;
   motorista_nome?: string;
@@ -132,7 +138,7 @@ export default function ResponsavelDashboard() {
           const { data: alunosDB, error: alunosErr } = await supabase
             .from('alunos')
             .select(`
-              id, nome, escola, serie, status_carteirinha, foto_url, rota_id,
+              id, nome, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria,
               rotas (
                 id,
                 nome,
@@ -162,12 +168,18 @@ export default function ResponsavelDashboard() {
                 id:                a.id,
                 nome:              a.nome,
                 escola:            a.escola,
+                escola_id:         a.escola_id,
                 serie:             a.serie ?? '—',
+                ano_serie:         a.ano_serie ?? '',
+                turma:             a.turma ?? '',
+                status:            a.status ?? 'aguardando',
                 statusCarteirinha: mapStatus(a.status_carteirinha),
                 rotaId:            rota?.nome ?? 'Aguardando Atribuição',
                 fotoUrl:           a.foto_url ?? undefined,
                 motorista_nome:    motoristaNome,
                 veiculo_numero:    veiculoNumero,
+                periodo:           a.periodo ?? 'manha',
+                observacao_secretaria: a.observacao_secretaria ?? null,
               };
             });
             setFilhos(mapeados);
@@ -344,6 +356,17 @@ export default function ResponsavelDashboard() {
                   <h4 className="text-sm font-bold text-slate-900 truncate mt-1.5">{filho.nome}</h4>
                   <span className="text-xs text-slate-500 mt-0.5 truncate">{filho.escola}</span>
                   
+                  {filho.status === 'pendente_correcao' && filho.observacao_secretaria && (
+                    <div className="mt-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold flex flex-col gap-1.5 animate-fadeIn">
+                      <div className="flex items-center gap-1.5 text-rose-900 font-black uppercase text-[9px] tracking-wider">
+                        <ShieldAlert size={12} className="text-rose-600 animate-pulse" />
+                        <span>Solicitação de Correção pela SEMED</span>
+                      </div>
+                      <p className="leading-relaxed font-medium">"{filho.observacao_secretaria}"</p>
+                      <span className="text-[9.5px] text-rose-500 font-bold block mt-0.5">ℹ Substitua o arquivo sinalizado no botão "Documentos" abaixo e reenvie para análise.</span>
+                    </div>
+                  )}
+                  
                   {filho.statusCarteirinha === 'Aprovado' ? (
                     <div className="mt-1 flex flex-col gap-0.5 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-md font-medium">
                       <span className="flex items-center gap-1"><User size={10} /> Motorista: {filho.motorista_nome || 'Aguardando'}</span>
@@ -489,8 +512,9 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
   const [dataNascimento, setDataNascimento] = useState('');
   const [escolaIdAluno, setEscolaIdAluno] = useState(escolas[0]?.id || '');
   const [escolaAluno, setEscolaAluno] = useState(escolas[0]?.nome || '');
-  const [serieAluno, setSerieAluno] = useState('');
-  const [turnoAluno, setTurnoAluno] = useState('Manhã');
+  const [anoSerie, setAnoSerie] = useState('');
+  const [turma, setTurma] = useState('');
+  const [periodo, setPeriodo] = useState<'manha' | 'tarde' | 'noite'>('manha');
 
   useEffect(() => {
     if (escolas.length > 0 && !escolaIdAluno) {
@@ -506,7 +530,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
   const [fileMatricula, setFileMatricula] = useState<File | null>(null);
 
   const handleSalvarFilho = async () => {
-    if (!nomeAluno.trim() || !serieAluno.trim() || !dataNascimento) return;
+    if (!nomeAluno.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento) return;
     setLoading(true);
 
     try {
@@ -521,9 +545,10 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           data_nascimento: dataNascimento,
           escola: escolaAluno,
           escola_id: escolaIdAluno,
-          serie: serieAluno,
-          turno: turnoAluno,
-          status_carteirinha: 'Em análise',
+          ano_serie: anoSerie,
+          turma: turma,
+          periodo: periodo,
+          status: 'aguardando',
           responsavel_id: user.id
         };
 
@@ -542,9 +567,10 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
               nome: nomeAluno,
               escola: escolaAluno,
               escola_id: escolaIdAluno,
-              serie: serieAluno,
-              turno: turnoAluno,
-              status_carteirinha: 'Em análise',
+              ano_serie: anoSerie,
+              turma: turma,
+              periodo: periodo,
+              status: 'aguardando',
               responsavel_id: user.id
             })
             .select('id')
@@ -559,7 +585,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           alunoSalvoId = insertData.id;
         }
 
-        // Tenta fazer upload dos 4 arquivos
+        // Tenta fazer upload dos 4 arquivos para o novo bucket documentos-transporte
         const arquivosUpload = [
           { file: fileComprovante, tipo: 'Comprovante_Residencia' },
           { file: fileDocAluno, tipo: 'Documento_Aluno' },
@@ -574,7 +600,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
               const fileName = `${alunoSalvoId}_${item.tipo}_${Date.now()}.${ext}`;
               
               const { error: storageError } = await supabase.storage
-                .from('documentos-alunos')
+                .from('documentos-transporte')
                 .upload(`documentos/${fileName}`, item.file, { upsert: true });
                 
               if (storageError) {
@@ -583,12 +609,13 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
 
               if (!storageError) {
                 const publicUrl = supabase.storage
-                  .from('documentos-alunos')
+                  .from('documentos-transporte')
                   .getPublicUrl(`documentos/${fileName}`).data.publicUrl;
                   
                 const { error: docInsertError } = await supabase.from('documentos_aluno').insert({
                   aluno_id: alunoSalvoId,
                   tipo_documento: item.tipo,
+                  url_arquivo: publicUrl,
                   url_documento: publicUrl
                 });
 
@@ -607,8 +634,10 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           id: alunoSalvoId,
           nome: nomeAluno,
           escola: escolaAluno,
-          serie: serieAluno,
-          statusCarteirinha: 'Em análise',
+          serie: `${anoSerie} - ${turma}`,
+          statusCarteirinha: 'Pendente',
+          status: 'aguardando',
+          periodo: periodo,
           rotaId: 'Aguardando Atribuição',
           fotoUrl: undefined,
           motorista_nome: 'Aguardando Atribuição',
@@ -623,8 +652,10 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           id: `aluno-new-${Date.now()}`,
           nome: nomeAluno,
           escola: escolaAluno,
-          serie: serieAluno,
-          statusCarteirinha: 'Em análise',
+          serie: `${anoSerie} - ${turma}`,
+          statusCarteirinha: 'Pendente',
+          status: 'aguardando',
+          periodo: periodo,
           rotaId: 'Aguardando Atribuição',
           fotoUrl: undefined,
           motorista_nome: 'Aguardando Atribuição',
@@ -713,37 +744,50 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                    Ano / Turma
+                    Ano / Série
                   </label>
                   <input
                     type="text"
-                    value={serieAluno}
-                    onChange={(e) => setSerieAluno(e.target.value)}
-                    placeholder="Ex: 4º Ano B"
+                    value={anoSerie}
+                    onChange={(e) => setAnoSerie(e.target.value)}
+                    placeholder="Ex: 4º Ano"
                     className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
                   />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                    Turno
+                    Turma
                   </label>
-                  <select
-                    value={turnoAluno}
-                    onChange={(e) => setTurnoAluno(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
-                  >
-                    <option value="Manhã">Manhã</option>
-                    <option value="Tarde">Tarde</option>
-                    <option value="Noite">Noite</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={turma}
+                    onChange={(e) => setTurma(e.target.value)}
+                    placeholder="Ex: B"
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+                  />
                 </div>
               </div>
 
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Turno
+                </label>
+                <select
+                  value={periodo}
+                  onChange={(e) => setPeriodo(e.target.value as any)}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                >
+                  <option value="manha">Manhã</option>
+                  <option value="tarde">Tarde</option>
+                  <option value="noite">Noite</option>
+                </select>
+              </div>
+
               <button
-                disabled={!nomeAluno.trim() || !serieAluno.trim() || !dataNascimento}
+                disabled={!nomeAluno.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento}
                 onClick={() => setStep(2)}
                 className={`w-full py-3.5 mt-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
-                  nomeAluno.trim() && serieAluno.trim() && dataNascimento
+                  nomeAluno.trim() && anoSerie.trim() && turma.trim() && dataNascimento
                     ? 'bg-slate-900 text-white hover:bg-slate-800'
                     : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
                 }`}
@@ -862,7 +906,7 @@ interface DocumentosModalProps {
   onSuccess: (newStatus: Filho['statusCarteirinha']) => void;
 }
 
-type DocType = 'Declaracao' | 'Comprovante' | 'Foto3x4';
+type DocType = 'Comprovante_Residencia' | 'Documento_Aluno' | 'Documento_Responsavel' | 'Declaracao_Matricula';
 
 interface DocStatus {
   enviado: boolean;
@@ -877,9 +921,10 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
   const [loadingAction, setLoadingAction] = useState(false);
 
   const [docs, setDocs] = useState<Record<DocType, DocStatus>>({
-    Declaracao: { enviado: false, nomeArquivo: null, url: null, loading: false },
-    Comprovante: { enviado: false, nomeArquivo: null, url: null, loading: false },
-    Foto3x4: { enviado: false, nomeArquivo: null, url: null, loading: false },
+    Comprovante_Residencia: { enviado: false, nomeArquivo: null, url: null, loading: false },
+    Documento_Aluno: { enviado: false, nomeArquivo: null, url: null, loading: false },
+    Documento_Responsavel: { enviado: false, nomeArquivo: null, url: null, loading: false },
+    Declaracao_Matricula: { enviado: false, nomeArquivo: null, url: null, loading: false },
   });
 
   useEffect(() => {
@@ -887,7 +932,7 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
       try {
         const { data, error } = await supabase
           .from('documentos_aluno')
-          .select('tipo_documento, url_documento')
+          .select('tipo_documento, url_arquivo, url_documento')
           .eq('aluno_id', aluno.id);
 
         if (!error && data && data.length > 0) {
@@ -898,7 +943,7 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
               updated[t] = {
                 enviado: true,
                 nomeArquivo: `doc_cadastrado_${t}.pdf`,
-                url: doc.url_documento,
+                url: doc.url_arquivo || doc.url_documento || null,
                 loading: false
               };
             }
@@ -924,7 +969,7 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
       const fileName = `${aluno.id}_${tipo}_${Date.now()}.${ext}`;
 
       const { data: storageData, error: storageError } = await supabase.storage
-        .from('documentos-alunos')
+        .from('documentos-transporte')
         .upload(`documentos/${fileName}`, file, {
           cacheControl: '3600',
           upsert: true
@@ -933,15 +978,23 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
       if (storageError) throw storageError;
 
       const publicUrl = supabase.storage
-        .from('documentos-alunos')
+        .from('documentos-transporte')
         .getPublicUrl(`documentos/${fileName}`).data.publicUrl;
+
+      // Deleta anterior para evitar duplicidades
+      await supabase
+        .from('documentos_aluno')
+        .delete()
+        .eq('aluno_id', aluno.id)
+        .eq('tipo_documento', tipo);
 
       const { error: dbError } = await supabase
         .from('documentos_aluno')
         .insert({
           aluno_id: aluno.id,
           tipo_documento: tipo,
-          url_documento: publicUrl,
+          url_arquivo: publicUrl,
+          url_documento: publicUrl, // legado
         });
 
       if (dbError) throw dbError;
@@ -969,12 +1022,17 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
   };
 
   const getDocLabel = (tipo: DocType) => {
-    if (tipo === 'Declaracao')  return 'Declaração de Matrícula';
-    if (tipo === 'Comprovante') return 'Comprovante de Residência';
-    return 'Foto 3x4 do Rosto';
+    if (tipo === 'Comprovante_Residencia')  return 'Comprovante de Residência';
+    if (tipo === 'Documento_Aluno') return 'Documento do Aluno (RG/Certidão)';
+    if (tipo === 'Documento_Responsavel') return 'Documento do Responsável (RG/CPF)';
+    if (tipo === 'Declaracao_Matricula') return 'Declaração de Matrícula';
+    return 'Documento';
   };
 
-  const isAllUploaded = docs.Declaracao.enviado && docs.Comprovante.enviado;
+  const isAllUploaded = docs.Comprovante_Residencia.enviado && 
+                        docs.Documento_Aluno.enviado && 
+                        docs.Documento_Responsavel.enviado && 
+                        docs.Declaracao_Matricula.enviado;
 
   const handleFinalize = async () => {
     setLoadingAction(true);
@@ -982,7 +1040,11 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
       // 1. Atualiza no Supabase real
       const { error } = await supabase
         .from('alunos')
-        .update({ status_carteirinha: 'Em análise' })
+        .update({ 
+          status: 'aguardando',
+          status_carteirinha: 'Em análise',
+          observacao_secretaria: null 
+        })
         .eq('id', aluno.id);
 
       if (error) throw error;
@@ -1025,7 +1087,7 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
             </div>
           )}
 
-          {(['Declaracao', 'Comprovante', 'Foto3x4'] as DocType[]).map((tipo) => {
+          {(['Comprovante_Residencia', 'Documento_Aluno', 'Documento_Responsavel', 'Declaracao_Matricula'] as DocType[]).map((tipo) => {
             const doc = docs[tipo];
             return (
               <div key={tipo} className={`border rounded-2xl p-3 flex flex-col gap-2 transition-all ${
@@ -1034,12 +1096,14 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={`p-1.5 rounded-lg ${doc.enviado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {tipo === 'Foto3x4' ? <Image size={15} /> : <FileText size={15} />}
+                      {tipo === 'Declaracao_Matricula' ? <FileText size={15} /> : <Image size={15} />}
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-950">{getDocLabel(tipo)}</h4>
                       <span className="text-[9px] text-slate-400 block">
-                        {tipo === 'Declaracao' ? 'PDF ou Foto Escolar' : tipo === 'Comprovante' ? 'Luz, Água ou Telefone' : 'Rosto do estudante'}
+                        {tipo === 'Comprovante_Residencia' ? 'Luz, Água ou Telefone' : 
+                         tipo === 'Documento_Aluno' ? 'RG ou Certidão' : 
+                         tipo === 'Documento_Responsavel' ? 'RG ou CPF' : 'Declaração Escolar'}
                       </span>
                     </div>
                   </div>
@@ -1048,7 +1112,7 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
 
                 {doc.loading ? (
                   <div className="py-4 border border-dashed rounded-xl flex items-center justify-center gap-2">
-                    <div className="w-3.5 h-3.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[10px] text-slate-500 font-bold">Enviando...</span>
                   </div>
                 ) : doc.enviado ? (
@@ -1095,11 +1159,10 @@ function DocumentosModal({ aluno, onClose, onSuccess }: DocumentosModalProps) {
           </button>
           {!isAllUploaded && (
             <p className="text-[9px] text-center text-slate-400 font-bold">
-              Declaração e Comprovante de Residência são obrigatórios.
+              Todos os 4 documentos anexos são obrigatórios para a re-análise.
             </p>
           )}
         </div>
-
       </div>
     </div>
   );

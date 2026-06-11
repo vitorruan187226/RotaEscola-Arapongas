@@ -70,6 +70,8 @@ export default function FrotaPage() {
   const [motNome, setMotNome] = useState('');
   const [motCpf, setMotCpf] = useState('');
   const [motTelefone, setMotTelefone] = useState('');
+  const [motCnh, setMotCnh] = useState('');
+  const [motCnhCategoria, setMotCnhCategoria] = useState('');
   const [motPlaca, setMotPlaca] = useState('');
   const [motModelo, setMotModelo] = useState('');
   const [motCapacidade, setMotCapacidade] = useState(15);
@@ -175,7 +177,9 @@ export default function FrotaPage() {
           telefone: motTelefone,
           placa: motPlaca,
           modelo: motModelo,
-          capacidade: Number(motCapacidade)
+          capacidade: Number(motCapacidade),
+          cnh: motCnh,
+          cnhCategoria: motCnhCategoria
         })
       });
 
@@ -191,6 +195,8 @@ export default function FrotaPage() {
       setMotNome('');
       setMotCpf('');
       setMotTelefone('');
+      setMotCnh('');
+      setMotCnhCategoria('');
       setMotPlaca('');
       setMotModelo('');
       
@@ -401,6 +407,8 @@ export default function FrotaPage() {
               setMotNome('');
               setMotCpf('');
               setMotTelefone('');
+              setMotCnh('');
+              setMotCnhCategoria('');
               setMotPlaca('');
               setMotModelo('');
               setModalMotorista(true);
@@ -640,6 +648,30 @@ export default function FrotaPage() {
                   placeholder="Ex: 43999998888"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">CNH do Motorista</label>
+                  <input
+                    type="text"
+                    value={motCnh}
+                    onChange={(e) => setMotCnh(e.target.value)}
+                    placeholder="Ex: 12345678900"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Modelo/Categoria CNH</label>
+                  <input
+                    type="text"
+                    value={motCnhCategoria}
+                    onChange={(e) => setMotCnhCategoria(e.target.value)}
+                    placeholder="Ex: Categoria D"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
               </div>
 
               <div className="border-t border-dashed my-2 pt-2">

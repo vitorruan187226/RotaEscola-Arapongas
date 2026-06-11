@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { nome, cpf, telefone, placa, modelo, capacidade } = await req.json();
+    const { nome, cpf, telefone, placa, modelo, capacidade, cnh, cnhCategoria } = await req.json();
 
     const cleanCpf = cpf ? cpf.toString().replace(/\D/g, '') : '';
     
@@ -85,6 +85,8 @@ export async function POST(req: NextRequest) {
         placa_veiculo: placa ? placa.toUpperCase() : '',
         modelo_veiculo: modelo || '',
         capacidade_van: capacidade ? Number(capacidade) : 0,
+        cnh: cnh || null,
+        cnh_categoria: cnhCategoria || null,
         ativo: true
       });
 

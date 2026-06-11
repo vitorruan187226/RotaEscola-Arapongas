@@ -131,4 +131,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 08/06/2026 | **Paginação Inteligente na Frota:** Adicionada paginação (Google-like) na tabela de veículos (`frota/page.tsx`) com 5 itens por página para melhorar a experiência do usuário e impedir a quebra de layout de listas longas. |
 | 08/06/2026 | **Motoristas Avulsos na Frota:** Integração dos motoristas recém-criados e não atribuídos diretamente na lista principal de frota (`frota/page.tsx`), recebendo o status de 'Aguardando Veículo' e um atalho rápido para atribuição de veículo, melhorando a UX da secretaria. |
 | 11/06/2026 | **Governança de Rotas:** Remoção dos campos "Veículo Designado" e "Motorista Designado" no modal de criação e edição de Rotas (`rotas/page.tsx`). A atribuição do veículo e do motorista para a rota agora ocorre de forma centralizada e exclusiva na tela de Frota e Veículos, evitando conflitos de dados e mantendo a fonte da verdade em um único local. |
+| 11/06/2026 | **Campos de Habilitação no Cadastro:** Inclusão dos campos de CNH e Modelo/Categoria da CNH no formulário de cadastro de motoristas reais (`frota/page.tsx`), integrando-os com o backend do Supabase via rota da API POST `/api/admin/motoristas`. |
+
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Building2, 
@@ -17,7 +17,9 @@ import {
   MapPin, 
   Users, 
   Calendar,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { createClient } from '../../../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../../../lib/mocks/alunos';
@@ -27,6 +29,10 @@ interface AlunoAuditoria {
   nome: string;
   escola: string;
   serie: string;
+  ano_serie?: string | null;
+  turma?: string | null;
+  periodo?: string | null;
+  turno?: string | null;
   status: 'Em análise' | 'Aprovado' | 'Rejeitado' | 'Pendente';
   enviadoEm: string;
   rotaId?: string;
@@ -37,15 +43,52 @@ interface DocumentoAnexo {
   url: string;
 }
 
-const ALUNOS_MOCK_AUDITORIA: AlunoAuditoria[] = ALUNOS_MOCK_GLOBAL.map(a => ({
-  id: a.id,
-  nome: a.nome,
-  escola: a.escola,
-  serie: a.serie,
-  status: a.statusCarteirinha === 'Pendente' ? 'Rejeitado' as const : a.statusCarteirinha,
-  rotaId: a.rotaId,
-  enviadoEm: new Date().toLocaleDateString('pt-BR')
-}));
+function parseSerie(serieStr: string) {
+  if (!serieStr || serieStr === '—') {
+    return { ano_serie: 'Série não informada', turma: 'Sem Turma' };
+  }
+  
+  if (serieStr.includes(' - ')) {
+    const parts = serieStr.split(' - ');
+    return {
+      ano_serie: parts[0]?.trim() || 'Série não informada',
+      turma: parts[1]?.trim() || 'Sem Turma'
+    };
+  }
+  
+  const parts = serieStr.trim().split(/\s+/);
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length === 1 && /[A-Za-z0-9]/.test(lastPart)) {
+      return {
+        ano_serie: parts.slice(0, -1).join(' '),
+        turma: lastPart.toUpperCase()
+      };
+    }
+  }
+  
+  return {
+    ano_serie: serieStr,
+    turma: ''
+  };
+}
+
+const ALUNOS_MOCK_AUDITORIA: AlunoAuditoria[] = ALUNOS_MOCK_GLOBAL.map(a => {
+  const parsed = parseSerie(a.serie);
+  return {
+    id: a.id,
+    nome: a.nome,
+    escola: a.escola,
+    serie: a.serie,
+    ano_serie: parsed.ano_serie,
+    turma: parsed.turma,
+    periodo: a.id.charCodeAt(a.id.length - 1) % 2 === 0 ? 'manha' : 'tarde',
+    turno: a.id.charCodeAt(a.id.length - 1) % 2 === 0 ? 'Manhã' : 'Tarde',
+    status: a.statusCarteirinha === 'Pendente' ? 'Rejeitado' as const : a.statusCarteirinha,
+    rotaId: a.rotaId,
+    enviadoEm: new Date().toLocaleDateString('pt-BR')
+  };
+});
 
 export default function EscolaDetalhesPage() {
   const router = useRouter();
@@ -61,6 +104,16 @@ export default function EscolaDetalhesPage() {
 
   // Filtros por Abas
   const [activeTab, setActiveTab] = useState<'pendentes' | 'aprovados' | 'rejeitados'>('pendentes');
+
+  // Controle de colapso das séries agrupadas
+  const [collapsedSeries, setCollapsedSeries] = useState<Record<string, boolean>>({});
+
+  const toggleSeries = (ano: string) => {
+    setCollapsedSeries(prev => ({
+      ...prev,
+      [ano]: !prev[ano]
+    }));
+  };
 
   // Estados dos Modais de Auditoria
   const [selectedAluno, setSelectedAluno] = useState<AlunoAuditoria | null>(null);
@@ -148,7 +201,7 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, status_carteirinha, rota_id, created_at')
+        .select('id, nome, escola, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie')
         .eq('escola', escolaNome);
 
       if (error) {
@@ -169,15 +222,22 @@ export default function EscolaDetalhesPage() {
 
       // Se não houver erro, usa os dados do banco, mesmo que vazio
       if (data) {
-        const mapped: AlunoAuditoria[] = data.map((a: any) => ({
-          id: a.id,
-          nome: a.nome,
-          escola: a.escola,
-          serie: '—',
-          status: (a.status_carteirinha === 'Pendente' ? 'Rejeitado' as const : a.status_carteirinha as AlunoAuditoria['status']) ?? 'Pendente',
-          enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
-          rotaId: a.rota_id ?? undefined
-        }));
+        const mapped: AlunoAuditoria[] = data.map((a: any) => {
+          const parsed = parseSerie(a.serie);
+          return {
+            id: a.id,
+            nome: a.nome,
+            escola: a.escola,
+            serie: a.serie || '—',
+            ano_serie: a.ano_serie || parsed.ano_serie,
+            turma: a.turma || parsed.turma,
+            periodo: a.periodo || (a.turno ? (a.turno === 'Manhã' ? 'manha' : a.turno === 'Tarde' ? 'tarde' : 'noite') : 'manha'),
+            turno: a.turno || (a.periodo ? (a.periodo === 'manha' ? 'Manhã' : a.periodo === 'tarde' ? 'Tarde' : 'Noite') : 'Manhã'),
+            status: (a.status_carteirinha === 'Pendente' ? 'Rejeitado' as const : a.status_carteirinha as AlunoAuditoria['status']) ?? 'Pendente',
+            enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+            rotaId: a.rota_id ?? undefined
+          };
+        });
         setAlunos(mapped);
         setUsandoMock(false);
       }
@@ -413,6 +473,42 @@ export default function EscolaDetalhesPage() {
   const countAprovados = alunos.filter(a => a.status === 'Aprovado').length;
   const countRejeitados = alunos.filter(a => a.status === 'Rejeitado' || a.status === 'Pendente').length;
 
+  // Agrupamento dos alunos
+  const groupedAlunos = useMemo(() => {
+    const groups: Record<string, Record<string, AlunoAuditoria[]>> = {};
+
+    filteredAlunos.forEach(aluno => {
+      const ano = aluno.ano_serie || (aluno.serie ? parseSerie(aluno.serie).ano_serie : 'Sem Série');
+      const t = aluno.turma || (aluno.serie ? parseSerie(aluno.serie).turma : '');
+      const shift = aluno.turno || (aluno.periodo ? (aluno.periodo === 'manha' ? 'Manhã' : aluno.periodo === 'tarde' ? 'Tarde' : 'Noite') : 'Manhã');
+      
+      const turmaDisplay = t ? (t.startsWith('Turma') ? t : `Turma ${t}`) : 'Sem Turma';
+      const subKey = `${turmaDisplay} - ${shift}`;
+
+      if (!groups[ano]) {
+        groups[ano] = {};
+      }
+      if (!groups[ano][subKey]) {
+        groups[ano][subKey] = [];
+      }
+      groups[ano][subKey].push(aluno);
+    });
+
+    return groups;
+  }, [filteredAlunos]);
+
+  // Resumo de séries pendentes
+  const pendingSeriesSummary = useMemo(() => {
+    const summary: Record<string, number> = {};
+    alunos.forEach(aluno => {
+      if (aluno.status === 'Em análise') {
+        const ano = aluno.ano_serie || (aluno.serie ? parseSerie(aluno.serie).ano_serie : 'Sem Série');
+        summary[ano] = (summary[ano] || 0) + 1;
+      }
+    });
+    return Object.entries(summary).filter(([_, count]) => count > 0);
+  }, [alunos]);
+
   return (
     <div className="flex flex-col gap-6 relative font-sans">
       
@@ -554,132 +650,199 @@ export default function EscolaDetalhesPage() {
               </p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b bg-slate-50 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Estudante</th>
-                  <th className="py-3 px-4">Série / Ano</th>
-                  <th className="py-3 px-4">Enviado Em</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-center">Ações de Auditoria</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredAlunos.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{a.nome}</td>
-                    <td className="py-3.5 px-4 text-slate-600 font-mono">{a.serie}</td>
-                    <td className="py-3.5 px-4 text-slate-400 font-mono">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={12} className="text-slate-350" />
-                        <span>{a.enviadoEm}</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        a.status === 'Aprovado'
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                          : a.status === 'Em análise'
-                          ? 'bg-blue-50 border-blue-200 text-blue-700'
-                          : 'bg-rose-50 border-rose-200 text-rose-700'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          a.status === 'Aprovado' ? 'bg-emerald-500' : a.status === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-rose-500'
-                        }`} />
-                        {a.status === 'Pendente' ? 'Recusado' : a.status}
+            <div className="flex flex-col gap-4">
+              {activeTab === 'pendentes' && pendingSeriesSummary.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2 p-3 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider w-full mb-1">
+                    Séries com Pendências em Aberto
+                  </div>
+                  {pendingSeriesSummary.map(([serieName, count]) => (
+                    <div 
+                      key={serieName}
+                      className="flex items-center gap-2 px-3 py-1 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-700 animate-fadeIn"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span>{serieName}</span>
+                      <span className="px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded-full text-[10px] font-black">
+                        {count}
                       </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center justify-center gap-2">
-                        {/* 1. Botão Ver Documentos (presente em todos os status) */}
-                        <button
-                          onClick={() => handleOpenDocs(a)}
-                          className="flex items-center gap-1 py-1.5 px-3 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border"
-                        >
-                          <Eye size={12} />
-                          <span>Ver Documentos</span>
-                        </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                        {/* 2. Ações para Pendentes (Em análise) */}
-                        {a.status === 'Em análise' && (
-                          <>
-                            <button
-                              disabled={loadingAction !== null}
-                              onClick={() => handleAprovar(a)}
-                              className="flex items-center gap-1 py-1.5 px-3 rounded-lg text-[10px] font-extrabold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors shadow-sm disabled:opacity-50"
-                            >
-                              {loadingAction === a.id ? (
-                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <>
-                                  <CheckCircle size={12} />
-                                  <span>Aprovar</span>
-                                </>
-                              )}
-                            </button>
-                            <button
-                              disabled={loadingAction !== null}
-                              onClick={() => handleRejeitar(a.id)}
-                              className="flex items-center gap-1 py-1.5 px-3 rounded-lg text-[10px] font-extrabold bg-rose-600 text-white hover:bg-rose-500 transition-colors shadow-sm disabled:opacity-50"
-                            >
-                              {loadingAction === a.id ? (
-                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <>
-                                  <XCircle size={12} />
-                                  <span>Rejeitar</span>
-                                </>
-                              )}
-                            </button>
-                          </>
-                        )}
+              {Object.entries(groupedAlunos).map(([anoSerie, subGroups]) => {
+                const totalInSeries = Object.values(subGroups).reduce((acc, list) => acc + list.length, 0);
+                const isCollapsed = collapsedSeries[anoSerie];
+                
+                const badgeColor = 
+                  activeTab === 'pendentes' 
+                    ? 'bg-rose-50 text-rose-700 border-rose-100' 
+                    : activeTab === 'aprovados' 
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                    : 'bg-amber-50 text-amber-700 border-amber-100';
 
-                        {/* 3. Exibição para Aprovados (Remoção de botões, mostra Rota + botão discreto de Alterar Rota) */}
-                        {a.status === 'Aprovado' && (
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              const rota = rotas.find(r => r.id === a.rotaId || r.codigo === a.rotaId);
-                              const rotaNome = rota ? `${rota.codigo} — ${rota.nome_rota || rota.nome}` : a.rotaId || 'Sem Rota';
-                              return (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-bold bg-amber-50/70 text-amber-800 border border-amber-200">
-                                  <Clock size={10} className="text-amber-500" />
-                                  <span>{rotaNome}</span>
-                                </span>
-                              );
-                            })()}
-                            <button
-                              onClick={() => handleAprovar(a)}
-                              className="flex items-center gap-1 py-1.5 px-2.5 rounded-lg text-[10px] font-extrabold bg-white text-slate-700 hover:bg-slate-100 transition-colors border"
-                              title="Alterar Rota"
-                            >
-                              <span>Alterar Rota</span>
-                            </button>
-                          </div>
-                        )}
-
-                        {/* 4. Ações para Rejeitados (Pendente / Rejeitado) - Exibe apenas o botão 'Reavaliar' */}
-                        {(a.status === 'Rejeitado' || a.status === 'Pendente') && (
-                          <button
-                            disabled={loadingAction !== null}
-                            onClick={() => handleReavaliar(a.id)}
-                            className="flex items-center gap-1 py-1.5 px-3 rounded-lg text-[10px] font-extrabold bg-amber-600 text-white hover:bg-amber-500 transition-colors shadow-sm disabled:opacity-50"
-                          >
-                            {loadingAction === a.id ? (
-                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <>
-                                <Sparkles size={12} className="text-amber-350 shrink-0" />
-                                <span>Reavaliar</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                return (
+                  <div key={anoSerie} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:border-slate-300">
+                    {/* Header */}
+                    <button
+                      onClick={() => toggleSeries(anoSerie)}
+                      className="w-full flex items-center justify-between p-4 bg-slate-50/80 hover:bg-slate-100/80 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        {isCollapsed ? <ChevronRight size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+                        <span className="font-extrabold text-slate-800 text-xs sm:text-sm">{anoSerie}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${badgeColor}`}>
+                          {totalInSeries} {totalInSeries === 1 ? 'estudante' : 'estudantes'}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </button>
+                    
+                    {/* Body */}
+                    {!isCollapsed && (
+                      <div className="p-4 bg-white flex flex-col gap-4">
+                        {Object.entries(subGroups).map(([subKey, list]) => (
+                          <div key={subKey} className="border border-slate-100 rounded-xl p-3.5 bg-slate-50/20">
+                            <div className="text-[11px] font-extrabold text-slate-600 mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+                              <div className="w-1.5 h-3 bg-amber-500 rounded-sm" />
+                              <span>{subKey}</span>
+                              <span className="text-[10px] font-normal text-slate-400">({list.length} {list.length === 1 ? 'aluno' : 'alunos'})</span>
+                            </div>
+                            
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="border-b bg-slate-50/50 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                                    <th className="py-2.5 px-3">Estudante</th>
+                                    <th className="py-2.5 px-3">Enviado Em</th>
+                                    <th className="py-2.5 px-3">Status</th>
+                                    <th className="py-2.5 px-3 text-center">Ações de Auditoria</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-medium">
+                                  {list.map((a) => (
+                                    <tr key={a.id} className="hover:bg-slate-50/30 transition-colors">
+                                      <td className="py-3 px-3 font-bold text-slate-900">{a.nome}</td>
+                                      <td className="py-3 px-3 text-slate-450 font-mono">
+                                        <div className="flex items-center gap-1">
+                                          <Calendar size={11} className="text-slate-350" />
+                                          <span>{a.enviadoEm}</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-3">
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                          a.status === 'Aprovado'
+                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                            : a.status === 'Em análise'
+                                            ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                            : 'bg-rose-50 border-rose-200 text-rose-700'
+                                        }`}>
+                                          <span className={`w-1.5 h-1.5 rounded-full ${
+                                            a.status === 'Aprovado' ? 'bg-emerald-500' : a.status === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-rose-500'
+                                          }`} />
+                                          {a.status === 'Pendente' ? 'Recusado' : a.status}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-3">
+                                        <div className="flex items-center justify-center gap-2">
+                                          {/* 1. Botão Ver Documentos */}
+                                          <button
+                                            onClick={() => handleOpenDocs(a)}
+                                            className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border"
+                                          >
+                                            <Eye size={11} />
+                                            <span>Ver Documentos</span>
+                                          </button>
+                  
+                                          {/* 2. Ações para Pendentes */}
+                                          {a.status === 'Em análise' && (
+                                            <>
+                                              <button
+                                                disabled={loadingAction !== null}
+                                                onClick={() => handleAprovar(a)}
+                                                className="flex items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors shadow-sm disabled:opacity-50"
+                                              >
+                                                {loadingAction === a.id ? (
+                                                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                  <>
+                                                    <CheckCircle size={11} />
+                                                    <span>Aprovar</span>
+                                                  </>
+                                                )}
+                                              </button>
+                                              <button
+                                                disabled={loadingAction !== null}
+                                                onClick={() => handleRejeitar(a.id)}
+                                                className="flex items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-rose-600 text-white hover:bg-rose-500 transition-colors shadow-sm disabled:opacity-50"
+                                              >
+                                                {loadingAction === a.id ? (
+                                                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                  <>
+                                                    <XCircle size={11} />
+                                                    <span>Rejeitar</span>
+                                                  </>
+                                                )}
+                                              </button>
+                                            </>
+                                          )}
+                  
+                                          {/* 3. Ações para Aprovados */}
+                                          {a.status === 'Aprovado' && (
+                                            <div className="flex items-center gap-2">
+                                              {(() => {
+                                                const rota = rotas.find(r => r.id === a.rotaId || r.codigo === a.rotaId);
+                                                const rotaNome = rota ? `${rota.codigo} — ${rota.nome_rota || rota.nome}` : a.rotaId || 'Sem Rota';
+                                                return (
+                                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                    <Clock size={10} className="text-amber-500" />
+                                                    <span>{rotaNome}</span>
+                                                  </span>
+                                                );
+                                              })()}
+                                              <button
+                                                onClick={() => handleAprovar(a)}
+                                                className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-white text-slate-700 hover:bg-slate-100 transition-colors border"
+                                                title="Alterar Rota"
+                                              >
+                                                <span>Alterar Rota</span>
+                                              </button>
+                                            </div>
+                                          )}
+                  
+                                          {/* 4. Ações para Rejeitados */}
+                                          {(a.status === 'Rejeitado' || a.status === 'Pendente') && (
+                                            <button
+                                              disabled={loadingAction !== null}
+                                              onClick={() => handleReavaliar(a.id)}
+                                              className="flex items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-amber-600 text-white hover:bg-amber-500 transition-colors shadow-sm disabled:opacity-50"
+                                            >
+                                              {loadingAction === a.id ? (
+                                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                              ) : (
+                                                <>
+                                                  <Sparkles size={11} className="text-amber-350 shrink-0" />
+                                                  <span>Reavaliar</span>
+                                                </>
+                                              )}
+                                            </button>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

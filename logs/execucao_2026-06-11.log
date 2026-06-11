@@ -7,5 +7,4 @@
 [2026-06-11 17:19:00] INFO: Adicionado fluxo e modal de feedback de solicitação de correção e persistência. Executado typechecking 'npx tsc --noEmit' com sucesso (0 erros). Criados arquivos de documentação técnica em _docs/0408_Table_Documentos_Aluno.md e atualizado indice.txt.
 [2026-06-11 17:21:00] INFO: Fornecidos ao usuário os scripts SQL completos das migrações (CNH de motoristas e fluxo de auditoria cadastral da SEMED).
 [2026-06-11 17:30:00] INFO: Identificado que a rota RT-66 está no turno 'Tarde', mas o painel do motorista estava filtrando por 'Manhã'. Identificado também a falta de sincronia de veículo em motoristas_perfil, resolvido com proposta de Trigger SQL de sincronização e instrução de login/turno para o usuário.
-
-
+[2026-06-11 17:55:00] INFO: Reestruturação visual da Fila de Auditoria Cadastral concluída em app/dashboard/admin/escolas/detalhes/page.tsx. Implementado agrupamento por Série (Accordion) e subdivisão por Turma + Período. Removidas colunas redundantes e adicionado resumo no topo. Executado typecheck com sucesso.

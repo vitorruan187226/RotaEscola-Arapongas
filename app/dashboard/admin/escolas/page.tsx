@@ -11,12 +11,38 @@ interface Escola {
   nome: string;
   endereco: string;
   turnos: string[]; // ['Manhã', 'Tarde', 'Noite']
+  tipo?: 'municipal' | 'estadual';
+  series?: string[]; // ['1º Ano', '2º Ano']
 }
 
+const SERIES_MUNICIPAIS = ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
+const SERIES_ESTADUAIS = ['6º Ano', '7º Ano', '8º Ano', '9º Ano', '1º Grau', '2º Grau', '3º Grau'];
+
 const ESCOLAS_MOCK: Escola[] = [
-  { id: 'escola-mock-1', nome: 'Escola Municipal Dorcelina Folador', endereco: 'Rua das Gralhas, 123 - Arapongas', turnos: ['Manhã', 'Tarde'] },
-  { id: 'escola-mock-2', nome: 'Colégio Estadual Julia Wanderley', endereco: 'Av. Arapongas, 456 - Centro', turnos: ['Manhã', 'Tarde', 'Noite'] },
-  { id: 'escola-mock-3', nome: 'Escola Municipal Codorna', endereco: 'Rua Codorna, 789 - Zona Sul', turnos: ['Manhã', 'Tarde'] }
+  { 
+    id: 'escola-mock-1', 
+    nome: 'Escola Municipal Dorcelina Folador', 
+    endereco: 'Rua das Gralhas, 123 - Arapongas', 
+    turnos: ['Manhã', 'Tarde'],
+    tipo: 'municipal',
+    series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano']
+  },
+  { 
+    id: 'escola-mock-2', 
+    nome: 'Colégio Estadual Julia Wanderley', 
+    endereco: 'Av. Arapongas, 456 - Centro', 
+    turnos: ['Manhã', 'Tarde', 'Noite'],
+    tipo: 'estadual',
+    series: ['6º Ano', '7º Ano', '8º Ano', '9º Ano', '1º Grau', '2º Grau', '3º Grau']
+  },
+  { 
+    id: 'escola-mock-3', 
+    nome: 'Escola Municipal Codorna', 
+    endereco: 'Rua Codorna, 789 - Zona Sul', 
+    turnos: ['Manhã', 'Tarde'],
+    tipo: 'municipal',
+    series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano']
+  }
 ];
 
 export default function EscolasPage() {
@@ -39,6 +65,16 @@ export default function EscolasPage() {
   const [nome, setNome] = useState('');
   const [endereco, setEndereco] = useState('');
   const [turnos, setTurnos] = useState<string[]>([]); // ['Manhã', 'Tarde']
+  const [tipo, setTipo] = useState<'municipal' | 'estadual'>('municipal');
+  const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
+
+  const toggleSerieSelection = (serie: string) => {
+    if (selectedSeries.includes(serie)) {
+      setSelectedSeries(prev => prev.filter(s => s !== serie));
+    } else {
+      setSelectedSeries(prev => [...prev, serie]);
+    }
+  };
 
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -60,7 +96,7 @@ export default function EscolasPage() {
       // 1. Busca as escolas do banco de dados
       const { data: escolasDB, error: escolasError } = await supabase
         .from('escolas')
-        .select('id, nome, endereco, turnos')
+        .select('id, nome, endereco, turnos, tipo, series')
         .order('nome', { ascending: true });
 
       if (!escolasError && escolasDB && escolasDB.length > 0) {
@@ -141,7 +177,9 @@ export default function EscolasPage() {
           .insert({
             nome,
             endereco,
-            turnos
+            turnos,
+            tipo,
+            series: selectedSeries
           })
           .select('id')
           .maybeSingle();
@@ -154,7 +192,9 @@ export default function EscolasPage() {
         id: createdId,
         nome,
         endereco,
-        turnos
+        turnos,
+        tipo,
+        series: selectedSeries
       };
 
       setEscolas(prev => [nova, ...prev]);
@@ -162,6 +202,8 @@ export default function EscolasPage() {
       setNome('');
       setEndereco('');
       setTurnos([]);
+      setTipo('municipal');
+      setSelectedSeries([]);
       showToast('Escola cadastrada com sucesso!', 'success');
     } catch (err: any) {
       console.warn('Erro ao salvar no banco. Salvando simulado localmente.', err.message);
@@ -169,13 +211,17 @@ export default function EscolasPage() {
         id: `escola-mock-${Date.now()}`,
         nome,
         endereco,
-        turnos
+        turnos,
+        tipo,
+        series: selectedSeries
       };
       setEscolas(prev => [mockNova, ...prev]);
       setModalNovo(false);
       setNome('');
       setEndereco('');
       setTurnos([]);
+      setTipo('municipal');
+      setSelectedSeries([]);
       showToast('Cadastro simulado com sucesso!', 'success');
     } finally {
       setLoadingAction(false);
@@ -192,7 +238,9 @@ export default function EscolasPage() {
           .update({
             nome,
             endereco,
-            turnos
+            turnos,
+            tipo,
+            series: selectedSeries
           })
           .eq('id', modalEditar.id);
 
@@ -203,25 +251,33 @@ export default function EscolasPage() {
         ...e,
         nome,
         endereco,
-        turnos
+        turnos,
+        tipo,
+        series: selectedSeries
       } : e));
       
       setModalEditar(null);
       setNome('');
       setEndereco('');
       setTurnos([]);
+      setTipo('municipal');
+      setSelectedSeries([]);
       showToast('Cadastro atualizado com sucesso!', 'success');
     } catch {
       setEscolas(prev => prev.map(e => e.id === modalEditar.id ? {
         ...e,
         nome,
         endereco,
-        turnos
+        turnos,
+        tipo,
+        series: selectedSeries
       } : e));
       setModalEditar(null);
       setNome('');
       setEndereco('');
       setTurnos([]);
+      setTipo('municipal');
+      setSelectedSeries([]);
       showToast('Cadastro atualizado localmente!', 'success');
     } finally {
       setLoadingAction(false);
@@ -274,6 +330,8 @@ export default function EscolasPage() {
             setNome('');
             setEndereco('');
             setTurnos([]);
+            setTipo('municipal');
+            setSelectedSeries([]);
             setModalNovo(true);
           }}
           className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
@@ -371,6 +429,20 @@ export default function EscolasPage() {
                       </span>
                     ))}
                   </div>
+
+                  {/* Séries Atendidas */}
+                  {escola.series && escola.series.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2 border-t border-slate-100 pt-2">
+                      {escola.series.map((s) => (
+                        <span
+                          key={s}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-55 text-slate-600 border border-slate-200/60"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer do Card / Ações */}
@@ -385,6 +457,8 @@ export default function EscolasPage() {
                         setNome(escola.nome);
                         setEndereco(escola.endereco);
                         setTurnos(escola.turnos);
+                        setTipo(escola.tipo || 'municipal');
+                        setSelectedSeries(escola.series || []);
                         setModalEditar(escola);
                       }}
                       className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
@@ -463,6 +537,38 @@ export default function EscolasPage() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Tipo de Escola</label>
+                <select
+                  value={tipo}
+                  onChange={(e) => {
+                    setTipo(e.target.value as 'municipal' | 'estadual');
+                    setSelectedSeries([]);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="municipal">Municipal (Prefeitura)</option>
+                  <option value="estadual">Estadual</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1.5 font-bold">Séries Atendidas</label>
+                <div className="flex flex-col gap-2 bg-slate-50 border p-3 rounded-2xl max-h-[160px] overflow-y-auto">
+                  {(tipo === 'municipal' ? SERIES_MUNICIPAIS : SERIES_ESTADUAIS).map((serie) => (
+                    <label key={serie} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={selectedSeries.includes(serie)}
+                        onChange={() => toggleSerieSelection(serie)}
+                        className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                      />
+                      <span className="text-xs font-bold text-slate-700">{serie}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
@@ -474,10 +580,10 @@ export default function EscolasPage() {
                 Cancelar
               </button>
               <button
-                disabled={!nome.trim() || !endereco.trim() || turnos.length === 0 || loadingAction}
+                disabled={!nome.trim() || !endereco.trim() || turnos.length === 0 || selectedSeries.length === 0 || loadingAction}
                 onClick={handleCreate}
                 className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
-                  nome.trim() && endereco.trim() && turnos.length > 0 && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
+                  nome.trim() && endereco.trim() && turnos.length > 0 && selectedSeries.length > 0 && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
                 }`}
               >
                 {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Salvar Escola'}
@@ -540,6 +646,38 @@ export default function EscolasPage() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Tipo de Escola</label>
+                <select
+                  value={tipo}
+                  onChange={(e) => {
+                    setTipo(e.target.value as 'municipal' | 'estadual');
+                    setSelectedSeries([]);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="municipal">Municipal (Prefeitura)</option>
+                  <option value="estadual">Estadual</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1.5 font-bold">Séries Atendidas</label>
+                <div className="flex flex-col gap-2 bg-slate-50 border p-3 rounded-2xl max-h-[160px] overflow-y-auto">
+                  {(tipo === 'municipal' ? SERIES_MUNICIPAIS : SERIES_ESTADUAIS).map((serie) => (
+                    <label key={serie} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={selectedSeries.includes(serie)}
+                        onChange={() => toggleSerieSelection(serie)}
+                        className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                      />
+                      <span className="text-xs font-bold text-slate-700">{serie}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
@@ -551,10 +689,10 @@ export default function EscolasPage() {
                 Cancelar
               </button>
               <button
-                disabled={!nome.trim() || !endereco.trim() || turnos.length === 0 || loadingAction}
+                disabled={!nome.trim() || !endereco.trim() || turnos.length === 0 || selectedSeries.length === 0 || loadingAction}
                 onClick={handleUpdate}
                 className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
-                  nome.trim() && endereco.trim() && turnos.length > 0 && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
+                  nome.trim() && endereco.trim() && turnos.length > 0 && selectedSeries.length > 0 && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
                 }`}
               >
                 {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Salvar Alterações'}

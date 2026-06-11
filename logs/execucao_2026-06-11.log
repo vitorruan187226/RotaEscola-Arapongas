@@ -1,0 +1,3 @@
+[2026-06-11 16:35:00] INFO: Iniciando diagnóstico do erro apontado pelo usuário. Verificando rota e painel de frota.
+[2026-06-11 16:40:00] INFO: Identificado que o modal de criação/edição de Rotas ainda continha o select de 'Motorista Designado' e enviava o 'motorista_id' no payload de atualização das rotas. Isso causava conflito com a vinculação centralizada feita a partir da Frota de Veículos.
+[2026-06-11 16:42:00] INFO: Planejado remover o select de 'Motorista Designado' do modal de rotas e remover 'motorista_id' do payload real em handleSave para evitar sobrescrever a associação feita na tela de Frota.

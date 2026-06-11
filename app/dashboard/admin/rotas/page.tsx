@@ -223,34 +223,7 @@ function RotaModal({
           {field('Nome da Rota', 'nome', 'Ex: Região Norte / Zona Rural')}
 
           {/* Veículo removido: Atribuição é feita via Frota e Veículos */}
-
-          {/* Motorista dropdown */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Motorista Designado
-            </label>
-            <select
-              value={form.motorista_id}
-              onChange={e => setForm(p => ({ ...p, motorista_id: e.target.value }))}
-              style={{
-                padding: '10px 14px', borderRadius: '10px',
-                border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
-                outline: 'none', background: '#F8FAFC', color: '#0F172A', cursor: 'pointer',
-              }}
-            >
-              <option value="">-- Sem Motorista --</option>
-              {motoristas.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.nome}{m.placa_veiculo ? ` — ${m.placa_veiculo}` : ''}
-                </option>
-              ))}
-            </select>
-            {motoristas.length === 0 && (
-              <span style={{ fontSize: '0.72rem', color: '#F59E0B', fontWeight: 600 }}>
-                ⚠ Nenhum motorista cadastrado. Acesse "Frota e Veículos" para cadastrar.
-              </span>
-            )}
-          </div>
+          {/* Motorista removido: Atribuição é feita via Frota e Veículos */}
 
           {/* Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -463,7 +436,6 @@ export default function RotasPage() {
       const payload = {
         codigo: form.codigo,
         nome: form.nome,
-        motorista_id: form.motorista_id || null,
         horario_inicio: form.horario_inicio ? `${form.horario_inicio}:00` : null,
         horario_fim: form.horario_fim ? `${form.horario_fim}:00` : null,
         ativa: form.ativa,

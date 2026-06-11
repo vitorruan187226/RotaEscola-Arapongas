@@ -192,16 +192,16 @@ export default function ResponsavelDashboard() {
           // Carrega as escolas do Supabase para o dropdown
           const { data: escolasDB } = await supabase
             .from('escolas')
-            .select('id, nome, turnos')
+            .select('id, nome, turnos, series')
             .order('nome', { ascending: true });
           
           if (escolasDB && escolasDB.length > 0) {
             setEscolas(escolasDB);
           } else {
             setEscolas([
-              { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'] },
-              { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'] },
-              { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'] }
+              { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'], series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] },
+              { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'], series: ['6º Ano', '7º Ano', '8º Ano', '9º Ano', '1º Grau', '2º Grau', '3º Grau'] },
+              { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'], series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] }
             ]);
           }
         } else {
@@ -211,9 +211,9 @@ export default function ResponsavelDashboard() {
           setFilhos(FILHOS_MOCK);
           setUsandoMock(true);
           setEscolas([
-            { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'] },
-            { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'] },
-            { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'] }
+            { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'], series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] },
+            { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'], series: ['6º Ano', '7º Ano', '8º Ano', '9º Ano', '1º Grau', '2º Grau', '3º Grau'] },
+            { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'], series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] }
           ]);
         }
       } catch (err) {
@@ -223,9 +223,9 @@ export default function ResponsavelDashboard() {
         setFilhos([]);
         setUsandoMock(false);
         setEscolas([
-          { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'] },
-          { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'] },
-          { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'] }
+          { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', turnos: ['Manhã', 'Tarde'], series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', turnos: ['Manhã', 'Tarde', 'Noite'], series: ['6º Ano', '7º Ano', '8º Ano', '9º Ano', '1º Grau', '2º Grau', '3º Grau'] },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', turnos: ['Manhã', 'Tarde'], series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] }
         ]);
       } finally {
         setLoading(false);
@@ -516,12 +516,23 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
   const [turma, setTurma] = useState('');
   const [periodo, setPeriodo] = useState<'manha' | 'tarde' | 'noite'>('manha');
 
+  const selectedSchool = escolas.find(esc => esc.id === escolaIdAluno);
+  const schoolSeries = selectedSchool?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
+
   useEffect(() => {
     if (escolas.length > 0 && !escolaIdAluno) {
       setEscolaIdAluno(escolas[0].id);
       setEscolaAluno(escolas[0].nome);
     }
   }, [escolas]);
+
+  useEffect(() => {
+    const activeSchool = escolas.find(esc => esc.id === escolaIdAluno);
+    const activeSeries = activeSchool?.series || [];
+    if (activeSeries.length > 0 && (!anoSerie || !activeSeries.includes(anoSerie))) {
+      setAnoSerie(activeSeries[0]);
+    }
+  }, [escolaIdAluno, escolas]);
 
   // Campos - Etapa 2 (Arquivos)
   const [fileComprovante, setFileComprovante] = useState<File | null>(null);
@@ -746,13 +757,16 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                     Ano / Série
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={anoSerie}
                     onChange={(e) => setAnoSerie(e.target.value)}
-                    placeholder="Ex: 4º Ano"
-                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
-                  />
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                  >
+                    <option value="" disabled>-- Série --</option>
+                    {schoolSeries.map((s: string) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">

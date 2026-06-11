@@ -222,34 +222,7 @@ function RotaModal({
           
           {field('Nome da Rota', 'nome', 'Ex: Região Norte / Zona Rural')}
 
-          {/* Veículo dropdown */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Veículo Designado
-            </label>
-            <select
-              value={form.veiculo_id}
-              onChange={e => {
-                const vId = e.target.value;
-                const v = veiculos.find(v => v.id === vId);
-                setForm(p => ({ 
-                  ...p, 
-                  veiculo_id: vId,
-                  motorista_id: (v && v.motorista_id) ? v.motorista_id : p.motorista_id
-                }));
-              }}
-              style={{
-                padding: '10px 14px', borderRadius: '10px',
-                border: '1.5px solid #E2E8F0', fontSize: '0.875rem',
-                outline: 'none', background: '#F8FAFC', color: '#0F172A', cursor: 'pointer',
-              }}
-            >
-              <option value="">-- Sem Veículo --</option>
-              {veiculos.map(v => (
-                <option key={v.id} value={v.id}>{v.placa} ({v.tipo})</option>
-              ))}
-            </select>
-          </div>
+          {/* Veículo removido: Atribuição é feita via Frota e Veículos */}
 
           {/* Motorista dropdown */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -490,7 +463,6 @@ export default function RotasPage() {
       const payload = {
         codigo: form.codigo,
         nome: form.nome,
-        veiculo_id: form.veiculo_id || null,
         motorista_id: form.motorista_id || null,
         horario_inicio: form.horario_inicio ? `${form.horario_inicio}:00` : null,
         horario_fim: form.horario_fim ? `${form.horario_fim}:00` : null,

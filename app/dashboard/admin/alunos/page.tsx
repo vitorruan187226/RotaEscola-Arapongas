@@ -29,48 +29,21 @@ interface MetricsData {
   mais_faltosos: Array<{ nome: string; escola: string; total_faltas: number }>;
 }
 
-const FALLBACK_METRICS: MetricsData = {
-  total_alunos: 580,
-  presencas_hoje: 492,
-  faltas_hoje: 18,
-  alunos_por_escola: [
-    { escola: 'Escola Municipal Dorcelina Folador', total: 198 },
-    { escola: 'Colégio Estadual Julia Wanderley', total: 184 },
-    { escola: 'Escola Municipal Codorna', total: 102 },
-    { escola: 'Escola Municipal Cândido Portinari', total: 96 }
-  ],
-  alunos_por_rota: [
-    { rota: 'RT-04 — Rota 04 — Zona Rural', total: 112 },
-    { rota: 'RT-22 — Rota 22 — Centro', total: 98 },
-    { rota: 'RT-14 — Rota 14 — Jardim Aeroporto', total: 86 },
-    { rota: 'RT-07 — Rota 07 — Parque Industrial', total: 78 }
-  ],
-  alunos_por_turno: [
-    { turno: 'Manhã', total: 310 },
-    { turno: 'Tarde', total: 235 },
-    { turno: 'Noite', total: 35 }
-  ],
-  mais_assiduos: [
-    { nome: 'Lucas Lima Souza', escola: 'Escola Municipal Dorcelina Folador', total_presencas: 44 },
-    { nome: 'Ana Beatriz Silveira', escola: 'Escola Municipal Dorcelina Folador', total_presencas: 42 },
-    { nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', total_presencas: 40 },
-    { nome: 'Mariana Costa Souza', escola: 'Colégio Estadual Julia Wanderley', total_presencas: 38 },
-    { nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', total_presencas: 37 }
-  ],
-  mais_faltosos: [
-    { nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', total_faltas: 12 },
-    { nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', total_faltas: 9 },
-    { nome: 'Enzo Gabriel Silva', escola: 'Escola Municipal Dorcelina Folador', total_faltas: 8 },
-    { nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', total_faltas: 6 },
-    { nome: 'Felipe Nascimento Torres', escola: 'Escola Municipal Codorna', total_faltas: 5 }
-  ]
+const INITIAL_METRICS: MetricsData = {
+  total_alunos: 0,
+  presencas_hoje: 0,
+  faltas_hoje: 0,
+  alunos_por_escola: [],
+  alunos_por_rota: [],
+  alunos_por_turno: [],
+  mais_assiduos: [],
+  mais_faltosos: []
 };
 
 export default function AlunosPage() {
   const supabase = createClient();
-  const [metrics, setMetrics] = useState<MetricsData>(FALLBACK_METRICS);
+  const [metrics, setMetrics] = useState<MetricsData>(INITIAL_METRICS);
   const [loading, setLoading] = useState(true);
-  const [usandoMock, setUsandoMock] = useState(false);
   const [escolaFilter, setEscolaFilter] = useState('');
 
   useEffect(() => {
@@ -82,27 +55,23 @@ export default function AlunosPage() {
     try {
       const { data, error } = await supabase.rpc('get_dashboard_metrics');
       if (error) {
-        console.warn('Erro ao chamar RPC get_dashboard_metrics, usando Mock:', error.message);
-        setMetrics(FALLBACK_METRICS);
-        setUsandoMock(true);
+        console.error('Erro ao chamar RPC get_dashboard_metrics:', error.message);
+        setMetrics(INITIAL_METRICS);
       } else if (data) {
         setMetrics(data as MetricsData);
-        setUsandoMock(false);
       } else {
-        setMetrics(FALLBACK_METRICS);
-        setUsandoMock(true);
+        setMetrics(INITIAL_METRICS);
       }
     } catch (err) {
-      console.warn('Erro na consulta de métricas, usando Mock:', err);
-      setMetrics(FALLBACK_METRICS);
-      setUsandoMock(true);
+      console.error('Erro na consulta de métricas:', err);
+      setMetrics(INITIAL_METRICS);
     } finally {
       setLoading(false);
     }
   }
 
   // Filtragem local baseada na busca por escola
-  const filteredEscolas = metrics.alunos_por_escola.filter(e =>
+  const filteredEscolas = (metrics?.alunos_por_escola || []).filter(e =>
     e.escola.toLowerCase().includes(escolaFilter.toLowerCase())
   );
 
@@ -122,11 +91,6 @@ export default function AlunosPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          {usandoMock && (
-            <span className="text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-200/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              Modo Simulação
-            </span>
-          )}
           <button
             onClick={fetchMetrics}
             className="flex items-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-50 transition-colors bg-white shadow-sm"

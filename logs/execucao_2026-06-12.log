@@ -10,3 +10,4 @@
 [2026-06-12 16:11:00] INFO: Corrigida coluna r.nome_rota para r.nome na RPC get_dashboard_metrics() no arquivo de migração 20260612190000_dashboard_metrics_rpc.sql.
 [2026-06-12 16:19:00] INFO: Removido botão redundante 'Alterar Rota' da listagem de alunos aprovados em app/dashboard/admin/escolas/detalhes/page.tsx.
 [2026-06-12 16:34:00] INFO: Corrigido bug de salvamento de turma/escola de alunos em escolas não migradas, mapeando escolaId e adicionando opções dinâmicas aos selects do modal de edição em app/dashboard/admin/escolas/detalhes/page.tsx.
+[2026-06-12 16:40:00] INFO: Corrigido tipo na RPC get_dashboard_metrics() de COALESCE entre text e uuid em 20260612190000_dashboard_metrics_rpc.sql. Adicionada escola_id na query de alunos em app/dashboard/admin/escolas/detalhes/page.tsx.

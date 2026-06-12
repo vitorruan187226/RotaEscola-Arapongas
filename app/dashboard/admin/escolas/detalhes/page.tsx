@@ -244,7 +244,7 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie')
+        .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie')
         .eq('escola', escolaNome);
 
       if (error) {

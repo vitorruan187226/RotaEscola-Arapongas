@@ -31,7 +31,7 @@ begin
   -- 3. Alunos por rota
   select json_agg(t) into v_alunos_por_rota
   from (
-    select coalesce(r.codigo || ' — ' || r.nome, r.codigo, a.rota_id, 'Sem Rota') as rota, count(*) as total
+    select coalesce(r.codigo || ' — ' || r.nome, r.codigo, a.rota_id::text, 'Sem Rota') as rota, count(*) as total
     from public.alunos a
     left join public.rotas r on a.rota_id::text = r.id::text
     group by a.rota_id, r.codigo, r.nome

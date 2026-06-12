@@ -929,13 +929,6 @@ export default function EscolaDetalhesPage() {
                                                   </span>
                                                 );
                                               })()}
-                                              <button
-                                                onClick={() => handleAprovar(a)}
-                                                className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-white text-slate-700 hover:bg-slate-100 transition-colors border"
-                                                title="Alterar Rota"
-                                              >
-                                                <span>Alterar Rota</span>
-                                              </button>
                                             </div>
                                           )}
                   

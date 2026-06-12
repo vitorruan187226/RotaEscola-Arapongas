@@ -135,5 +135,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 12/06/2026 | **Refatoração Estrutural:** Centralização do CRUD de Alunos (Edição, Exclusão e Transferência de Escola) contextualmente nos Detalhes da Escola (Entidades Escolares). Conversão do módulo de Gestão de Alunos em Dashboard de Relatórios e Assiduidade com agregação PostgreSQL via RPC. |
 | 12/06/2026 | **Desmock do Dashboard de Relatórios:** Remoção total de dados simulados de fallback e do indicador 'Modo Simulação', conectando a UI estritamente à resposta da RPC do banco de dados. |
 | 12/06/2026 | **Simplificação de UX:** Remoção do botão redundante 'Alterar Rota' da listagem de alunos aprovados nos detalhes de escolas, mantendo apenas a atribuição e edição via modal unificado. |
+| 12/06/2026 | **Correção de Mismatch de Opções:** Implementada injeção dinâmica de escola e série do estudante nos dropdowns do modal de edição de alunos para impedir a perda de dados em escolas não cadastradas (como Marques de Caravelas) ou formatações de séries personalizadas. |
 
 

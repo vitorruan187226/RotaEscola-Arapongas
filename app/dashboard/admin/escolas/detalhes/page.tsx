@@ -30,6 +30,7 @@ interface AlunoAuditoria {
   id: string;
   nome: string;
   escola: string;
+  escolaId?: string | null;
   serie: string;
   ano_serie?: string | null;
   turma?: string | null;
@@ -270,6 +271,7 @@ export default function EscolaDetalhesPage() {
             id: a.id,
             nome: a.nome,
             escola: a.escola,
+            escolaId: a.escola_id,
             serie: a.serie || '—',
             ano_serie: a.ano_serie || parsed.ano_serie,
             turma: a.turma || parsed.turma,
@@ -956,8 +958,8 @@ export default function EscolaDetalhesPage() {
                                             onClick={() => {
                                               setNome(a.nome);
                                               setEscola(a.escola);
-                                              const schoolObj = escolas.find(e => e.nome === a.escola);
-                                              setEscolaIdSelect(schoolObj?.id || '');
+                                              const schoolObj = escolas.find(e => e.id === a.escolaId || e.nome === a.escola);
+                                              setEscolaIdSelect(a.escolaId || schoolObj?.id || '');
                                               setAnoSerieSelect(a.ano_serie || '');
                                               setTurmaInput(a.turma || '');
                                               setPeriodoSelect((a.periodo as any) || 'manha');
@@ -1216,9 +1218,16 @@ export default function EscolaDetalhesPage() {
                   }}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
-                  {escolas.map((esc) => (
-                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
-                  ))}
+                  {(() => {
+                    const list = [...escolas];
+                    const hasCurrent = list.some(esc => esc.id === escolaIdSelect);
+                    if (!hasCurrent && escolaIdSelect && escola) {
+                      list.push({ id: escolaIdSelect, nome: escola, series: [] });
+                    }
+                    return list.map((esc) => (
+                      <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                    ));
+                  })()}
                 </select>
               </div>
 
@@ -1232,7 +1241,12 @@ export default function EscolaDetalhesPage() {
                   >
                     {(() => {
                       const currentSchoolObj = escolas.find(esc => esc.id === escolaIdSelect || esc.nome === escola);
-                      const currentSchoolSeries = currentSchoolObj?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano'];
+                      let currentSchoolSeries = currentSchoolObj?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano'];
+                      
+                      if (anoSerieSelect && !currentSchoolSeries.includes(anoSerieSelect)) {
+                        currentSchoolSeries = [anoSerieSelect, ...currentSchoolSeries];
+                      }
+                      
                       return currentSchoolSeries.map((s: string) => (
                         <option key={s} value={s}>{s}</option>
                       ));

@@ -9,3 +9,4 @@
 [2026-06-12 16:08:00] INFO: Removido fallback de simulação (dados mocados) do painel de alunos (app/dashboard/admin/alunos/page.tsx) substituindo por INITIAL_METRICS (zerado) e removido indicador de Modo Simulação.
 [2026-06-12 16:11:00] INFO: Corrigida coluna r.nome_rota para r.nome na RPC get_dashboard_metrics() no arquivo de migração 20260612190000_dashboard_metrics_rpc.sql.
 [2026-06-12 16:19:00] INFO: Removido botão redundante 'Alterar Rota' da listagem de alunos aprovados em app/dashboard/admin/escolas/detalhes/page.tsx.
+[2026-06-12 16:34:00] INFO: Corrigido bug de salvamento de turma/escola de alunos em escolas não migradas, mapeando escolaId e adicionando opções dinâmicas aos selects do modal de edição em app/dashboard/admin/escolas/detalhes/page.tsx.

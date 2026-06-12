@@ -133,5 +133,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 11/06/2026 | **Governança de Rotas:** Remoção dos campos "Veículo Designado" e "Motorista Designado" no modal de criação e edição de Rotas (`rotas/page.tsx`). A atribuição do veículo e do motorista para a rota agora ocorre de forma centralizada e exclusiva na tela de Frota e Veículos, evitando conflitos de dados e mantendo a fonte da verdade em um único local. |
 | 11/06/2026 | **Campos de Habilitação no Cadastro:** Inclusão dos campos de CNH e Modelo/Categoria da CNH no formulário de cadastro de motoristas reais (`frota/page.tsx`), integrando-os com o backend do Supabase via rota da API POST `/api/admin/motoristas`. |
 | 12/06/2026 | **Refatoração Estrutural:** Centralização do CRUD de Alunos (Edição, Exclusão e Transferência de Escola) contextualmente nos Detalhes da Escola (Entidades Escolares). Conversão do módulo de Gestão de Alunos em Dashboard de Relatórios e Assiduidade com agregação PostgreSQL via RPC. |
+| 12/06/2026 | **Desmock do Dashboard de Relatórios:** Remoção total de dados simulados de fallback e do indicador 'Modo Simulação', conectando a UI estritamente à resposta da RPC do banco de dados. |
 
 

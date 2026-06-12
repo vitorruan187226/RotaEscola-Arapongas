@@ -11,3 +11,4 @@
 [2026-06-12 16:19:00] INFO: Removido botão redundante 'Alterar Rota' da listagem de alunos aprovados em app/dashboard/admin/escolas/detalhes/page.tsx.
 [2026-06-12 16:34:00] INFO: Corrigido bug de salvamento de turma/escola de alunos em escolas não migradas, mapeando escolaId e adicionando opções dinâmicas aos selects do modal de edição em app/dashboard/admin/escolas/detalhes/page.tsx.
 [2026-06-12 16:40:00] INFO: Corrigido tipo na RPC get_dashboard_metrics() de COALESCE entre text e uuid em 20260612190000_dashboard_metrics_rpc.sql. Adicionada escola_id na query de alunos em app/dashboard/admin/escolas/detalhes/page.tsx.
+[2026-06-12 17:05:00] INFO: Realizada auditoria de segurança completa focando em vazamento de dados de alunos. Identificadas vulnerabilidades no endpoint de motoristas, RLS de perfis, bucket de Storage público e RPC pública de e-mails. Criado documento _docs/0105_Analise_Seguranca.md com o relatório e o script SQL corretivo.

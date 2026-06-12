@@ -39,7 +39,7 @@ app/dashboard/admin/
 | `/dashboard/admin` | `LayoutDashboard` | Visão Geral | — |
 | `/dashboard/admin/escolas` | `Building2` | Entidades Escolares | 🔴 Número total de alunos com status `'Em análise'` de Arapongas (oculta se for 0) |
 | `/dashboard/admin/frota` | `Bus` | Frota e Veículos | — |
-| `/dashboard/admin/alunos` | `Users` | Gestão de Alunos | — |
+| `/dashboard/admin/alunos` | `Users` | Relatórios e Métricas | — |
 | `/dashboard/admin/rotas` | `MapPin` | Rotas e Itinerários | — |
 
 ### Responsividade
@@ -104,7 +104,7 @@ interface AtividadeRecente {
 |---|---|---|---|
 | Visão Geral | `page.tsx` | ✅ Ativo (KPIs mock) | — |
 | Entidades Escolares | `escolas/page.tsx` | ✅ Ativo | `escolas` |
-| Gestão de Alunos | `alunos/page.tsx` | ✅ Ativo (CRUD real) | `alunos` |
+| Gestão de Alunos | `alunos/page.tsx` | ✅ Ativo (Dashboard de Relatórios) | `alunos` + logs_embarque + presencas_diarias |
 | Frota e Veículos | `frota/page.tsx` | ✅ Ativo (CRUD real) | `veiculos` |
 | Análise de Docs | `documentos/page.tsx` | ✅ Ativo (Acessado por atalho / Oculto na sidebar) | `alunos` + `rotas` + Storage |
 | Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real + Motorista Designado) | `rotas` + `perfis` |
@@ -132,5 +132,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 08/06/2026 | **Motoristas Avulsos na Frota:** Integração dos motoristas recém-criados e não atribuídos diretamente na lista principal de frota (`frota/page.tsx`), recebendo o status de 'Aguardando Veículo' e um atalho rápido para atribuição de veículo, melhorando a UX da secretaria. |
 | 11/06/2026 | **Governança de Rotas:** Remoção dos campos "Veículo Designado" e "Motorista Designado" no modal de criação e edição de Rotas (`rotas/page.tsx`). A atribuição do veículo e do motorista para a rota agora ocorre de forma centralizada e exclusiva na tela de Frota e Veículos, evitando conflitos de dados e mantendo a fonte da verdade em um único local. |
 | 11/06/2026 | **Campos de Habilitação no Cadastro:** Inclusão dos campos de CNH e Modelo/Categoria da CNH no formulário de cadastro de motoristas reais (`frota/page.tsx`), integrando-os com o backend do Supabase via rota da API POST `/api/admin/motoristas`. |
+| 12/06/2026 | **Refatoração Estrutural:** Centralização do CRUD de Alunos (Edição, Exclusão e Transferência de Escola) contextualmente nos Detalhes da Escola (Entidades Escolares). Conversão do módulo de Gestão de Alunos em Dashboard de Relatórios e Assiduidade com agregação PostgreSQL via RPC. |
 
 

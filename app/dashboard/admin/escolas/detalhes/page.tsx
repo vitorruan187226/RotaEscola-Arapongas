@@ -19,7 +19,9 @@ import {
   Calendar,
   Sparkles,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { createClient } from '../../../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../../../lib/mocks/alunos';
@@ -127,6 +129,21 @@ export default function EscolaDetalhesPage() {
   const [selectedRotaId, setSelectedRotaId] = useState<string>('');
   const [fluxoContinuo, setFluxoContinuo] = useState(false);
 
+  // Estados dos Modais de Edição/Exclusão Administrativa
+  const [escolas, setEscolas] = useState<any[]>([]);
+  const [modalEditar, setModalEditar] = useState<AlunoAuditoria | null>(null);
+  const [modalExcluir, setModalExcluir] = useState<AlunoAuditoria | null>(null);
+
+  // Campos de Edição
+  const [nome, setNome] = useState('');
+  const [escola, setEscola] = useState('');
+  const [escolaIdSelect, setEscolaIdSelect] = useState('');
+  const [anoSerieSelect, setAnoSerieSelect] = useState('');
+  const [turmaInput, setTurmaInput] = useState('');
+  const [periodoSelect, setPeriodoSelect] = useState<'manha' | 'tarde' | 'noite'>('manha');
+  const [rotaIdSelect, setRotaIdSelect] = useState('');
+  const [statusSelect, setStatusSelect] = useState<AlunoAuditoria['status']>('Pendente');
+
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -150,6 +167,7 @@ export default function EscolaDetalhesPage() {
       loadEscolaDados();
       loadAlunosDaEscola();
       loadRotas();
+      loadEscolas();
     }
   }, [escolaNome]);
 
@@ -192,6 +210,30 @@ export default function EscolaDetalhesPage() {
         { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
         { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
         { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
+      ]);
+    }
+  }
+
+  async function loadEscolas() {
+    try {
+      const { data, error } = await supabase
+        .from('escolas')
+        .select('id, nome, series')
+        .order('nome', { ascending: true });
+      if (!error && data && data.length > 0) {
+        setEscolas(data);
+      } else {
+        setEscolas([
+          { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', series: ['6º Ano', '7º Ano', '8º Ano', '9º Ano'] },
+          { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] }
+        ]);
+      }
+    } catch {
+      setEscolas([
+        { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador', series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] },
+        { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley', series: ['6º Ano', '7º Ano', '8º Ano', '9º Ano'] },
+        { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna', series: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'] }
       ]);
     }
   }
@@ -446,6 +488,92 @@ export default function EscolaDetalhesPage() {
       setLoadingAction(null);
     }
   };
+
+  const handleSaveEdition = async () => {
+    if (!modalEditar || !nome.trim()) return;
+    setLoadingAction(modalEditar.id);
+    const isMockAluno = modalEditar.id.startsWith('aluno-mock') || usandoMock;
+
+    try {
+      const finalSerie = turmaInput.trim() ? `${anoSerieSelect} - ${turmaInput.trim().toUpperCase()}` : anoSerieSelect;
+      
+      if (!isMockAluno) {
+        const { error } = await supabase
+          .from('alunos')
+          .update({
+            nome: nome.trim(),
+            escola: escola,
+            escola_id: escolaIdSelect || null,
+            ano_serie: anoSerieSelect,
+            turma: turmaInput.trim().toUpperCase(),
+            serie: finalSerie,
+            periodo: periodoSelect,
+            turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
+            status_carteirinha: statusSelect === 'Rejeitado' ? 'Pendente' : statusSelect,
+            rota_id: rotaIdSelect || null
+          })
+          .eq('id', modalEditar.id);
+
+        if (error) throw error;
+      }
+
+      // Se o aluno mudou de escola, ele deve ser removido da lista dessa escola
+      const mudouDeEscola = escola !== escolaNome;
+
+      setAlunos(prev => {
+        if (mudouDeEscola) {
+          return prev.filter(a => a.id !== modalEditar.id);
+        }
+        return prev.map(a => a.id === modalEditar.id ? {
+          ...a,
+          nome: nome.trim(),
+          escola: escola,
+          serie: finalSerie,
+          ano_serie: anoSerieSelect,
+          turma: turmaInput.trim().toUpperCase(),
+          periodo: periodoSelect,
+          turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
+          status: statusSelect,
+          rotaId: rotaIdSelect || undefined
+        } : a);
+      });
+
+      setModalEditar(null);
+      showToast(mudouDeEscola ? 'Aluno transferido de escola com sucesso!' : 'Cadastro atualizado com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao atualizar aluno:', err);
+      showToast('Erro ao atualizar dados: ' + (err.message || err), 'error');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleConfirmExcluir = async () => {
+    if (!modalExcluir) return;
+    setLoadingAction(modalExcluir.id);
+    const isMockAluno = modalExcluir.id.startsWith('aluno-mock') || usandoMock;
+
+    try {
+      if (!isMockAluno) {
+        const { error } = await supabase
+          .from('alunos')
+          .delete()
+          .eq('id', modalExcluir.id);
+
+        if (error) throw error;
+      }
+
+      setAlunos(prev => prev.filter(a => a.id !== modalExcluir.id));
+      setModalExcluir(null);
+      showToast('Aluno removido com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao excluir aluno:', err);
+      showToast('Erro ao excluir: ' + (err.message || err), 'error');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
 
   const getDocLabel = (tipo: string) => {
     if (tipo === 'Comprovante_Residencia') return 'Comprovante de Residência';
@@ -828,6 +956,34 @@ export default function EscolaDetalhesPage() {
                                               )}
                                             </button>
                                           )}
+
+                                          {/* 5. Ações Administrativas de Edição/Exclusão */}
+                                          <div className="h-4 w-[1px] bg-slate-200 mx-1 shrink-0" />
+                                          <button
+                                            onClick={() => {
+                                              setNome(a.nome);
+                                              setEscola(a.escola);
+                                              const schoolObj = escolas.find(e => e.nome === a.escola);
+                                              setEscolaIdSelect(schoolObj?.id || '');
+                                              setAnoSerieSelect(a.ano_serie || '');
+                                              setTurmaInput(a.turma || '');
+                                              setPeriodoSelect((a.periodo as any) || 'manha');
+                                              setRotaIdSelect(a.rotaId || '');
+                                              setStatusSelect(a.status);
+                                              setModalEditar(a);
+                                            }}
+                                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
+                                            title="Editar Cadastro do Aluno"
+                                          >
+                                            <Edit2 size={12} />
+                                          </button>
+                                          <button
+                                            onClick={() => setModalExcluir(a)}
+                                            className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors border border-transparent hover:border-rose-100"
+                                            title="Excluir Aluno"
+                                          >
+                                            <Trash2 size={12} />
+                                          </button>
                                         </div>
                                       </td>
                                     </tr>
@@ -1022,6 +1178,200 @@ export default function EscolaDetalhesPage() {
         </div>
       )}
 
+      {/* MODAL: EDITAR ALUNO (CRUD DESCENTRALIZADO) */}
+      {modalEditar && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn max-h-[90vh]">
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm">Editar Cadastro do Aluno</h3>
+                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">Administrativo SEMED</span>
+              </div>
+              <button onClick={() => setModalEditar(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                <X size={15} />
+              </button>
+            </div>
+            
+            <div className="p-5 flex-1 overflow-y-auto flex flex-col gap-3">
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nome Completo</label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Nome do estudante"
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Instituição de Ensino (Transferência)</label>
+                <select
+                  value={escolaIdSelect}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setEscolaIdSelect(selId);
+                    const schoolObj = escolas.find(esc => esc.id === selId);
+                    if (schoolObj) {
+                      setEscola(schoolObj.nome);
+                      if (schoolObj.series && schoolObj.series.length > 0) {
+                        if (!schoolObj.series.includes(anoSerieSelect)) {
+                          setAnoSerieSelect(schoolObj.series[0]);
+                        }
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Ano / Série</label>
+                  <select
+                    value={anoSerieSelect}
+                    onChange={(e) => setAnoSerieSelect(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                  >
+                    {(() => {
+                      const currentSchoolObj = escolas.find(esc => esc.id === escolaIdSelect || esc.nome === escola);
+                      const currentSchoolSeries = currentSchoolObj?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano'];
+                      return currentSchoolSeries.map((s: string) => (
+                        <option key={s} value={s}>{s}</option>
+                      ));
+                    })()}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turma</label>
+                  <input
+                    type="text"
+                    value={turmaInput}
+                    onChange={(e) => setTurmaInput(e.target.value.toUpperCase())}
+                    placeholder="Ex: B"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all uppercase"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turno Letivo</label>
+                <select
+                  value={periodoSelect}
+                  onChange={(e) => setPeriodoSelect(e.target.value as any)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="manha">Manhã</option>
+                  <option value="tarde">Tarde</option>
+                  <option value="noite">Noite</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Rota Vinculada</label>
+                <select
+                  value={rotaIdSelect}
+                  onChange={(e) => setRotaIdSelect(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="">-- Sem Rota --</option>
+                  {rotas.map((r) => (
+                    <option key={r.id} value={r.id}>{r.codigo || 'RT'} — {r.nome_rota || r.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Status do Aluno</label>
+                <select
+                  value={statusSelect === 'Rejeitado' ? 'Pendente' : statusSelect}
+                  onChange={(e) => setStatusSelect(e.target.value as any)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
+                >
+                  <option value="Pendente">Pendente / Rejeitado</option>
+                  <option value="Em análise">Em análise</option>
+                  <option value="Aprovado">Aprovado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
+              <button
+                disabled={loadingAction === modalEditar.id}
+                onClick={() => setModalEditar(null)}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!nome.trim() || loadingAction === modalEditar.id}
+                onClick={handleSaveEdition}
+                className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
+                  nome.trim() && loadingAction !== modalEditar.id
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
+                }`}
+              >
+                {loadingAction === modalEditar.id ? (
+                  <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span>Salvar Alterações</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIRMAR EXCLUSÃO DE ALUNO */}
+      {modalExcluir && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn">
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2 text-rose-600">
+                <AlertCircle size={18} />
+                <h3 className="font-black text-slate-900 text-sm">Excluir Aluno</h3>
+              </div>
+              <button onClick={() => setModalExcluir(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="p-5 flex flex-col gap-2">
+              <p className="text-xs font-bold text-slate-800">
+                Deseja realmente remover este aluno do sistema de transporte?
+              </p>
+              <p className="text-[11px] text-slate-500 leading-normal">
+                Esta ação é permanente e removerá o aluno <strong>{modalExcluir.nome}</strong>, sua carteirinha digital, registros de embarque e documentos associados do banco de dados do município de Arapongas.
+              </p>
+            </div>
+
+            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
+              <button
+                onClick={() => setModalExcluir(null)}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-105 transition-colors bg-white"
+              >
+                Voltar
+              </button>
+              <button
+                disabled={loadingAction === modalExcluir.id}
+                onClick={handleConfirmExcluir}
+                className="py-2.5 px-5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 transition-colors shadow flex items-center justify-center gap-1.5"
+              >
+                {loadingAction === modalExcluir.id ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span>Confirmar Exclusão</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

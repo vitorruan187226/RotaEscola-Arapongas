@@ -1,705 +1,417 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle, ShieldAlert } from 'lucide-react';
+import { 
+  Users, 
+  Building2, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  Calendar, 
+  UserCheck, 
+  UserX, 
+  BarChart3, 
+  Award,
+  Sparkles,
+  RefreshCw,
+  Search
+} from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
 
-interface AlunoAdmin {
-  id: string;
-  nome: string;
-  escola: string;
-  escolaId?: string;
-  serie: string;
-  rotaId: string;
-  statusCarteirinha: 'Pendente' | 'Em análise' | 'Aprovado';
-  rotaNome?: string;
-  turno?: 'Manhã' | 'Tarde' | 'Noite';
+interface MetricsData {
+  total_alunos: number;
+  presencas_hoje: number;
+  faltas_hoje: number;
+  alunos_por_escola: Array<{ escola: string; total: number }>;
+  alunos_por_rota: Array<{ rota: string; total: number }>;
+  alunos_por_turno: Array<{ turno: string; total: number }>;
+  mais_assiduos: Array<{ nome: string; escola: string; total_presencas: number }>;
+  mais_faltosos: Array<{ nome: string; escola: string; total_faltas: number }>;
 }
 
-const ALUNOS_MOCK: AlunoAdmin[] = [
-  { id: 'aluno-mock-1', nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '4º Ano B', rotaId: 'Rota 04', statusCarteirinha: 'Aprovado', turno: 'Manhã' },
-  { id: 'aluno-mock-2', nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '7º Ano A', rotaId: 'Rota 22', statusCarteirinha: 'Em análise', turno: 'Tarde' },
-  { id: 'aluno-mock-3', nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', escolaId: 'b73e2840-7288-4682-9642-17cb25e36003', serie: '2º Ano C', rotaId: 'Rota 14', statusCarteirinha: 'Pendente', turno: 'Manhã' },
-  { id: 'aluno-mock-4', nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', escolaId: 'b73e2840-7288-4682-9642-17cb25e36002', serie: '6º Ano B', rotaId: 'Rota 07', statusCarteirinha: 'Pendente', turno: 'Manhã' },
-  { id: 'aluno-mock-5', nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', escolaId: 'b73e2840-7288-4682-9642-17cb25e36001', serie: '3º Ano A', rotaId: 'Rota 04', statusCarteirinha: 'Em análise', turno: 'Tarde' }
-];
+const FALLBACK_METRICS: MetricsData = {
+  total_alunos: 580,
+  presencas_hoje: 492,
+  faltas_hoje: 18,
+  alunos_por_escola: [
+    { escola: 'Escola Municipal Dorcelina Folador', total: 198 },
+    { escola: 'Colégio Estadual Julia Wanderley', total: 184 },
+    { escola: 'Escola Municipal Codorna', total: 102 },
+    { escola: 'Escola Municipal Cândido Portinari', total: 96 }
+  ],
+  alunos_por_rota: [
+    { rota: 'RT-04 — Rota 04 — Zona Rural', total: 112 },
+    { rota: 'RT-22 — Rota 22 — Centro', total: 98 },
+    { rota: 'RT-14 — Rota 14 — Jardim Aeroporto', total: 86 },
+    { rota: 'RT-07 — Rota 07 — Parque Industrial', total: 78 }
+  ],
+  alunos_por_turno: [
+    { turno: 'Manhã', total: 310 },
+    { turno: 'Tarde', total: 235 },
+    { turno: 'Noite', total: 35 }
+  ],
+  mais_assiduos: [
+    { nome: 'Lucas Lima Souza', escola: 'Escola Municipal Dorcelina Folador', total_presencas: 44 },
+    { nome: 'Ana Beatriz Silveira', escola: 'Escola Municipal Dorcelina Folador', total_presencas: 42 },
+    { nome: 'Thiago Martins Nogueira', escola: 'Escola Municipal Dorcelina Folador', total_presencas: 40 },
+    { nome: 'Mariana Costa Souza', escola: 'Colégio Estadual Julia Wanderley', total_presencas: 38 },
+    { nome: 'Beatriz Martins Nogueira', escola: 'Colégio Estadual Julia Wanderley', total_presencas: 37 }
+  ],
+  mais_faltosos: [
+    { nome: 'Pedro Henrique Silva', escola: 'Escola Municipal Codorna', total_faltas: 12 },
+    { nome: 'Sophia Moraes Dias', escola: 'Colégio Estadual Julia Wanderley', total_faltas: 9 },
+    { nome: 'Enzo Gabriel Silva', escola: 'Escola Municipal Dorcelina Folador', total_faltas: 8 },
+    { nome: 'Guilherme Augusto Nogueira', escola: 'Escola Municipal Dorcelina Folador', total_faltas: 6 },
+    { nome: 'Felipe Nascimento Torres', escola: 'Escola Municipal Codorna', total_faltas: 5 }
+  ]
+};
 
 export default function AlunosPage() {
   const supabase = createClient();
-  
-  const [alunos, setAlunos] = useState<AlunoAdmin[]>([]);
-  const [escolas, setEscolas] = useState<any[]>([]);
-  const [rotas, setRotas] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<MetricsData>(FALLBACK_METRICS);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [usandoMock, setUsandoMock] = useState(false);
-
-  // Estados dos Modais
-  const [modalNovo, setModalNovo] = useState(false);
-  const [modalEditar, setModalEditar] = useState<AlunoAdmin | null>(null);
-  const [loadingAction, setLoadingAction] = useState(false);
-
-  // Form Fields (Novo / Editar)
-  const [nome, setNome] = useState('');
-  const [escola, setEscola] = useState('Escola Municipal Dorcelina Folador');
-  const [escolaId, setEscolaId] = useState('');
-  const [serie, setSerie] = useState('');
-  const [rotaId, setRotaId] = useState('');
-  const [status, setStatus] = useState<'Pendente' | 'Em análise' | 'Aprovado'>('Pendente');
-  const [turno, setTurno] = useState<'Manhã' | 'Tarde' | 'Noite'>('Manhã');
-
-  // Estado de Toast
-  const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-
-  const showToast = (text: string, type: 'success' | 'error') => {
-    setToast({ text, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const [escolaFilter, setEscolaFilter] = useState('');
 
   useEffect(() => {
-    loadAlunos();
-    loadEscolas();
-    loadRotas();
-
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const schoolParam = params.get('escola');
-      if (schoolParam) {
-        setSearchTerm(schoolParam);
-      }
-    }
+    fetchMetrics();
   }, []);
 
-  async function loadEscolas() {
-    try {
-      const { data, error } = await supabase
-        .from('escolas')
-        .select('id, nome')
-        .order('nome', { ascending: true });
-      if (!error && data && data.length > 0) {
-        setEscolas(data);
-      } else {
-        setEscolas([
-          { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador' },
-          { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley' },
-          { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna' }
-        ]);
-      }
-    } catch {
-      setEscolas([
-        { id: 'b73e2840-7288-4682-9642-17cb25e36001', nome: 'Escola Municipal Dorcelina Folador' },
-        { id: 'b73e2840-7288-4682-9642-17cb25e36002', nome: 'Colégio Estadual Julia Wanderley' },
-        { id: 'b73e2840-7288-4682-9642-17cb25e36003', nome: 'Escola Municipal Codorna' }
-      ]);
-    }
-  }
-
-  async function loadRotas() {
-    try {
-      const { data, error } = await supabase
-        .from('rotas')
-        .select('id, nome, codigo');
-      if (!error && data) {
-        setRotas(data);
-      } else {
-        setRotas([
-          { id: '9d0f2832-7288-4682-9642-17cb25e36928', nome: 'Rota 04 — Zona Rural', codigo: 'RT-04' },
-          { id: 'b63e2840-7288-4682-9642-17cb25e36004', nome: 'Rota 22 — Centro', codigo: 'RT-22' }
-        ]);
-      }
-    } catch {
-      setRotas([
-        { id: '9d0f2832-7288-4682-9642-17cb25e36928', nome: 'Rota 04 — Zona Rural', codigo: 'RT-04' },
-        { id: 'b63e2840-7288-4682-9642-17cb25e36004', nome: 'Rota 22 — Centro', codigo: 'RT-22' }
-      ]);
-    }
-  }
-
-  async function loadAlunos() {
+  async function fetchMetrics() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('alunos')
-        .select(`
-          id, nome, escola, escola_id, rota_id, status_carteirinha, serie, turno,
-          rotas (
-            id,
-            nome,
-            codigo
-          )
-        `);
-
-      if (error) throw error;
-
-      const mapped: AlunoAdmin[] = (data ?? []).map((a: any) => ({
-        id: a.id,
-        nome: a.nome,
-        escola: a.escola,
-        escolaId: a.escola_id ?? undefined,
-        serie: a.serie ?? '—',
-        rotaId: a.rota_id ?? '',
-        statusCarteirinha: (a.status_carteirinha as AlunoAdmin['statusCarteirinha']) ?? 'Pendente',
-        rotaNome: a.rotas ? `${a.rotas.codigo || 'RT'} — ${a.rotas.nome}` : undefined,
-        turno: (a.turno as AlunoAdmin['turno']) ?? 'Manhã'
-      }));
-
-      setAlunos(mapped);
-      setUsandoMock(false);
+      const { data, error } = await supabase.rpc('get_dashboard_metrics');
+      if (error) {
+        console.warn('Erro ao chamar RPC get_dashboard_metrics, usando Mock:', error.message);
+        setMetrics(FALLBACK_METRICS);
+        setUsandoMock(true);
+      } else if (data) {
+        setMetrics(data as MetricsData);
+        setUsandoMock(false);
+      } else {
+        setMetrics(FALLBACK_METRICS);
+        setUsandoMock(true);
+      }
     } catch (err) {
-      console.warn('Erro ao carregar alunos do Supabase, caindo no mock:', err);
-      setAlunos(ALUNOS_MOCK);
+      console.warn('Erro na consulta de métricas, usando Mock:', err);
+      setMetrics(FALLBACK_METRICS);
       setUsandoMock(true);
     } finally {
       setLoading(false);
     }
   }
 
-  const handleCreate = async () => {
-    if (!nome.trim() || !serie.trim()) return;
-    setLoadingAction(true);
-    try {
-      let createdId = `aluno-gen-${Date.now()}`;
-      
-      if (!usandoMock) {
-        const { data, error } = await supabase
-          .from('alunos')
-          .insert({
-            nome,
-            escola,
-            escola_id: escolaId || null,
-            serie,
-            status_carteirinha: status,
-            rota_id: rotaId,
-            turno: turno
-          })
-          .select('id')
-          .maybeSingle();
-
-        if (error) {
-          // Retry
-          const { data: retryData, error: retryError } = await supabase
-            .from('alunos')
-            .insert({
-              nome,
-              escola,
-              escola_id: escolaId || null,
-              serie,
-              status_carteirinha: status,
-              rota_id: rotaId,
-              turno: turno
-            })
-            .select('id')
-            .maybeSingle();
-
-          if (retryError) throw retryError;
-          if (retryData?.id) createdId = retryData.id;
-        } else if (data?.id) {
-          createdId = data.id;
-        }
-      }
-
-      const novo: AlunoAdmin = {
-        id: createdId,
-        nome,
-        escola,
-        escolaId,
-        serie,
-        rotaId,
-        statusCarteirinha: status,
-        turno: turno
-      };
-
-      setAlunos(prev => [novo, ...prev]);
-      setModalNovo(false);
-      setNome('');
-      setSerie('');
-      showToast('Aluno cadastrado com sucesso!', 'success');
-    } catch {
-      // Se estiver em modo simulado ou offline
-      const mockNovo: AlunoAdmin = {
-        id: `aluno-mock-${Date.now()}`,
-        nome,
-        escola,
-        escolaId,
-        serie,
-        rotaId,
-        statusCarteirinha: status,
-        turno: turno
-      };
-      setAlunos(prev => [mockNovo, ...prev]);
-      setModalNovo(false);
-      setNome('');
-      setSerie('');
-      showToast('Cadastro simulado com sucesso!', 'success');
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!modalEditar || !nome.trim() || !serie.trim()) return;
-    setLoadingAction(true);
-    try {
-      if (!usandoMock && !modalEditar.id.startsWith('aluno-mock')) {
-        const { error } = await supabase
-          .from('alunos')
-          .update({
-            nome,
-            escola,
-            escola_id: escolaId || null,
-            serie,
-            status_carteirinha: status,
-            rota_id: rotaId,
-            turno: turno
-          })
-          .eq('id', modalEditar.id);
-
-        if (error) throw error;
-      }
-
-      setAlunos(prev => prev.map(a => a.id === modalEditar.id ? {
-        ...a,
-        nome,
-        escola,
-        escolaId,
-        serie,
-        rotaId,
-        statusCarteirinha: status,
-        turno: turno
-      } : a));
-      
-      setModalEditar(null);
-      setNome('');
-      setSerie('');
-      showToast('Cadastro atualizado com sucesso!', 'success');
-    } catch {
-      setAlunos(prev => prev.map(a => a.id === modalEditar.id ? {
-        ...a,
-        nome,
-        escola,
-        escolaId,
-        serie,
-        rotaId,
-        statusCarteirinha: status
-      } : a));
-      setModalEditar(null);
-      setNome('');
-      setSerie('');
-      showToast('Cadastro atualizado localmente!', 'success');
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Deseja realmente remover este estudante do cadastro municipal?')) return;
-    try {
-      if (!usandoMock && !id.startsWith('aluno-mock')) {
-        const { error } = await supabase.from('alunos').delete().eq('id', id);
-        if (error) throw error;
-      }
-      setAlunos(prev => prev.filter(a => a.id !== id));
-      showToast('Estudante excluído com sucesso.', 'success');
-    } catch {
-      setAlunos(prev => prev.filter(a => a.id !== id));
-      showToast('Exclusão simulada com sucesso.', 'success');
-    }
-  };
-
-  const filteredAlunos = alunos.filter(a =>
-    a.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.escola.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filtragem local baseada na busca por escola
+  const filteredEscolas = metrics.alunos_por_escola.filter(e =>
+    e.escola.toLowerCase().includes(escolaFilter.toLowerCase())
   );
 
   return (
-    <div className="flex flex-col gap-6 relative">
+    <div className="flex flex-col gap-6 relative font-sans animate-fadeIn">
       
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 border backdrop-blur text-white text-xs font-bold ${
-          toast.type === 'success' ? 'bg-emerald-600 border-emerald-500/20' : 'bg-rose-600 border-rose-500/20'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
-          <span>{toast.text}</span>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Gestão de Alunos</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <BarChart3 className="text-amber-500" size={24} />
+            <span>Painel de Relatórios e Métricas</span>
+          </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Gestão do cadastro municipal do transporte escolar de Arapongas — {alunos.length} alunos monitorados.
+            Consolidado estratégico da assiduidade e logística do transporte escolar municipal de Arapongas.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setNome('');
-            setSerie('');
-            setStatus('Pendente');
-            if (escolas.length > 0) {
-              setEscolaId(escolas[0].id);
-              setEscola(escolas[0].nome);
-            } else {
-              setEscolaId('');
-              setEscola('Escola Municipal Dorcelina Folador');
-            }
-            setRotaId(rotas.length > 0 ? rotas[0].id : '');
-            setModalNovo(true);
-          }}
-          className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
-        >
-          <Plus size={14} className="text-amber-500" />
-          <span>Novo Aluno</span>
-        </button>
-      </div>
-
-      {/* Barra de Filtros e Busca */}
-      <div className="bg-white border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nome do aluno ou escola..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border text-xs font-bold placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
-          />
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-        </div>
-        {usandoMock && (
-          <span className="text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-200/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
-            Visualização de Demonstração
-          </span>
-        )}
-      </div>
-
-      {/* Tabela de Alunos */}
-      <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-slate-500 font-bold">Carregando estudantes...</span>
-            </div>
-          ) : filteredAlunos.length === 0 ? (
-            <div className="py-20 text-center flex flex-col items-center gap-3">
-              <span className="text-3xl">👥</span>
-              <h3 className="text-sm font-bold text-slate-900">Nenhum estudante encontrado</h3>
-              <p className="text-xs text-slate-400 max-w-[280px] mx-auto leading-relaxed">
-                Tente redefinir os termos de busca ou adicione um novo registro no painel.
-              </p>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b bg-slate-50 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Nome do Aluno</th>
-                  <th className="py-3 px-4">Escola</th>
-                  <th className="py-3 px-4">Ano/Turma</th>
-                  <th className="py-3 px-4">Turno</th>
-                  <th className="py-3 px-4">Rota Vinculada</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredAlunos.map((aluno) => (
-                  <tr key={aluno.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{aluno.nome}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{aluno.escola}</td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono">{aluno.serie}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        aluno.turno === 'Manhã' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                        aluno.turno === 'Tarde' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                        'bg-purple-50 border-purple-200 text-purple-700'
-                      }`}>
-                        {aluno.turno ?? 'Manhã'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600 font-semibold">{aluno.rotaNome || aluno.rotaId || 'Aguardando Atribuição'}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        aluno.statusCarteirinha === 'Aprovado'
-                          ? 'bg-emerald-50 border-emerald-250 text-emerald-700'
-                          : aluno.statusCarteirinha === 'Em análise'
-                          ? 'bg-blue-50 border-blue-250 text-blue-700'
-                          : 'bg-amber-50 border-amber-250 text-amber-700'
-                      }`}>
-                        <span className={`w-1 h-1 rounded-full ${
-                          aluno.statusCarteirinha === 'Aprovado' ? 'bg-emerald-500' : aluno.statusCarteirinha === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-amber-500'
-                        }`} />
-                        {aluno.statusCarteirinha}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            setNome(aluno.nome);
-                            setEscola(aluno.escola);
-                            setEscolaId(aluno.escolaId || '');
-                            setSerie(aluno.serie);
-                            setRotaId(aluno.rotaId);
-                            setStatus(aluno.statusCarteirinha);
-                            setTurno(aluno.turno ?? 'Manhã');
-                            setModalEditar(aluno);
-                          }}
-                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(aluno.id)}
-                          className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors border border-transparent hover:border-rose-100"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        
+        <div className="flex items-center gap-2">
+          {usandoMock && (
+            <span className="text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-200/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              Modo Simulação
+            </span>
           )}
+          <button
+            onClick={fetchMetrics}
+            className="flex items-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-50 transition-colors bg-white shadow-sm"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            <span>Atualizar</span>
+          </button>
         </div>
       </div>
 
-      {/* MODAL: NOVO ALUNO */}
-      {modalNovo && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn">
-            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
-              <div>
-                <h3 className="font-black text-slate-900 text-sm">Novo Aluno</h3>
-                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">SEMED Arapongas</span>
-              </div>
-              <button onClick={() => setModalNovo(false)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                <X size={15} />
-              </button>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Total Alunos */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-5 shadow-sm border border-slate-800 flex items-center justify-between relative overflow-hidden group">
+          <div className="flex flex-col gap-1 z-10">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Total de Estudantes</span>
+            <span className="text-3xl font-black">{loading ? '...' : metrics.total_alunos}</span>
+            <span className="text-[10px] text-slate-550 font-bold">Cadastros ativos no transporte</span>
+          </div>
+          <div className="p-4 bg-slate-800/40 rounded-2xl z-10">
+            <Users size={24} className="text-amber-400" />
+          </div>
+          <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all duration-500" />
+        </div>
+
+        {/* Presenças de Hoje */}
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden group">
+          <div className="flex flex-col gap-1 z-10">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450">Presentes Hoje (Check-in)</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900">{loading ? '...' : metrics.presencas_hoje}</span>
+              {metrics.total_alunos > 0 && (
+                <span className="text-xs text-emerald-600 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                  {Math.round((metrics.presencas_hoje / metrics.total_alunos) * 100)}%
+                </span>
+              )}
             </div>
-            
-            <div className="p-5 flex flex-col gap-3">
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nome Completo</label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Nome do estudante"
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Instituição de Ensino</label>
-                <select
-                  value={escolaId}
-                  onChange={(e) => {
-                    const selId = e.target.value;
-                    setEscolaId(selId);
-                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
-                    setEscola(selNome);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  {escolas.map((esc) => (
-                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Ano / Turma</label>
-                <input
-                  type="text"
-                  value={serie}
-                  onChange={(e) => setSerie(e.target.value)}
-                  placeholder="Ex: 4º Ano B"
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turno Escolar</label>
-                <select
-                  value={turno}
-                  onChange={(e) => setTurno(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  <option value="Manhã">Manhã</option>
-                  <option value="Tarde">Tarde</option>
-                  <option value="Noite">Noite</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Rota Vinculada</label>
-                <select
-                  value={rotaId}
-                  onChange={(e) => setRotaId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  <option value="">-- Sem Rota --</option>
-                  {rotas.map((r) => (
-                    <option key={r.id} value={r.id}>{r.codigo || 'RT'} — {r.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Status da Carteirinha</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  <option value="Pendente">Pendente (Aguardando Doc)</option>
-                  <option value="Em análise">Em análise (Aguardando SEMED)</option>
-                  <option value="Aprovado">Aprovado (Carteirinha Liberada)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
-              <button
-                disabled={loadingAction}
-                onClick={() => setModalNovo(false)}
-                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                disabled={!nome.trim() || !serie.trim() || loadingAction}
-                onClick={handleCreate}
-                className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
-                  nome.trim() && serie.trim() && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
-                }`}
-              >
-                {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Salvar Aluno'}
-              </button>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-650 font-extrabold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Embarques detectados hoje</span>
             </div>
           </div>
+          <div className="p-4 bg-emerald-50 rounded-2xl z-10 border border-emerald-100/50">
+            <UserCheck size={24} className="text-emerald-600" />
+          </div>
+          <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500" />
         </div>
-      )}
 
-      {/* MODAL: EDITAR ALUNO */}
-      {modalEditar && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border flex flex-col animate-fadeIn">
-            <div className="px-5 py-4 border-b flex items-center justify-between bg-slate-50">
-              <div>
-                <h3 className="font-black text-slate-900 text-sm">Editar Cadastro</h3>
-                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">SEMED Arapongas</span>
-              </div>
-              <button onClick={() => setModalEditar(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                <X size={15} />
-              </button>
+        {/* Ausências de Hoje */}
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden group">
+          <div className="flex flex-col gap-1 z-10">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450">Ausências Informadas</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900">{loading ? '...' : metrics.faltas_hoje}</span>
+              {metrics.total_alunos > 0 && (
+                <span className="text-xs text-rose-600 font-extrabold bg-rose-50 px-1.5 py-0.5 rounded-md">
+                  {Math.round((metrics.faltas_hoje / metrics.total_alunos) * 100)}%
+                </span>
+              )}
             </div>
-            
-            <div className="p-5 flex flex-col gap-3">
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nome Completo</label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Nome do estudante"
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 transition-all"
-                />
-              </div>
+            <span className="text-[10px] text-slate-400 font-bold">Faltas justificadas pelos responsáveis</span>
+          </div>
+          <div className="p-4 bg-rose-50 rounded-2xl z-10 border border-rose-100/50">
+            <UserX size={24} className="text-rose-600" />
+          </div>
+          <div className="absolute right-0 top-0 w-32 h-32 bg-rose-500/5 rounded-full blur-2xl group-hover:bg-rose-500/10 transition-all duration-500" />
+        </div>
+      </div>
 
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Instituição de Ensino</label>
-                <select
-                  value={escolaId}
-                  onChange={(e) => {
-                    const selId = e.target.value;
-                    setEscolaId(selId);
-                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
-                    setEscola(selNome);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  {escolas.map((esc) => (
-                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Ano / Turma</label>
-                <input
-                  type="text"
-                  value={serie}
-                  onChange={(e) => setSerie(e.target.value)}
-                  placeholder="Ex: 4º Ano B"
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 transition-all font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turno Escolar</label>
-                <select
-                  value={turno}
-                  onChange={(e) => setTurno(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  <option value="Manhã">Manhã</option>
-                  <option value="Tarde">Tarde</option>
-                  <option value="Noite">Noite</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Rota Vinculada</label>
-                <select
-                  value={rotaId}
-                  onChange={(e) => setRotaId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  <option value="">-- Sem Rota --</option>
-                  {rotas.map((r) => (
-                    <option key={r.id} value={r.id}>{r.codigo || 'RT'} — {r.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Status da Carteirinha</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
-                >
-                  <option value="Pendente">Pendente (Aguardando Doc)</option>
-                  <option value="Em análise">Em análise (Aguardando SEMED)</option>
-                  <option value="Aprovado">Aprovado (Carteirinha Liberada)</option>
-                </select>
-              </div>
+      {/* Main Stats Area: Schools Ranking & Rotas Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Escola Ranking */}
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex flex-col gap-4 lg:col-span-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-wider">
+              <Building2 size={15} className="text-amber-500" />
+              <span>Estudantes por Unidade de Ensino</span>
             </div>
-
-            <div className="px-5 py-4 border-t bg-slate-50 flex gap-2 justify-end">
-              <button
-                disabled={loadingAction}
-                onClick={() => setModalEditar(null)}
-                className="py-2.5 px-4 rounded-xl text-xs font-bold border text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                disabled={!nome.trim() || !serie.trim() || loadingAction}
-                onClick={handleUpdate}
-                className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow ${
-                  nome.trim() && serie.trim() && !loadingAction ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
-                }`}
-              >
-                {loadingAction ? <div className="w-3.5 h-3.5 border-2 border-slate-550 border-t-transparent rounded-full animate-spin" /> : 'Salvar Alterações'}
-              </button>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Filtrar escola..."
+                value={escolaFilter}
+                onChange={(e) => setEscolaFilter(e.target.value)}
+                className="pl-7 pr-3 py-1 rounded-xl border text-[10px] font-bold placeholder-slate-400 focus:outline-none focus:border-slate-800 transition-all w-36"
+              />
+              <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
+
+          <div className="flex flex-col gap-4 py-2">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredEscolas.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-10">Nenhuma escola corresponde ao filtro.</p>
+            ) : (
+              filteredEscolas.map((item, idx) => {
+                const totalAlunosRede = metrics.total_alunos || 1;
+                const percentage = Math.round((item.total / totalAlunosRede) * 100);
+                
+                // Color badges for top ranks
+                const isTop1 = idx === 0;
+                const isTop2 = idx === 1;
+                const isTop3 = idx === 2;
+
+                return (
+                  <div key={item.escola} className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 font-bold text-slate-900 truncate">
+                        <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black text-white shrink-0 ${
+                          isTop1 ? 'bg-amber-500 animate-bounce' : isTop2 ? 'bg-slate-400' : isTop3 ? 'bg-amber-600' : 'bg-slate-300'
+                        }`}>
+                          {idx + 1}º
+                        </span>
+                        <span className="truncate max-w-[200px] sm:max-w-xs" title={item.escola}>{item.escola}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 font-extrabold">
+                        <span className="text-slate-500">{item.total} alunos</span>
+                        <span className="text-amber-550 bg-amber-50 px-1.5 py-0.2 rounded">{percentage}%</span>
+                      </div>
+                    </div>
+                    {/* Horizontal Bar */}
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          isTop1 ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-slate-400'
+                        }`} 
+                        style={{ width: `${Math.max(percentage, 3)}%` }} 
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Turnos & Rotas */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Turnos */}
+          <div className="bg-white border rounded-3xl p-5 shadow-sm flex flex-col gap-4 flex-1">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-wider pb-2 border-b">
+              <Clock size={15} className="text-amber-500" />
+              <span>Distribuição por Turno</span>
+            </div>
+
+            <div className="flex flex-col justify-center gap-3.5 py-2">
+              {loading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                metrics.alunos_por_turno.map((item) => {
+                  const total = metrics.total_alunos || 1;
+                  const percentage = Math.round((item.total / total) * 100);
+                  const isManha = item.turno.toLowerCase().includes('manhã') || item.turno.toLowerCase() === 'manha';
+                  const isTarde = item.turno.toLowerCase().includes('tarde');
+
+                  return (
+                    <div key={item.turno} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 font-bold text-slate-700">
+                        <span className={`w-2.5 h-2.5 rounded-full ${
+                          isManha ? 'bg-amber-450' : isTarde ? 'bg-blue-400' : 'bg-indigo-700'
+                        }`} />
+                        <span>{item.turno}</span>
+                      </div>
+                      <div className="flex items-center gap-2 font-black">
+                        <span className="text-slate-800">{item.total}</span>
+                        <span className="text-slate-400 font-medium">({percentage}%)</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Passageiros por Rota */}
+          <div className="bg-white border rounded-3xl p-5 shadow-sm flex flex-col gap-4 flex-1">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-wider pb-2 border-b">
+              <BarChart3 size={15} className="text-amber-500" />
+              <span>Volume por Rota Ativa</span>
+            </div>
+
+            <div className="flex flex-col gap-3.5 py-2 overflow-y-auto max-h-[180px] custom-scrollbar">
+              {loading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : metrics.alunos_por_rota.length === 0 ? (
+                <p className="text-xs text-slate-400 text-center">Nenhuma rota ativa.</p>
+              ) : (
+                metrics.alunos_por_rota.map((item) => (
+                  <div key={item.rota} className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-700 truncate max-w-[160px]" title={item.rota}>{item.rota}</span>
+                    <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md text-[10px] shrink-0">
+                      {item.total} passageiros
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Assiduidade & Absenteísmo Lists */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Mais Assiduos */}
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex flex-col gap-4">
+          <div className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-wider pb-2 border-b">
+            <Award size={15} className="text-emerald-600" />
+            <span>Top 5 Alunos Mais Assíduos</span>
+          </div>
+
+          <div className="flex flex-col gap-3 py-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : metrics.mais_assiduos.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-6">Sem registros de embarque disponíveis.</p>
+            ) : (
+              metrics.mais_assiduos.map((item, idx) => (
+                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-50 hover:bg-slate-55/50 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-emerald-700 bg-emerald-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 truncate">{item.nome}</p>
+                      <p className="text-[9px] text-slate-400 truncate mt-0.5">{item.escola}</p>
+                    </div>
+                  </div>
+                  <span className="text-emerald-700 bg-emerald-100/60 text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0">
+                    {item.total_presencas} check-ins
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Mais Faltosos */}
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex flex-col gap-4">
+          <div className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-wider pb-2 border-b">
+            <AlertCircle size={15} className="text-rose-600" />
+            <span>Top 5 Alunos com Mais Faltas</span>
+          </div>
+
+          <div className="flex flex-col gap-3 py-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : metrics.mais_faltosos.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-6">Sem registros de faltas disponíveis.</p>
+            ) : (
+              metrics.mais_faltosos.map((item, idx) => (
+                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-50 hover:bg-slate-55/50 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-rose-700 bg-rose-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 truncate">{item.nome}</p>
+                      <p className="text-[9px] text-slate-400 truncate mt-0.5">{item.escola}</p>
+                    </div>
+                  </div>
+                  <span className="text-rose-750 bg-rose-100/60 text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0">
+                    {item.total_faltas} faltas
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+      </div>
 
     </div>
   );

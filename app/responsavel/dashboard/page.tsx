@@ -775,9 +775,9 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
                   <input
                     type="text"
                     value={turma}
-                    onChange={(e) => setTurma(e.target.value)}
+                    onChange={(e) => setTurma(e.target.value.toUpperCase())}
                     placeholder="Ex: B"
-                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all uppercase"
                   />
                 </div>
               </div>

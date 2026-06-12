@@ -1,0 +1,4 @@
+[2026-06-12 15:03:00] INFO: Identificado campo de Turma (classe de série) no formulário CadastroFilhoModal em app/responsavel/dashboard/page.tsx.
+[2026-06-12 15:05:00] INFO: Aplicada a padronização no frontend convertendo o valor da Turma para maiúsculo dinamicamente no onChange e adicionada a classe Tailwind uppercase para exibição visual imediata.
+[2026-06-12 15:08:00] INFO: Criada a migração 20260612180500_force_uppercase_turma.sql para atualizar a trigger function sync_alunos_columns(), garantindo a conversão de novos registros e atualizações para maiúsculo também no banco de dados.
+[2026-06-12 15:10:00] INFO: Atualizadas as documentações técnicas correspondentes em _docs/0208_PortalPais.md e _docs/0402_Alunos_Responsavel_RLS.md.

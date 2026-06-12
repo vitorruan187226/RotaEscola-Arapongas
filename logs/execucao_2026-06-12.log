@@ -7,3 +7,4 @@
 [2026-06-12 16:00:00] INFO: Reconstruída por completo a página de Gestão de Alunos em app/dashboard/admin/alunos/page.tsx como um Dashboard de Relatórios e Assiduidade Operacional (KPIs, Ranking de escolas, alunos por rota/turno, mais assíduos/faltosos) com suporte a modo real (RPC) e fallback simulado de demonstração.
 [2026-06-12 16:05:00] INFO: Atualizada a documentação geral do painel em _docs/0205_AdminDashboard.md. Executado typechecking com 100% de sucesso (0 erros).
 [2026-06-12 16:08:00] INFO: Removido fallback de simulação (dados mocados) do painel de alunos (app/dashboard/admin/alunos/page.tsx) substituindo por INITIAL_METRICS (zerado) e removido indicador de Modo Simulação.
+[2026-06-12 16:11:00] INFO: Corrigida coluna r.nome_rota para r.nome na RPC get_dashboard_metrics() no arquivo de migração 20260612190000_dashboard_metrics_rpc.sql.

@@ -82,24 +82,6 @@ export default function CarteirinhaDigitalPage() {
     ctx.lineTo(370, 75);
     ctx.stroke();
 
-    // Student Photo Placeholder (stylized profile icon)
-    ctx.fillStyle = '#334155';
-    ctx.beginPath();
-    ctx.arc(200, 140, 45, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#f59e0b';
-    ctx.stroke();
-    
-    // Draw user symbol inside photo placeholder (head and torso)
-    ctx.fillStyle = '#94a3b8';
-    ctx.beginPath();
-    ctx.arc(200, 130, 15, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(200, 175, 25, Math.PI, 0, false);
-    ctx.fill();
-
     // Student Name
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 16px sans-serif';
@@ -137,14 +119,61 @@ export default function CarteirinhaDigitalPage() {
     ctx.fillStyle = '#fbbf24';
     ctx.fillText(itinText, 220, 342);
 
-    // Render QR Code SVG to canvas
+    // Render QR Code SVG and Student Photo asynchronously
     const svgElement = document.querySelector('#carteirinha-qr-code svg');
     if (svgElement) {
       const svgString = new XMLSerializer().serializeToString(svgElement);
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const blobURL = window.URL.createObjectURL(svgBlob);
-      const img = new window.Image();
-      img.onload = () => {
+      
+      const imgQR = new window.Image();
+      const imgFoto = new window.Image();
+      
+      let qrLoaded = false;
+      let fotoLoaded = false;
+      let fotoFailed = false;
+
+      const finishDrawing = () => {
+        // Confirm both QR and Foto (if applicable) are resolved
+        if (!qrLoaded) return;
+        if (aluno.fotoUrl && !fotoLoaded && !fotoFailed) return;
+
+        // Draw Student Photo/Silhouette
+        if (aluno.fotoUrl && fotoLoaded) {
+          ctx.save();
+          // Draw circular clip path
+          ctx.beginPath();
+          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.clip();
+          // Draw image inside clip
+          ctx.drawImage(imgFoto, 155, 95, 90, 90);
+          ctx.restore();
+
+          // Stroke border around circular photo
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          // Silhouette placeholder
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#f59e0b';
+          ctx.stroke();
+          
+          ctx.fillStyle = '#94a3b8';
+          ctx.beginPath();
+          ctx.arc(200, 130, 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(200, 175, 25, Math.PI, 0, false);
+          ctx.fill();
+        }
+
         // Draw QR Code Background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(135, 385, 130, 130);
@@ -153,7 +182,7 @@ export default function CarteirinhaDigitalPage() {
         ctx.strokeRect(135, 385, 130, 130);
 
         // Draw QR Code
-        ctx.drawImage(img, 140, 390, 120, 120);
+        ctx.drawImage(imgQR, 140, 390, 120, 120);
 
         // Footer message
         ctx.fillStyle = '#64748b';
@@ -174,8 +203,43 @@ export default function CarteirinhaDigitalPage() {
         window.URL.revokeObjectURL(blobURL);
         setIsDownloading(false);
       };
-      img.src = blobURL;
+
+      imgQR.onload = () => {
+        qrLoaded = true;
+        finishDrawing();
+      };
+      imgQR.src = blobURL;
+
+      if (aluno.fotoUrl) {
+        imgFoto.crossOrigin = 'anonymous';
+        imgFoto.onload = () => {
+          fotoLoaded = true;
+          finishDrawing();
+        };
+        imgFoto.onerror = () => {
+          fotoFailed = true;
+          finishDrawing();
+        };
+        imgFoto.src = aluno.fotoUrl;
+      }
     } else {
+      // Fallback silhouette when QR SVG is not found
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(200, 140, 45, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.stroke();
+      
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.arc(200, 130, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(200, 175, 25, Math.PI, 0, false);
+      ctx.fill();
+
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(135, 385, 130, 130);
       ctx.fillStyle = '#0f172a';

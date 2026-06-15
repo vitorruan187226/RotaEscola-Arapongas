@@ -32,3 +32,8 @@
 2026-06-15 16:13:30 [INFO] Corrigida colisão de nomes do construtor de imagem (`window.Image` em vez de `Image` do Lucide).
 2026-06-15 16:14:00 [INFO] Adicionado o estado `isDownloading` para melhor feedback visual premium do botão de download (Salvando...).
 2026-06-15 16:14:30 [INFO] Validada a compilação do TypeScript e staging/commit efetuados.
+2026-06-15 16:38:00 [INFO] Inicializada a funcionalidade de upload e alteração de foto do aluno diretamente a partir do avatar no painel do responsável.
+2026-06-15 16:38:30 [INFO] Importado o ícone Camera e adicionados os overlays visuais, spinners de upload e inputs de arquivo ocultos no JSX.
+2026-06-15 16:39:00 [INFO] Implementada a função handleUploadPhoto em app/responsavel/dashboard/page.tsx integrando com Supabase Storage e salvando URLs públicas na coluna foto_url da tabela alunos.
+2026-06-15 16:39:30 [INFO] Refatorado a renderização do HTML5 Canvas de exportação da carteirinha em page.tsx e carteirinha/[id]/page.tsx para desenhar a imagem da foto do aluno de forma assíncrona com CORS.
+2026-06-15 16:40:00 [INFO] Validação do compilador TypeScript (npx tsc --noEmit) executada e concluída com sucesso (0 erros).

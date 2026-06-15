@@ -6,7 +6,7 @@ import { createClient } from '../../../utils/supabase/client';
 import {
   User, Shield, MapPin, UploadCloud, AlertCircle, FileText,
   CheckCircle, Clock, MessageCircle, X, Trash2, CalendarX,
-  RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus, ShieldAlert
+  RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus, ShieldAlert, Camera
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -108,6 +108,7 @@ export default function ResponsavelDashboard() {
   const [escolas,  setEscolas]  = useState<any[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [usandoMock, setUsandoMock] = useState(false);
+  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null);
 
   // Estados dos Modais
   const [selectedFilhoDoc, setSelectedFilhoDoc] = useState<Filho | null>(null);
@@ -256,6 +257,70 @@ export default function ResponsavelDashboard() {
     setFilhos(prev => prev.map(filho => filho.id === alunoId ? { ...filho, statusCarteirinha: newStatus } : filho));
   };
 
+  // Função para fazer upload da foto do aluno
+  const handleUploadPhoto = async (alunoId: string, file: File) => {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Por favor, selecione um arquivo de imagem válido.', 'error');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('A imagem deve ter no máximo 5MB.', 'error');
+      return;
+    }
+
+    setUploadingPhotoId(alunoId);
+
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const fileName = `fotos-alunos/${alunoId}_${Date.now()}.${ext}`;
+
+      if (usandoMock) {
+        setTimeout(() => {
+          const fakeUrl = `https://picsum.photos/300/400?random=${alunoId}`;
+          setFilhos(prev => prev.map(f => f.id === alunoId ? { ...f, fotoUrl: fakeUrl } : f));
+          setUploadingPhotoId(null);
+          showToast('Foto do aluno atualizada (modo demonstração)!', 'success');
+        }, 1500);
+        return;
+      }
+
+      // Upload para Supabase Storage
+      const { error: storageError } = await supabase.storage
+        .from('documentos-transporte')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (storageError) throw storageError;
+
+      // Pegar URL Pública
+      const publicUrl = supabase.storage
+        .from('documentos-transporte')
+        .getPublicUrl(fileName).data.publicUrl;
+
+      // Atualizar coluna foto_url na tabela alunos
+      const { error: dbError } = await supabase
+        .from('alunos')
+        .update({ foto_url: publicUrl })
+        .eq('id', alunoId);
+
+      if (dbError) throw dbError;
+
+      // Atualizar estado local
+      setFilhos(prev => prev.map(f => f.id === alunoId ? { ...f, fotoUrl: publicUrl } : f));
+      showToast('Foto do aluno atualizada com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao fazer upload da foto:', err);
+      showToast(err.message || 'Erro ao enviar a foto do aluno.', 'error');
+    } finally {
+      setUploadingPhotoId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -353,7 +418,11 @@ export default function ResponsavelDashboard() {
             >
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
-                <div className="w-16 h-20 rounded-xl bg-slate-100 border border-slate-200/60 overflow-hidden flex items-center justify-center shrink-0">
+                <div 
+                  onClick={() => document.getElementById(`upload-photo-${filho.id}`)?.click()}
+                  className="w-16 h-20 rounded-xl bg-slate-100 border border-slate-200/60 overflow-hidden flex items-center justify-center shrink-0 cursor-pointer relative group transition-all duration-200 hover:border-amber-500 hover:scale-[1.03]"
+                  title="Clique para alterar a foto do aluno"
+                >
                   {filho.fotoUrl ? (
                     <img src={filho.fotoUrl} alt={filho.nome} className="w-full h-full object-cover" />
                   ) : (
@@ -362,6 +431,34 @@ export default function ResponsavelDashboard() {
                       <span className="text-[8px] text-slate-500 font-bold uppercase leading-none">Sem Foto</span>
                     </div>
                   )}
+
+                  {/* Overlay interativo de Hover */}
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white gap-1 select-none">
+                    <Camera size={14} className="text-amber-400" />
+                    <span className="text-[7.5px] font-black uppercase tracking-wider text-amber-400">Alterar</span>
+                  </div>
+
+                  {/* Loading Spinner overlay */}
+                  {uploadingPhotoId === filho.id && (
+                    <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center z-10">
+                      <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+
+                  {/* Input de arquivo oculto */}
+                  <input
+                    type="file"
+                    id={`upload-photo-${filho.id}`}
+                    accept="image/*"
+                    className="hidden"
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleUploadPhoto(filho.id, file);
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="flex-1 flex flex-col justify-center min-w-0">
@@ -1250,24 +1347,6 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
     ctx.lineTo(370, 75);
     ctx.stroke();
 
-    // Student Photo Placeholder (stylized profile icon)
-    ctx.fillStyle = '#334155';
-    ctx.beginPath();
-    ctx.arc(200, 140, 45, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#f59e0b';
-    ctx.stroke();
-    
-    // Draw user symbol inside photo placeholder (head and torso)
-    ctx.fillStyle = '#94a3b8';
-    ctx.beginPath();
-    ctx.arc(200, 130, 15, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(200, 175, 25, Math.PI, 0, false);
-    ctx.fill();
-
     // Student Name
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 16px sans-serif';
@@ -1305,14 +1384,61 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
     ctx.fillStyle = '#fbbf24';
     ctx.fillText(itinText, 220, 342);
 
-    // Render QR Code SVG to canvas
+    // Render QR Code SVG and Student Photo asynchronously
     const svgElement = document.querySelector('#carteirinha-qr-code svg');
     if (svgElement) {
       const svgString = new XMLSerializer().serializeToString(svgElement);
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const blobURL = window.URL.createObjectURL(svgBlob);
-      const img = new window.Image();
-      img.onload = () => {
+      
+      const imgQR = new window.Image();
+      const imgFoto = new window.Image();
+      
+      let qrLoaded = false;
+      let fotoLoaded = false;
+      let fotoFailed = false;
+
+      const finishDrawing = () => {
+        // Confirm both QR and Foto (if applicable) are resolved
+        if (!qrLoaded) return;
+        if (aluno.fotoUrl && !fotoLoaded && !fotoFailed) return;
+
+        // Draw Student Photo/Silhouette
+        if (aluno.fotoUrl && fotoLoaded) {
+          ctx.save();
+          // Draw circular clip path
+          ctx.beginPath();
+          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.clip();
+          // Draw image inside clip
+          ctx.drawImage(imgFoto, 155, 95, 90, 90);
+          ctx.restore();
+
+          // Stroke border around circular photo
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          // Silhouette placeholder
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#f59e0b';
+          ctx.stroke();
+          
+          ctx.fillStyle = '#94a3b8';
+          ctx.beginPath();
+          ctx.arc(200, 130, 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(200, 175, 25, Math.PI, 0, false);
+          ctx.fill();
+        }
+
         // Draw QR Code Background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(135, 385, 130, 130);
@@ -1321,7 +1447,7 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
         ctx.strokeRect(135, 385, 130, 130);
 
         // Draw QR Code
-        ctx.drawImage(img, 140, 390, 120, 120);
+        ctx.drawImage(imgQR, 140, 390, 120, 120);
 
         // Footer message
         ctx.fillStyle = '#64748b';
@@ -1342,8 +1468,43 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
         window.URL.revokeObjectURL(blobURL);
         setIsDownloading(false);
       };
-      img.src = blobURL;
+
+      imgQR.onload = () => {
+        qrLoaded = true;
+        finishDrawing();
+      };
+      imgQR.src = blobURL;
+
+      if (aluno.fotoUrl) {
+        imgFoto.crossOrigin = 'anonymous';
+        imgFoto.onload = () => {
+          fotoLoaded = true;
+          finishDrawing();
+        };
+        imgFoto.onerror = () => {
+          fotoFailed = true;
+          finishDrawing();
+        };
+        imgFoto.src = aluno.fotoUrl;
+      }
     } else {
+      // Fallback silhouette when QR SVG is not found
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(200, 140, 45, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.stroke();
+      
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.arc(200, 130, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(200, 175, 25, Math.PI, 0, false);
+      ctx.fill();
+
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(135, 385, 130, 130);
       ctx.fillStyle = '#0f172a';

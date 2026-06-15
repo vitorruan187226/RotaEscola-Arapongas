@@ -112,6 +112,7 @@ export default function MotoristaDashboardPage() {
   const [ocorrenciaEnviada, setOcorrenciaEnviada] = useState(false);
   const [mostrarSelecaoManual, setMostrarSelecaoManual] = useState(false);
   const [buscaAlunoManual, setBuscaAlunoManual] = useState('');
+  const [realtimeAlert, setRealtimeAlert] = useState<{ title: string; message: string; type: 'info' | 'alert' } | null>(null);
   const ocorrenciaScannerRef = useRef<any>(null);
 
   // Rota ativa
@@ -282,6 +283,44 @@ export default function MotoristaDashboardPage() {
       return () => clearTimeout(timer);
     }
   }, [scanState]);
+
+  // Escuta atualizações de ausência (presencas_diarias) via Realtime do Supabase
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-presencas')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'presencas_diarias',
+        },
+        (payload) => {
+          const newRow = payload.new as any;
+          if (newRow && newRow.compareceu === false) {
+            const activeRoute = rotaAtivaRef.current;
+            if (activeRoute) {
+              const student = activeRoute.alunos.find(a => a.id === newRow.aluno_id);
+              if (student) {
+                setRealtimeAlert({
+                  title: 'Ausência Reportada',
+                  message: `O responsável por ${student.nome.split(' ')[0]} informou que ele(a) não irá hoje.`,
+                  type: 'alert'
+                });
+                setTimeout(() => setRealtimeAlert(null), 6000);
+              }
+            }
+          }
+          loadData(selectedTurno);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTurno]);
 
   // Cicla o status entre Pendente -> Presente -> Ausente -> Pendente ao clicar
   const cycleAlunoStatus = (alunoId: number | string) => {
@@ -748,6 +787,28 @@ export default function MotoristaDashboardPage() {
               <p className="text-xs font-bold text-white leading-tight">Checklist Concluído</p>
               <p className="text-[10px] text-slate-400 mt-1">{toastMessage}</p>
             </div>
+          </div>
+        )}
+
+        {/* Toast de Alerta em Tempo Real (Ausência Reportada pelos Pais) */}
+        {realtimeAlert && (
+          <div 
+            className="absolute left-5 right-5 z-[60] bg-slate-900 border border-amber-500/40 rounded-2xl p-4 flex items-center gap-3 shadow-2xl animate-slideDown transition-all duration-300"
+            style={{ top: showSuccessToast ? '140px' : '64px' }}
+          >
+            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+              <ShieldAlert size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-white leading-tight">{realtimeAlert.title}</p>
+              <p className="text-[10px] text-slate-400 mt-1 truncate">{realtimeAlert.message}</p>
+            </div>
+            <button 
+              onClick={() => setRealtimeAlert(null)}
+              className="p-1 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-white transition-colors"
+            >
+              <X size={14} />
+            </button>
           </div>
         )}
 

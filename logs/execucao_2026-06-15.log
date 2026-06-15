@@ -11,3 +11,9 @@
 2026-06-15 13:59:00 [INFO] Atualizado o painel do responsável (page.tsx) com o modal de rastreamento dinâmico (projeção GPS, timeline e WhatsApp).
 2026-06-15 13:59:15 [INFO] Validação de tipos executada (npx tsc --noEmit) com sucesso total.
 2026-06-15 13:59:20 [INFO] Arquivo walkthrough.md gerado e checklist de tarefas concluído.
+2026-06-15 14:03:00 [INFO] Modificações adicionadas à área de staging (git add .).
+2026-06-15 14:03:05 [INFO] Commit efetuado com a mensagem: "feat(gps): rastreamento GPS e controle de ausencias dinamicos e interativos".
+2026-06-15 14:03:10 [INFO] Alterações enviadas com sucesso ao repositório remoto (git push).
+2026-06-15 14:09:00 [INFO] Adicionado canal do Supabase Realtime escutando a tabela presencas_diarias no painel do motorista.
+2026-06-15 14:09:10 [INFO] Adicionado alerta visual em tempo real no dashboard do motorista para notificar ausência de aluno na rota ativa.
+2026-06-15 14:09:15 [INFO] Validação de compilação pós-realtime (npx tsc --noEmit) concluída com sucesso.

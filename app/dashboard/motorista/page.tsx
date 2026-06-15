@@ -185,6 +185,20 @@ export default function MotoristaDashboardPage() {
                 .eq('rota_id', r.id)
                 .eq('turno', turno === 'Manhã' ? 'Manhã' : turno === 'Tarde' ? 'Tarde' : 'Noite');
 
+              // Busca ausências para os alunos desta rota no dia de hoje
+              const dbAlunosIds = (dbAlunos || []).map(a => a.id);
+              let dbPresencas: any[] = [];
+              if (dbAlunosIds.length > 0) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const { data } = await supabase
+                  .from('presencas_diarias')
+                  .select('aluno_id, compareceu')
+                  .in('aluno_id', dbAlunosIds)
+                  .eq('data_presenca', todayStr)
+                  .eq('compareceu', false);
+                dbPresencas = data || [];
+              }
+
               mappedRotas.push({
                 id: r.id,
                 codigo: r.codigo || 'RT',
@@ -195,13 +209,14 @@ export default function MotoristaDashboardPage() {
                   const hash = (aluno.carteirinhas && aluno.carteirinhas.length > 0)
                     ? aluno.carteirinhas[0].qr_code_hash
                     : undefined;
+                  const isAusente = dbPresencas.some(p => p.aluno_id === aluno.id);
                   return {
                     id: aluno.id,
                     nome: aluno.nome,
                     escola: aluno.escola || 'Escola Municipal',
                     nee: false,
                     aBordo: false,
-                    statusLocal: 'pendente',
+                    statusLocal: isAusente ? 'ausente' : 'pendente',
                     fotoUrl: aluno.foto_url || undefined,
                     responsavelId: aluno.responsavel_id || undefined,
                     qrCodeHash: hash
@@ -509,7 +524,7 @@ export default function MotoristaDashboardPage() {
           
           // 4. Atualizar a localização/status da rota para em trânsito
           supabase.from('localizacao_veiculo').insert({
-            rota_id: rotaAtiva.codigo,
+            rota_id: rotaAtiva.id,
             latitude: -23.4178,
             longitude: -51.4269,
             velocidade_kmh: 40,

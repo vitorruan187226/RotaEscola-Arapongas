@@ -24,8 +24,10 @@ interface Filho {
   periodo?: 'manha' | 'tarde' | 'noite';
   observacao_secretaria?: string | null;
   rotaId?: string;
+  rotaUuid?: string;
   fotoUrl?: string;
   motorista_nome?: string;
+  motorista_telefone?: string | null;
   veiculo_numero?: string;
 }
 
@@ -38,8 +40,10 @@ const FILHOS_MOCK: Filho[] = [
     serie: '4º Ano B',
     statusCarteirinha: 'Aprovado',
     rotaId: 'Rota 04',
+    rotaUuid: '9d0f2832-7288-4682-9642-17cb25e36928',
     fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80',
     motorista_nome: 'Silvio Roberto',
+    motorista_telefone: '43999999990',
     veiculo_numero: 'BEX-1234 (Van Escolar)'
   },
   {
@@ -145,6 +149,7 @@ export default function ResponsavelDashboard() {
                 perfis (
                   id,
                   nome,
+                  telefone,
                   motoristas_perfil (
                     placa_veiculo,
                     modelo_veiculo
@@ -159,6 +164,7 @@ export default function ResponsavelDashboard() {
               const rota = a.rotas;
               const motoristaPerfil = rota?.perfis;
               const motoristaNome = motoristaPerfil?.nome || 'Aguardando Atribuição';
+              const motoristaTelefone = motoristaPerfil?.telefone || null;
               const veiculoInfo = motoristaPerfil?.motoristas_perfil;
               const veiculoNumero = veiculoInfo 
                 ? `${veiculoInfo.placa_veiculo} (${veiculoInfo.modelo_veiculo || 'Ônibus'})` 
@@ -175,8 +181,10 @@ export default function ResponsavelDashboard() {
                 status:            a.status ?? 'aguardando',
                 statusCarteirinha: mapStatus(a.status_carteirinha),
                 rotaId:            rota?.nome ?? 'Aguardando Atribuição',
+                rotaUuid:          a.rota_id ?? undefined,
                 fotoUrl:           a.foto_url ?? undefined,
                 motorista_nome:    motoristaNome,
+                motorista_telefone: motoristaTelefone,
                 veiculo_numero:    veiculoNumero,
                 periodo:           a.periodo ?? 'manha',
                 observacao_secretaria: a.observacao_secretaria ?? null,
@@ -1336,10 +1344,11 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   useEffect(() => {
     async function fetchLoc() {
       try {
+        const queryRouteId = aluno.rotaUuid || aluno.rotaId;
         const { data, error } = await supabase
           .from('localizacao_veiculo')
           .select('latitude, longitude, velocidade_kmh, atualizado_em')
-          .eq('rota_id', aluno.rotaId)
+          .eq('rota_id', queryRouteId)
           .order('atualizado_em', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -1381,7 +1390,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     fetchLoc();
     const interval = setInterval(fetchLoc, 10000); // Pooling rápido de 10s para modal ativo
     return () => clearInterval(interval);
-  }, [aluno.rotaId, supabase]);
+  }, [aluno.rotaId, aluno.rotaUuid, supabase]);
 
   // Carrega status anterior de ausência diária
   useEffect(() => {
@@ -1460,6 +1469,30 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     }
   };
 
+  // Coordenadas limites de Arapongas (Bounding Box)
+  const LAT_MIN = -23.4300;
+  const LAT_MAX = -23.4100;
+  const LNG_MIN = -51.4350;
+  const LNG_MAX = -51.4150;
+
+  function getProjectedCoords(lat: number, lng: number) {
+    const clampedLat = Math.min(Math.max(lat, LAT_MIN), LAT_MAX);
+    const clampedLng = Math.min(Math.max(lng, LNG_MIN), LNG_MAX);
+
+    const x = ((clampedLng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * 100;
+    const y = ((LAT_MAX - clampedLat) / (LAT_MAX - LAT_MIN)) * 100;
+    return { x, y };
+  }
+
+  // Pontos fixos projetados para Escola e Stop (Ponto)
+  const schoolCoords = getProjectedCoords(-23.4120, -51.4200);
+  const stopCoords = getProjectedCoords(-23.4240, -51.4280);
+
+  // Posição projetada do ônibus
+  const busCoords = localizacao && !localizacao.foraDeTurno
+    ? getProjectedCoords(localizacao.latitude, localizacao.longitude)
+    : null;
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[95vh] animate-fadeIn">
@@ -1500,32 +1533,44 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 </svg>
 
                 {/* Escola */}
-                <div className="absolute top-[82px] left-[245px] flex flex-col items-center">
+                <div 
+                  className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: `${schoolCoords.x}%`, top: `${schoolCoords.y}%` }}
+                >
                   <div className="w-6 h-6 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-[10px] shadow animate-pulse">🏫</div>
-                  <span className="text-[7px] bg-slate-900 text-white font-extrabold px-1 rounded mt-0.5">SEMED Escola</span>
+                  <span className="text-[7px] bg-slate-900 text-white font-extrabold px-1.5 py-0.5 rounded mt-0.5 whitespace-nowrap shadow uppercase">
+                    Escola
+                  </span>
                 </div>
 
-                {/* Ponto */}
-                <div className="absolute top-[152px] left-[45px] flex flex-col items-center">
+                {/* Ponto de Embarque */}
+                <div 
+                  className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: `${stopCoords.x}%`, top: `${stopCoords.y}%` }}
+                >
                   <div className="w-6 h-6 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center shadow">
                     <MapPin size={11} className="text-white" />
                   </div>
-                  <span className="text-[7px] bg-slate-900 text-white font-extrabold px-1 rounded mt-0.5">Seu Ponto</span>
+                  <span className="text-[7px] bg-slate-900 text-white font-extrabold px-1.5 py-0.5 rounded mt-0.5 whitespace-nowrap shadow uppercase">
+                    Seu Ponto
+                  </span>
                 </div>
 
-                {/* Ônibus */}
-                {!localizacao?.foraDeTurno && (
+                {/* Ônibus (Baseado em Coordenadas GPS Reais) */}
+                {busCoords ? (
                   <div
-                    className="absolute flex flex-col items-center transition-all duration-1000 z-10"
-                    style={{
-                      top: tempoEstimado > 6 ? '156px' : '86px',
-                      left: tempoEstimado > 6 ? `${90 + (12 - tempoEstimado) * 6}px` : `${150 + (6 - tempoEstimado) * 15}px`,
-                    }}
+                    className="absolute flex flex-col items-center transition-all duration-1000 z-10 -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: `${busCoords.x}%`, top: `${busCoords.y}%` }}
                   >
                     <div className="w-7 h-7 rounded-full bg-slate-950 border border-amber-500 flex items-center justify-center shadow-md animate-bounce">
                       <Bus size={13} className="text-amber-500" />
                     </div>
+                    <span className="text-[7px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full mt-0.5 shadow whitespace-nowrap uppercase tracking-wider scale-90">
+                      Ônibus
+                    </span>
                   </div>
+                ) : (
+                  null
                 )}
 
                 {/* Fora de turno */}
@@ -1533,7 +1578,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1.5 p-4 z-20">
                     <WifiOff size={20} className="text-slate-400" />
                     <span className="text-xs font-black text-white">Veículo Fora de Turno</span>
-                    <span className="text-[9px] text-slate-300 text-center">Nenhum sinal de GPS active para esta linha no momento.</span>
+                    <span className="text-[9px] text-slate-300 text-center">Nenhum sinal de GPS ativo para esta linha no momento.</span>
                   </div>
                 )}
 
@@ -1577,6 +1622,73 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
             )}
           </div>
 
+          {/* Linha do Tempo de Paradas */}
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+            <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest leading-none mb-1">
+              Itinerário & Paradas
+            </h4>
+            
+            <div className="flex flex-col gap-4 relative pl-5 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
+              {/* Parada 1: Partida */}
+              <div className="relative flex flex-col gap-0.5">
+                <span className="absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 border-emerald-500 bg-white flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-xs font-bold text-slate-900 leading-tight">Partida da Garagem</span>
+                <span className="text-[9px] text-slate-500">Checklist inicial concluído pelo motorista</span>
+              </div>
+
+              {/* Parada 2: Ponto do Aluno */}
+              <div className="relative flex flex-col gap-0.5">
+                <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
+                  ausenciaNotificada 
+                    ? 'border-rose-500' 
+                    : localizacao?.foraDeTurno 
+                    ? 'border-slate-350' 
+                    : 'border-amber-500 animate-pulse'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    ausenciaNotificada 
+                      ? 'bg-rose-500' 
+                      : localizacao?.foraDeTurno 
+                      ? 'bg-slate-350' 
+                      : 'bg-amber-500'
+                  }`} />
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-900 leading-tight">Seu Ponto (Embarque)</span>
+                  {ausenciaNotificada ? (
+                    <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                      Falta Avisada
+                    </span>
+                  ) : !localizacao?.foraDeTurno ? (
+                    <span className="text-[8px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                      A Caminho
+                    </span>
+                  ) : null}
+                </div>
+                <span className="text-[9px] text-slate-500">
+                  {ausenciaNotificada 
+                    ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
+                    : localizacao?.foraDeTurno 
+                    ? 'Previsão indisponível' 
+                    : `Previsão de chegada: ~${tempoEstimado} min`}
+                </span>
+              </div>
+
+              {/* Parada 3: Escola */}
+              <div className="relative flex flex-col gap-0.5">
+                <span className="absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 border-slate-350 bg-white flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-350" />
+                </span>
+                <span className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[280px]">
+                  Destino: {aluno.escola}
+                </span>
+                <span className="text-[9px] text-slate-500">Desembarque seguro dos estudantes</span>
+              </div>
+            </div>
+          </div>
+
           {msg && (
             <div className={`p-3 rounded-xl text-xs font-semibold flex items-start gap-2 border ${
               msg.type === 'success' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-blue-50 border-blue-200 text-blue-700'
@@ -1585,6 +1697,44 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               <span>{msg.text}</span>
             </div>
           )}
+
+          {/* Card do Motorista e Veículo */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 text-white flex flex-col gap-3.5 shadow-md relative overflow-hidden">
+            <div className="absolute -right-4 -bottom-4 text-slate-800/15 pointer-events-none text-8xl select-none">
+              🚌
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-amber-500 border border-slate-700 overflow-hidden flex items-center justify-center text-lg text-slate-950 font-bold shrink-0 shadow">
+                {aluno.motorista_nome ? aluno.motorista_nome.charAt(0) : '👤'}
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">
+                  Motorista Responsável
+                </h4>
+                <span className="text-sm font-black text-white mt-1 block truncate">
+                  {aluno.motorista_nome || 'Aguardando atribuição'}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium block mt-0.5 truncate">
+                  Veículo: {aluno.veiculo_numero || 'Não atribuído'}
+                </span>
+              </div>
+            </div>
+
+            {aluno.motorista_telefone && (
+              <div className="border-t border-slate-800 pt-3 flex gap-2">
+                <a
+                  href={`https://wa.me/55${aluno.motorista_telefone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${aluno.motorista_nome?.split(' ')[0]}, sou responsável pelo aluno ${aluno.nome}. Gostaria de obter informações da rota de hoje.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <MessageCircle size={14} />
+                  <span>Falar no WhatsApp</span>
+                </a>
+              </div>
+            )}
+          </div>
 
           {/* Controle de Ausência */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white">

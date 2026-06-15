@@ -39,3 +39,5 @@
 2026-06-15 16:40:00 [INFO] Validação do compilador TypeScript (npx tsc --noEmit) executada e concluída com sucesso (0 erros).
 2026-06-15 16:55:00 [INFO] Criada migração SQL 20260615165500_create_storage_buckets.sql para instanciar buckets e políticas RLS de storage ausentes na produção.
 2026-06-15 17:02:00 [INFO] Modificado o query de atualização da tabela alunos com .select() para validar que o registro foi modificado no banco, evitando falhas silenciosas de RLS.
+2026-06-15 17:19:00 [INFO] Removidos dados numéricos fictícios (6.000 alunos, 102 veículos, etc.) da landing page (app/page.tsx) e substituídos por termos qualitativos.
+

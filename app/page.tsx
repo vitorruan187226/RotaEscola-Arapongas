@@ -34,10 +34,10 @@ const NAV_LINKS = [
 ];
 
 const STATS = [
-  { value: '6.000', label: 'Alunos atendidos', icon: Users },
-  { value: '102', label: 'Veículos na frota', icon: Bus },
-  { value: '38', label: 'Rotas ativas', icon: MapPin },
-  { value: '100%', label: 'Documentos digitais', icon: FileText },
+  { value: 'Seguro', label: 'Validação por QR Code', icon: QrCode },
+  { value: 'Ao Vivo', label: 'Rastreamento de rotas', icon: MapPin },
+  { value: 'Offline', label: 'Zona rural & sítios', icon: WifiOff },
+  { value: '100%', label: 'Processo digital', icon: FileText },
 ];
 
 const PILARES = [
@@ -216,8 +216,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="lp-hero-subtitle">
-                Conectando <strong>6.000 alunos</strong>, <strong>102 veículos</strong> e a{' '}
-                Secretaria de Educação em uma única plataforma inteligente.
+                Conectando alunos, veículos escolares e a Secretaria de Educação de Arapongas em uma única plataforma inteligente e segura.
               </p>
 
               <div className="lp-hero-ctas">
@@ -257,15 +256,15 @@ export default function LandingPage() {
                     <div className="lp-mockup-stat lp-mockup-stat--primary">
                       <Bus size={18} />
                       <div>
-                        <span className="lp-mockup-stat-val">102</span>
-                        <span className="lp-mockup-stat-lbl">Veículos</span>
+                        <span className="lp-mockup-stat-val">Rotas</span>
+                        <span className="lp-mockup-stat-lbl">Monitoradas</span>
                       </div>
                     </div>
                     <div className="lp-mockup-stat lp-mockup-stat--yellow">
                       <Users size={18} />
                       <div>
-                        <span className="lp-mockup-stat-val">6.000</span>
-                        <span className="lp-mockup-stat-lbl">Alunos</span>
+                        <span className="lp-mockup-stat-val">Alunos</span>
+                        <span className="lp-mockup-stat-lbl">Identificados</span>
                       </div>
                     </div>
                   </div>
@@ -275,7 +274,7 @@ export default function LandingPage() {
                     <div className="lp-mockup-route-dot lp-mockup-route-dot--green" />
                     <div className="lp-mockup-route-info">
                       <span className="lp-mockup-route-name">Rota 07 — Norte</span>
-                      <span className="lp-mockup-route-status">Em trânsito · 12 alunos</span>
+                      <span className="lp-mockup-route-status">Em trânsito</span>
                     </div>
                     <span className="lp-mockup-route-badge">●</span>
                   </div>

@@ -85,4 +85,5 @@ Constante `FILHOS_MOCK` tipada como `Filho[]` para uso demonstrativo. É carrega
 | 30/05/2026 | Refatoração profunda do Fluxo de Cadastro: Remoção completa da lógica de "Código de Vanzeiro". Introdução do formulário de Auditoria Documental com upload via Storage (3 documentos obrigatórios) e exibição do Motorista/Veículo para status "Aprovado". |
 | 30/05/2026 | **Fase II - Refatoração do Fluxo:** Divisão do envio em 4 documentos obrigatórios, alteração do status inicial para `'Em análise'` e carregamento dinâmico via JOIN multinível do Supabase. |
 | 15/06/2026 | Correção de timezone no controle de ausências: unificação das datas locais (`getLocalDateString()`), garantindo sincronização sem shifting de data com o motorista. |
+| 15/06/2026 | Implementação da exportação da carteirinha digital para imagem PNG via HTML5 Canvas, unificada no modal do responsável e na página de detalhes. |
 

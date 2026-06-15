@@ -1208,6 +1208,159 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
   const supabase = createClient();
   const [hash, setHash] = useState<string>(`rotaescola_arapongas_${aluno.id}_2026`);
   const [loading, setLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleSaveCredential = () => {
+    setIsDownloading(true);
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setIsDownloading(false);
+      return;
+    }
+
+    // Background gradient (navy blue)
+    const grad = ctx.createLinearGradient(0, 0, 0, 600);
+    grad.addColorStop(0, '#0f172a');
+    grad.addColorStop(1, '#020617');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 400, 600);
+
+    // Border / decoration
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(8, 8, 384, 584);
+
+    // Header Text
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PREFEITURA DE ARAPONGAS', 200, 40);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('SECRETARIA DE EDUCAÇÃO (SEMED)', 200, 55);
+
+    // Divider line
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(30, 75);
+    ctx.lineTo(370, 75);
+    ctx.stroke();
+
+    // Student Photo Placeholder (stylized profile icon)
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.arc(200, 140, 45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#f59e0b';
+    ctx.stroke();
+    
+    // Draw user symbol inside photo placeholder (head and torso)
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.arc(200, 130, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(200, 175, 25, Math.PI, 0, false);
+    ctx.fill();
+
+    // Student Name
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(aluno.nome.toUpperCase(), 200, 215);
+
+    // Subtitle "TRANSPORTE AUTORIZADO"
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText('TRANSPORTE AUTORIZADO', 200, 235);
+
+    // Details box background
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(30, 260, 340, 100);
+    ctx.strokeStyle = '#334155';
+    ctx.strokeRect(30, 260, 340, 100);
+
+    // Details layout (two columns)
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 8px sans-serif';
+    ctx.fillText('MATRÍCULA', 45, 285);
+    ctx.fillText('VALIDADE', 220, 285);
+    ctx.fillText('INSTITUIÇÃO', 45, 325);
+    ctx.fillText('ITINERÁRIO', 220, 325);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(`AR-26-${aluno.id.slice(0, 5).toUpperCase()}`, 45, 302);
+    ctx.fillText('Dezembro/2026', 220, 302);
+    
+    const instText = aluno.escola.length > 25 ? aluno.escola.slice(0, 22) + '...' : aluno.escola;
+    const itinText = aluno.rotaId && aluno.rotaId.length > 25 ? aluno.rotaId.slice(0, 22) + '...' : (aluno.rotaId || 'Não definido');
+    
+    ctx.fillText(instText, 45, 342);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText(itinText, 220, 342);
+
+    // Render QR Code SVG to canvas
+    const svgElement = document.querySelector('#carteirinha-qr-code svg');
+    if (svgElement) {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const blobURL = window.URL.createObjectURL(svgBlob);
+      const img = new window.Image();
+      img.onload = () => {
+        // Draw QR Code Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(135, 385, 130, 130);
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(135, 385, 130, 130);
+
+        // Draw QR Code
+        ctx.drawImage(img, 140, 390, 120, 120);
+
+        // Footer message
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('APRESENTE AO MOTORISTA', 200, 540);
+        ctx.font = 'mono 8px sans-serif';
+        ctx.fillText(hash, 200, 555);
+
+        // Trigger download
+        const png = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = png;
+        downloadLink.download = `carteirinha-${aluno.nome.replace(/\s+/g, '_')}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        window.URL.revokeObjectURL(blobURL);
+        setIsDownloading(false);
+      };
+      img.src = blobURL;
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(135, 385, 130, 130);
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText('QR CODE', 200, 450);
+      
+      const png = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = png;
+      downloadLink.download = `carteirinha-${aluno.nome.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      setIsDownloading(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchHash() {
@@ -1298,7 +1451,7 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
 
           {/* QR Code */}
           <div className="px-5 py-4 bg-slate-950 border-t border-slate-800 flex flex-col items-center justify-center gap-2">
-            <div className="bg-white p-3 rounded-2xl border-2 border-amber-500 flex flex-col items-center justify-center gap-1.5 shadow-md">
+            <div id="carteirinha-qr-code" className="bg-white p-3 rounded-2xl border-2 border-amber-500 flex flex-col items-center justify-center gap-1.5 shadow-md">
               {loading ? (
                 <div className="w-[100px] h-[100px] flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-slate-800 border-t-transparent rounded-full animate-spin" />
@@ -1312,13 +1465,14 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
           </div>
         </div>
 
-        {/* Botão de download de demonstração */}
+        {/* Botão de download real */}
         <button
-          onClick={() => alert('Função de exportar credencial em PDF simulada!')}
-          className="w-full bg-slate-900 text-white py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-slate-800 transition-colors shadow-md mt-3.5 border border-slate-850"
+          onClick={handleSaveCredential}
+          disabled={isDownloading}
+          className="w-full bg-slate-900 text-white py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-slate-800 transition-colors shadow-md mt-3.5 border border-slate-850 disabled:opacity-50"
         >
           <Download size={13} className="text-amber-500" />
-          <span>Salvar Credencial no Celular</span>
+          <span>{isDownloading ? 'Salvando...' : 'Salvar Credencial no Celular'}</span>
         </button>
       </div>
     </div>

@@ -28,3 +28,7 @@
 2026-06-15 14:49:20 [INFO] Integrado o sentido selecionado (`selectedSentido`) no payload do lote de embarque enviado à tabela `logs_embarque`.
 2026-06-15 14:49:40 [INFO] Validada a compilação do TypeScript com sucesso.
 2026-06-15 14:50:00 [INFO] Atualizado o arquivo de documentação técnica do Painel do Motorista (_docs/0207_PainelMotorista.md).
+2026-06-15 16:13:00 [INFO] Criada e testada a exportação visual de carteirinha via HTML5 Canvas em app/responsavel/dashboard/page.tsx e app/responsavel/carteirinha/[id]/page.tsx.
+2026-06-15 16:13:30 [INFO] Corrigida colisão de nomes do construtor de imagem (`window.Image` em vez de `Image` do Lucide).
+2026-06-15 16:14:00 [INFO] Adicionado o estado `isDownloading` para melhor feedback visual premium do botão de download (Salvando...).
+2026-06-15 16:14:30 [INFO] Validada a compilação do TypeScript e staging/commit efetuados.

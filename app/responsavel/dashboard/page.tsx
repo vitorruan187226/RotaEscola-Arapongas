@@ -303,12 +303,17 @@ export default function ResponsavelDashboard() {
         .getPublicUrl(fileName).data.publicUrl;
 
       // Atualizar coluna foto_url na tabela alunos
-      const { error: dbError } = await supabase
+      const { data: updateData, error: dbError } = await supabase
         .from('alunos')
         .update({ foto_url: publicUrl })
-        .eq('id', alunoId);
+        .eq('id', alunoId)
+        .select();
 
       if (dbError) throw dbError;
+
+      if (!updateData || updateData.length === 0) {
+        throw new Error('Erro ao salvar no banco de dados. O registro do aluno não pôde ser atualizado (RLS/Permissão).');
+      }
 
       // Atualizar estado local
       setFilhos(prev => prev.map(f => f.id === alunoId ? { ...f, fotoUrl: publicUrl } : f));

@@ -38,3 +38,4 @@
 2026-06-15 16:39:30 [INFO] Refatorado a renderização do HTML5 Canvas de exportação da carteirinha em page.tsx e carteirinha/[id]/page.tsx para desenhar a imagem da foto do aluno de forma assíncrona com CORS.
 2026-06-15 16:40:00 [INFO] Validação do compilador TypeScript (npx tsc --noEmit) executada e concluída com sucesso (0 erros).
 2026-06-15 16:55:00 [INFO] Criada migração SQL 20260615165500_create_storage_buckets.sql para instanciar buckets e políticas RLS de storage ausentes na produção.
+2026-06-15 17:02:00 [INFO] Modificado o query de atualização da tabela alunos com .select() para validar que o registro foi modificado no banco, evitando falhas silenciosas de RLS.

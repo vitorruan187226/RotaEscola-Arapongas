@@ -177,9 +177,17 @@ export default function CadastroPage() {
             background-color: var(--background-gray);
           }
           .login-card {
-            width: 100%;
+            width: 92%;
             max-width: 400px;
-            padding: 40px 32px;
+            padding: 32px 20px;
+            margin: 16px auto;
+          }
+          @media (min-width: 480px) {
+            .login-card {
+              width: 100%;
+              padding: 40px 32px;
+              margin: 0;
+            }
           }
         `}</style>
       </div>
@@ -309,9 +317,18 @@ export default function CadastroPage() {
         }
 
         .login-card {
-          width: 100%;
+          width: 92%;
           max-width: 400px;
-          padding: 40px 32px;
+          padding: 32px 20px;
+          margin: 16px auto;
+        }
+
+        @media (min-width: 480px) {
+          .login-card {
+            width: 100%;
+            padding: 40px 32px;
+            margin: 0;
+          }
         }
 
         .login-header {

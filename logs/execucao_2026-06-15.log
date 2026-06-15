@@ -17,3 +17,9 @@
 2026-06-15 14:09:00 [INFO] Adicionado canal do Supabase Realtime escutando a tabela presencas_diarias no painel do motorista.
 2026-06-15 14:09:10 [INFO] Adicionado alerta visual em tempo real no dashboard do motorista para notificar ausência de aluno na rota ativa.
 2026-06-15 14:09:15 [INFO] Validação de compilação pós-realtime (npx tsc --noEmit) concluída com sucesso.
+2026-06-15 14:09:40 [INFO] Commitado e empurrado alterações para o branch main.
+2026-06-15 14:15:30 [INFO] Detectada inconsistência de timezone (shifting pós-21h) entre consultas do painel do motorista e portal dos pais/rastreio.
+2026-06-15 14:16:00 [INFO] Criada e integrada a função utilitária `getLocalDateString()` em app/dashboard/motorista/page.tsx, app/responsavel/dashboard/page.tsx e app/responsavel/rastreio/[rota_id]/page.tsx.
+2026-06-15 14:16:15 [INFO] Substituídas todas as chamadas ISOString por getLocalDateString() para unificação em tempo local.
+2026-06-15 14:16:30 [INFO] Verificada e confirmada a compilação do TypeScript sem erros (npx tsc --noEmit).
+2026-06-15 14:16:45 [INFO] Atualizada a documentação técnica dos componentes em _docs/0207_PainelMotorista.md e _docs/0206_ResponsavelDashboard.md.

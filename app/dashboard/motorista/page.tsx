@@ -28,7 +28,8 @@ import {
   Search,
   UserCheck,
   ChevronRight,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 interface Aluno {
@@ -41,6 +42,7 @@ interface Aluno {
   fotoUrl?: string;
   responsavelId?: string;
   statusLocal: 'pendente' | 'presente' | 'ausente';
+  ausenciaNotificada?: boolean;
   qrCodeHash?: string;
 }
 
@@ -84,6 +86,14 @@ const ROTAS_MOCK: RotaConfig[] = [
 ];
 
 type ScanState = 'idle' | 'success' | 'error';
+
+const getLocalDateString = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export default function MotoristaDashboardPage() {
   const router = useRouter();
@@ -190,7 +200,7 @@ export default function MotoristaDashboardPage() {
               const dbAlunosIds = (dbAlunos || []).map(a => a.id);
               let dbPresencas: any[] = [];
               if (dbAlunosIds.length > 0) {
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = getLocalDateString();
                 const { data } = await supabase
                   .from('presencas_diarias')
                   .select('aluno_id, compareceu')
@@ -218,6 +228,7 @@ export default function MotoristaDashboardPage() {
                     nee: false,
                     aBordo: false,
                     statusLocal: isAusente ? 'ausente' : 'pendente',
+                    ausenciaNotificada: isAusente,
                     fotoUrl: aluno.foto_url || undefined,
                     responsavelId: aluno.responsavel_id || undefined,
                     qrCodeHash: hash
@@ -324,6 +335,15 @@ export default function MotoristaDashboardPage() {
 
   // Cicla o status entre Pendente -> Presente -> Ausente -> Pendente ao clicar
   const cycleAlunoStatus = (alunoId: number | string) => {
+    // Se a ausência foi notificada pelo responsável, o motorista não pode alterar o status
+    const targetAluno = rotaAtiva?.alunos.find(a => a.id === alunoId);
+    if (targetAluno?.ausenciaNotificada) {
+      setToastMessage(`A ausência de ${targetAluno.nome.split(' ')[0]} foi reportada pelo responsável.`);
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4500);
+      return;
+    }
+
     setRotas(prevRotas => 
       prevRotas.map(r => {
         if (r.id === selectedRotaId) {
@@ -376,6 +396,21 @@ export default function MotoristaDashboardPage() {
     });
     
     if (alunoEncontrado) {
+      if (alunoEncontrado.ausenciaNotificada) {
+        setScanState('error');
+        setScanErrorMsg('ESTUDANTE REPORTADO AUSENTE PELO RESPONSÁVEL');
+        
+        // Feedback sonoro/de voz de erro
+        try {
+          if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance('Atenção, aluno ausente hoje');
+            msg.lang = 'pt-BR';
+            window.speechSynthesis.speak(msg);
+          }
+        } catch(e) {}
+        return;
+      }
       if (alunoEncontrado.statusLocal === 'presente') return;
 
       // Marca como presente
@@ -522,7 +557,7 @@ export default function MotoristaDashboardPage() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const todayDate = new Date().toISOString().split('T')[0];
+      const todayDate = getLocalDateString();
 
       if (user && rotaAtiva && selectedRotaId.length > 10) {
         const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
@@ -1047,12 +1082,14 @@ export default function MotoristaDashboardPage() {
                   <div
                     key={aluno.id}
                     onClick={() => cycleAlunoStatus(aluno.id)}
-                    className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer select-none ${
-                      aluno.statusLocal === 'presente' 
-                        ? 'bg-emerald-950/10 border-l-4 border-emerald-500' 
+                    className={`flex items-center justify-between p-4 transition-all duration-200 select-none ${
+                      aluno.ausenciaNotificada 
+                        ? 'bg-rose-950/5 border-l-4 border-rose-600/40 opacity-75 cursor-not-allowed'
+                        : aluno.statusLocal === 'presente' 
+                        ? 'bg-emerald-950/10 border-l-4 border-emerald-500 cursor-pointer' 
                         : aluno.statusLocal === 'ausente'
-                        ? 'bg-rose-950/10 border-l-4 border-rose-500'
-                        : 'hover:bg-slate-900/30'
+                        ? 'bg-rose-950/10 border-l-4 border-rose-500 cursor-pointer'
+                        : 'hover:bg-slate-900/30 cursor-pointer'
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
@@ -1075,16 +1112,24 @@ export default function MotoristaDashboardPage() {
                           aluno.statusLocal === 'presente' 
                             ? 'text-emerald-400 font-extrabold' 
                             : aluno.statusLocal === 'ausente'
-                            ? 'text-rose-500 font-extrabold'
+                            ? `text-rose-500 font-extrabold ${aluno.ausenciaNotificada ? 'line-through opacity-60' : ''}`
                             : 'text-slate-100'
                         }`}>
-                          {aluno.statusLocal === 'ausente' && (
+                          {aluno.ausenciaNotificada && (
+                            <Lock size={10} className="text-rose-450 shrink-0" />
+                          )}
+                          {aluno.statusLocal === 'ausente' && !aluno.ausenciaNotificada && (
                             <span className="text-[9px] bg-rose-500/25 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
                               Faltou
                             </span>
                           )}
+                          {aluno.ausenciaNotificada && (
+                            <span className="text-[9px] bg-rose-500/20 text-rose-350 border border-rose-500/20 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
+                              Falta Avisada
+                            </span>
+                          )}
                           {aluno.statusLocal === 'presente' && (
-                            <span className="text-[9px] bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
+                            <span className="text-[9px] bg-emerald-555/25 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
                               Presente
                             </span>
                           )}
@@ -1105,11 +1150,19 @@ export default function MotoristaDashboardPage() {
                     <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 border ${
                       aluno.statusLocal === 'presente' 
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                        : aluno.ausenciaNotificada
+                        ? 'bg-rose-900/20 border-rose-900/30 text-rose-350'
                         : aluno.statusLocal === 'ausente'
                         ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                         : 'bg-slate-900 border-slate-800 text-slate-500'
                     }`}>
-                      {aluno.statusLocal === 'presente' ? 'Presente' : aluno.statusLocal === 'ausente' ? 'Faltou' : 'Pendente'}
+                      {aluno.statusLocal === 'presente' 
+                        ? 'Presente' 
+                        : aluno.ausenciaNotificada
+                        ? 'Avisado' 
+                        : aluno.statusLocal === 'ausente' 
+                        ? 'Faltou' 
+                        : 'Pendente'}
                     </span>
                   </div>
                 ))

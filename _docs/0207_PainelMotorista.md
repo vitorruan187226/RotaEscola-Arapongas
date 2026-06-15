@@ -102,6 +102,7 @@ interface Aluno {
 | 09/06/2026 | Correção no leitor de QR Code (handleQrCodeScanned e handleOcorrenciaScan) para permitir a validação tanto por UUID direto, hash customizado cadastrado ou formato fallback da carteirinha digital. |
 | 09/06/2026 | Otimização do escâner real com remoção da restrição de 'qrbox' para escanear a imagem completa e ajuste do aluno Carlos no banco de dados para a rota teste/turno manhã. |
 | 09/06/2026 | Correção do bug de loop de leitura: o scanner agora ignora leituras adicionais quando o status do aluno já estiver marcado como 'presente'. |
+| 15/06/2026 | Correção do bug de timezone/shifting de data: unificação de datas locais via `getLocalDateString()`, garantindo que faltas reportadas fiquem trancadas e riscadas sem poder ser sobrescritas pelo motorista. |
 
 
 

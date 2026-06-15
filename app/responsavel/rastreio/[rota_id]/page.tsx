@@ -17,6 +17,14 @@ interface LocalizacaoVeiculo {
   foraDeTurno: boolean;
 }
 
+const getLocalDateString = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function RastreioAusenciaPage() {
   const params   = useParams();
   const rawRotaId = params.rota_id as string;
@@ -102,7 +110,7 @@ export default function RastreioAusenciaPage() {
     try {
       const { error } = await supabase.from('presencas_diarias').upsert({
         aluno_id:       'aluno-01',
-        data_presenca:  new Date().toISOString().split('T')[0],
+        data_presenca:  getLocalDateString(),
         compareceu:     false,
         motivo:         'Notificado pelo responsável',
       });
@@ -127,7 +135,7 @@ export default function RastreioAusenciaPage() {
         .from('presencas_diarias')
         .delete()
         .eq('aluno_id', 'aluno-01')
-        .eq('data_presenca', new Date().toISOString().split('T')[0]);
+        .eq('data_presenca', getLocalDateString());
       if (error) throw error;
       setAusenciaNotificada(false);
       setMsg({ type: 'info', text: 'Ausência cancelada. O aluno está ativo novamente na lista de embarque.' });

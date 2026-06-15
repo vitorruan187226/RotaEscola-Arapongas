@@ -31,6 +31,14 @@ interface Filho {
   veiculo_numero?: string;
 }
 
+const getLocalDateString = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // ─── Mock tipado de fallback (lei 4 — sem @ts-ignore) ────────────────────────
 const FILHOS_MOCK: Filho[] = [
   {
@@ -1400,7 +1408,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           .from('presencas_diarias')
           .select('id')
           .eq('aluno_id', aluno.id)
-          .eq('data_presenca', new Date().toISOString().split('T')[0])
+          .eq('data_presenca', getLocalDateString())
           .eq('compareceu', false)
           .maybeSingle();
 
@@ -1427,7 +1435,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     try {
       const { error } = await supabase.from('presencas_diarias').upsert({
         aluno_id:       aluno.id,
-        data_presenca:  new Date().toISOString().split('T')[0],
+        data_presenca:  getLocalDateString(),
         compareceu:     false,
         motivo:         'Ausência reportada pelo painel móvel',
       });
@@ -1453,7 +1461,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
         .from('presencas_diarias')
         .delete()
         .eq('aluno_id', aluno.id)
-        .eq('data_presenca', new Date().toISOString().split('T')[0]);
+        .eq('data_presenca', getLocalDateString());
       
       if (error) throw error;
 
@@ -1793,7 +1801,7 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
     async function loadLogs() {
       if (usandoMock || alunoId.startsWith('aluno-')) {
         // Mock data fallback
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getLocalDateString();
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];

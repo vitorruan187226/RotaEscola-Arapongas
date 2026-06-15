@@ -23,6 +23,7 @@ app/dashboard/motorista/
 
 ### 2. Card de Rota e Turno (Topo)
 - **Seletor de Viagem:** Card integrado com fundo escuro (`bg-slate-900/60`) e bordas sutis (`border-slate-800/80`).
+- **Seletor de Sentido da Viagem:** Seletor interativo premium para o motorista definir explicitamente se a viagem é de **Ida (Escola)** ou **Volta (Casa)**, inicializado de acordo com o turno selecionado (Ida no turno Manhã, Volta no turno Tarde/Noite) com possibilidade de override manual.
 - **Contador Dinâmico & Lotação:** Exibe a lotação do veículo em formato mono (`4 / 5`).
 - **Barra de Progresso Suave:** Barra gradiente abaixo do seletor que ilustra a lotação em tempo real (de `0%` a `100%`).
 
@@ -103,6 +104,7 @@ interface Aluno {
 | 09/06/2026 | Otimização do escâner real com remoção da restrição de 'qrbox' para escanear a imagem completa e ajuste do aluno Carlos no banco de dados para a rota teste/turno manhã. |
 | 09/06/2026 | Correção do bug de loop de leitura: o scanner agora ignora leituras adicionais quando o status do aluno já estiver marcado como 'presente'. |
 | 15/06/2026 | Correção do bug de timezone/shifting de data: unificação de datas locais via `getLocalDateString()`, garantindo que faltas reportadas fiquem trancadas e riscadas sem poder ser sobrescritas pelo motorista. |
+| 15/06/2026 | Implementação do seletor manual premium de sentido da viagem (Ida/Volta) no painel do motorista, integrado ao fluxo de envio em lote para `logs_embarque`. |
 
 
 

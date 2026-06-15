@@ -23,3 +23,8 @@
 2026-06-15 14:16:15 [INFO] Substituídas todas as chamadas ISOString por getLocalDateString() para unificação em tempo local.
 2026-06-15 14:16:30 [INFO] Verificada e confirmada a compilação do TypeScript sem erros (npx tsc --noEmit).
 2026-06-15 14:16:45 [INFO] Atualizada a documentação técnica dos componentes em _docs/0207_PainelMotorista.md e _docs/0206_ResponsavelDashboard.md.
+2026-06-15 14:48:30 [INFO] Criado o estado `selectedSentido` no painel do motorista (page.tsx) com sincronização inteligente baseada no turno ativo.
+2026-06-15 14:49:00 [INFO] Criado e estilizado o seletor premium de sentido da viagem (Ida/Volta) no painel do motorista.
+2026-06-15 14:49:20 [INFO] Integrado o sentido selecionado (`selectedSentido`) no payload do lote de embarque enviado à tabela `logs_embarque`.
+2026-06-15 14:49:40 [INFO] Validada a compilação do TypeScript com sucesso.
+2026-06-15 14:50:00 [INFO] Atualizado o arquivo de documentação técnica do Painel do Motorista (_docs/0207_PainelMotorista.md).

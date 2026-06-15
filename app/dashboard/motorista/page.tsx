@@ -101,6 +101,7 @@ export default function MotoristaDashboardPage() {
 
   const [selectedRotaId, setSelectedRotaId] = useState(ROTAS_MOCK[0].id);
   const [selectedTurno, setSelectedTurno] = useState<'Manhã' | 'Tarde' | 'Noite'>('Manhã');
+  const [selectedSentido, setSelectedSentido] = useState<'IDA' | 'VOLTA'>('IDA');
   const [rotas, setRotas] = useState<RotaConfig[]>(ROTAS_MOCK);
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [scannedAluno, setScannedAluno] = useState<Aluno | null>(null);
@@ -282,6 +283,10 @@ export default function MotoristaDashboardPage() {
 
   useEffect(() => {
     loadData(selectedTurno);
+  }, [selectedTurno]);
+
+  useEffect(() => {
+    setSelectedSentido(selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA');
   }, [selectedTurno]);
 
   useEffect(() => {
@@ -560,7 +565,7 @@ export default function MotoristaDashboardPage() {
       const todayDate = getLocalDateString();
 
       if (user && rotaAtiva && selectedRotaId.length > 10) {
-        const dbTipoMovimento = selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA';
+        const dbTipoMovimento = selectedSentido;
 
         let dbTurno: 'Matutino' | 'Vespertino' | 'Noturno' = 'Matutino';
         if (selectedTurno === 'Tarde') dbTurno = 'Vespertino';
@@ -920,6 +925,29 @@ export default function MotoristaDashboardPage() {
                     }`}
                   >
                     {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sentido da Viagem (Ida / Volta) */}
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2.5">
+                Sentido da Viagem
+              </label>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                {(['IDA', 'VOLTA'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSelectedSentido(s)}
+                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 ${
+                      selectedSentido === s 
+                        ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold' 
+                        : 'text-slate-400 hover:text-white bg-transparent hover:bg-slate-900/40'
+                    }`}
+                  >
+                    {s === 'IDA' ? 'Ida (Escola)' : 'Volta (Casa)'}
                   </button>
                 ))}
               </div>

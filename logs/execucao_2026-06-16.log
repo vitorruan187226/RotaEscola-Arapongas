@@ -10,4 +10,5 @@
 2026-06-16 15:33:00 [INFO] Execução de todas as tarefas concluída com sucesso. Gerando walkthrough para o usuário.
 2026-06-16 15:47:00 [INFO] Correção do erro JSX de tag div não fechada no arquivo app/dashboard/motorista/page.tsx, travamento interativo da lista com pointer-events-none e desabilitação do envio do lote quando inativo ("Fora de Rota").
 2026-06-16 15:58:00 [INFO] Adicionada a desativação automática da rota no logout do motorista e no evento beforeunload (via fetch nativo keepalive), inscrição em tempo real na tabela rotas no painel dos responsáveis, e AutoRefresh no painel administrativo.
+2026-06-16 16:10:00 [INFO] Modificado app/dashboard/admin/frota/page.tsx: mapeado o status do veículo para o status ativo em tempo real da rota ("Em Rota" ou "Fora de Rota") e adicionada inscrição em tempo real de rotas e veículos.
 

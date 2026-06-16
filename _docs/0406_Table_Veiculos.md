@@ -56,4 +56,6 @@ create table if not exists public.veiculos (
 | 02/06/2026 | **Implementação de Botão de Status (Ações):** Inclusão da coluna de ações e do botão "Alternar Status" na tabela de frota de veículos, acionando a query de UPDATE de status no Supabase de `'Ativo'` para `'Manutenção'` e vice-versa de forma persistente. |
 | 03/06/2026 | **Associação de Rotas a Veículos:** Adicionada a coluna "Rota Atribuída" e a ação de "Vincular Rota" na tela de frotas. O vínculo limpa o veículo de rotas anteriores e atualiza a coluna `veiculo_id` na tabela `public.rotas` no Supabase. |
 | 08/06/2026 | **Sincronia de Motorista-Rota (Bugfix):** Correção no fluxo de vínculo de rota via Frota. Agora, ao atribuir uma Rota ao Veículo, o sistema não só limpa/atribui o `veiculo_id`, mas também pesquisa o motorista atual do veículo na tabela `veiculos` e preenche o `motorista_id` na tabela `rotas`, resolvendo o bug onde o painel do motorista ficava vazio. |
+| 16/06/2026 | **Mapeamento de Status em Tempo Real:** Atualizado o status do veículo no front-end para refletir a ativação em tempo real da rota atribuída ("Em Rota", "Fora de Rota", "Aguardando"), associado à inscrição em tempo real (Supabase Realtime) para refletir alterações instantaneamente. |
+
 

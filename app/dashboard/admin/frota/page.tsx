@@ -11,7 +11,7 @@ interface VeiculoAdmin {
   capacidade: number | string;
   motorista: string;
   tipo: 'Próprio' | 'Terceirizado' | 'Pendente';
-  status: 'Ativo' | 'Manutenção' | 'Aguardando';
+  status: 'Ativo' | 'Manutenção' | 'Aguardando' | 'Em Rota' | 'Fora de Rota';
   rota_id?: string | null;
   rota_nome?: string | null;
   is_motorista_avulso?: boolean;
@@ -85,6 +85,39 @@ export default function FrotaPage() {
     loadVeiculos();
   }, []);
 
+  // Escuta atualizações de rotas e veículos em tempo real para manter o painel de frota atualizado
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-rotas-frota')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rotas',
+        },
+        () => {
+          loadVeiculos();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'veiculos',
+        },
+        () => {
+          loadVeiculos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   async function loadVeiculos() {
     setLoading(true);
     try {
@@ -101,7 +134,7 @@ export default function FrotaPage() {
       // 1.2 Busca rotas cadastradas no banco
       const { data: dbRotas, error: rotasError } = await supabase
         .from('rotas')
-        .select('id, codigo, nome, veiculo_id')
+        .select('id, codigo, nome, veiculo_id, ativa')
         .order('nome', { ascending: true });
 
       const listRotas = dbRotas || [];
@@ -121,6 +154,16 @@ export default function FrotaPage() {
           // De-para de UUID para Nome do motorista
           const motEncontrado = listMots.find((m: any) => m.id === v.motorista_id);
           const rotaAssociada = listRotas.find((r: any) => r.veiculo_id === v.id);
+
+          let displayStatus = v.status || 'Ativo';
+          if (displayStatus === 'Ativo') {
+            if (rotaAssociada) {
+              displayStatus = rotaAssociada.ativa ? 'Em Rota' : 'Fora de Rota';
+            } else {
+              displayStatus = 'Aguardando';
+            }
+          }
+
           return {
             id: v.id,
             placa: v.placa,
@@ -128,7 +171,7 @@ export default function FrotaPage() {
             capacidade: v.capacidade,
             motorista: motEncontrado ? motEncontrado.nome : (v.motorista_id ?? 'Motorista não atribuído'),
             tipo: (v.tipo as any) ?? 'Próprio',
-            status: (v.status as any) ?? 'Ativo',
+            status: displayStatus as any,
             rota_id: rotaAssociada ? rotaAssociada.id : null,
             rota_nome: rotaAssociada ? `${rotaAssociada.codigo} - ${rotaAssociada.nome}` : 'Nenhuma rota atribuída'
           };
@@ -272,7 +315,7 @@ export default function FrotaPage() {
   };
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
-    const novoStatus = currentStatus === 'Ativo' ? 'Manutenção' : 'Ativo';
+    const novoStatus = currentStatus === 'Manutenção' ? 'Ativo' : 'Manutenção';
     const isMock = id.startsWith('v-mock-') || id.startsWith('v-gen-') || id.startsWith('v1') || id.startsWith('v2') || id.startsWith('v3') || id.startsWith('v4') || id.startsWith('v5') || usandoMock;
 
     try {
@@ -510,11 +553,16 @@ export default function FrotaPage() {
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        v.status === 'Ativo' ? 'bg-emerald-50 border-emerald-250 text-emerald-700' : 
+                        v.status === 'Em Rota' || v.status === 'Ativo' ? 'bg-emerald-50 border-emerald-250 text-emerald-700' : 
                         v.status === 'Manutenção' ? 'bg-rose-50 border-rose-250 text-rose-700' :
+                        v.status === 'Fora de Rota' ? 'bg-slate-100 border-slate-200 text-slate-500' :
                         'bg-amber-50 border-amber-250 text-amber-700'
                       }`}>
-                        <span className={`w-1 h-1 rounded-full ${v.status === 'Ativo' ? 'bg-emerald-500' : v.status === 'Manutenção' ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          v.status === 'Em Rota' || v.status === 'Ativo' ? 'bg-emerald-500' : 
+                          v.status === 'Manutenção' ? 'bg-rose-500 animate-pulse' : 
+                          v.status === 'Fora de Rota' ? 'bg-slate-400' : 
+                          'bg-amber-500'}`} />
                         {v.status}
                       </span>
                     </td>

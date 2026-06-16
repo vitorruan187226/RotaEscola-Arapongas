@@ -1900,7 +1900,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
         <div className="p-5 flex-1 overflow-y-auto flex flex-col gap-4">
           
           {/* Mapa SVG */}
-          <div className="w-full aspect-[4/3] rounded-2xl border bg-slate-50 relative overflow-hidden shadow-inner flex flex-col">
+          <div className="w-full aspect-[4/3] rounded-2xl border bg-slate-50 relative overflow-hidden shadow-inner flex flex-col shrink-0">
             {loadingLoc ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <div className="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
@@ -1994,7 +1994,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           </div>
 
           {/* Estimativa */}
-          <div className="bg-slate-50 border rounded-2xl p-3.5 flex items-center justify-between">
+          <div className="bg-slate-50 border rounded-2xl p-3.5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
                 <Clock size={16} />
@@ -2015,7 +2015,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           </div>
 
           {/* Linha do Tempo de Paradas */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-3 shrink-0">
             <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest leading-none mb-1">
               Itinerário & Paradas
             </h4>
@@ -2091,7 +2091,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           )}
 
           {/* Card do Motorista e Veículo */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 text-white flex flex-col gap-3.5 shadow-md relative overflow-hidden">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 text-white flex flex-col gap-3.5 shadow-md relative overflow-hidden shrink-0">
             <div className="absolute -right-4 -bottom-4 text-slate-800/15 pointer-events-none text-8xl select-none">
               🚌
             </div>
@@ -2129,7 +2129,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           </div>
 
           {/* Controle de Ausência */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white shrink-0">
             <div className="flex gap-2.5 items-start">
               <CalendarX size={18} className="text-amber-500 shrink-0 mt-0.5" />
               <div>

@@ -49,7 +49,7 @@ const EMPTY_FORM: RotaForm = {
   motorista_id: '',
   horario_inicio: '06:30',
   horario_fim: '12:30',
-  ativa: true,
+  ativa: false,
   turno: 'Manhã',
 };
 

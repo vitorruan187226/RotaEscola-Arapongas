@@ -145,6 +145,7 @@ export default function MotoristaDashboardPage() {
   // Refs de segurança para callbacks do scanner
   const rotaAtivaRef = useRef(rotaAtiva);
   const selectedRotaIdRef = useRef(selectedRotaId);
+  const motoristaIdRef = useRef<string>('');
 
   useEffect(() => {
     rotaAtivaRef.current = rotaAtiva;
@@ -160,6 +161,7 @@ export default function MotoristaDashboardPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        motoristaIdRef.current = user.id;
         const { data: perfil } = await supabase
           .from('perfis')
           .select('id, nome')
@@ -262,6 +264,8 @@ export default function MotoristaDashboardPage() {
     
     // Fallback Mock
     const fallbackRotas = ROTAS_MOCK.map(r => {
+      const existing = rotas.find(ex => ex.id === r.id);
+      const isAtiva = existing ? existing.ativa : false;
       let filteredAlunos = r.alunos;
       if (turno === 'Tarde') {
         filteredAlunos = [
@@ -273,7 +277,7 @@ export default function MotoristaDashboardPage() {
           { id: '201', nome: 'Rodrigo Barbosa', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente' }
         ];
       }
-      return { ...r, ativa: true, alunos: filteredAlunos };
+      return { ...r, ativa: isAtiva, alunos: filteredAlunos };
     });
 
     setRotas(fallbackRotas);
@@ -290,27 +294,26 @@ export default function MotoristaDashboardPage() {
   // Desativa a rota caso o motorista feche a aba/janela do navegador/app
   useEffect(() => {
     const handleUnload = () => {
-      if (selectedRotaId && selectedRotaId.length > 10) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-        if (supabaseUrl && supabaseKey) {
-          // Usando fetch nativo com keepalive para persistir a requisição mesmo após destruição da página
-          fetch(`${supabaseUrl}/rest/v1/rotas?id=eq.${selectedRotaId}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`
-            },
-            body: JSON.stringify({ ativa: false }),
-            keepalive: true
-          }).catch(() => {});
-        }
+      const mId = motoristaIdRef.current;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (mId && supabaseUrl && supabaseKey) {
+        // Usando fetch nativo com keepalive para persistir a requisição mesmo após destruição da página
+        fetch(`${supabaseUrl}/rest/v1/rotas?motorista_id=eq.${mId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          },
+          body: JSON.stringify({ ativa: false }),
+          keepalive: true
+        }).catch(() => {});
       }
     };
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [selectedRotaId]);
+  }, []);
 
   useEffect(() => {
     setSelectedSentido(selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA');
@@ -811,20 +814,36 @@ export default function MotoristaDashboardPage() {
   const handleToggleRotaAtiva = async (newVal: boolean) => {
     if (!rotaAtiva) return;
     try {
-      const { error } = await supabase
-        .from('rotas')
-        .update({ ativa: newVal })
-        .eq('id', selectedRotaId);
+      const { data: { user } } = await supabase.auth.getUser();
+      let query = supabase.from('rotas').update({ ativa: newVal });
+      if (newVal === false && user) {
+        query = query.eq('motorista_id', user.id);
+      } else {
+        query = query.eq('id', selectedRotaId);
+      }
+      const { error } = await query;
 
       if (error) throw error;
 
-      setRotas(prev => prev.map(r => r.id === selectedRotaId ? { ...r, ativa: newVal } : r));
+      setRotas(prev => prev.map(r => {
+        if (newVal === false) {
+          return { ...r, ativa: false };
+        } else {
+          return r.id === selectedRotaId ? { ...r, ativa: true } : r;
+        }
+      }));
       setToastMessage(newVal ? 'Rota iniciada com sucesso!' : 'Rota encerrada com sucesso!');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (err) {
       console.error('Erro ao alternar status da rota:', err);
-      setRotas(prev => prev.map(r => r.id === selectedRotaId ? { ...r, ativa: newVal } : r));
+      setRotas(prev => prev.map(r => {
+        if (newVal === false) {
+          return { ...r, ativa: false };
+        } else {
+          return r.id === selectedRotaId ? { ...r, ativa: true } : r;
+        }
+      }));
       setToastMessage(newVal ? '[MOCK] Rota iniciada!' : '[MOCK] Rota encerrada!');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
@@ -832,15 +851,16 @@ export default function MotoristaDashboardPage() {
   };
 
   const handleLogout = async () => {
-    if (selectedRotaId && selectedRotaId.length > 10) {
-      try {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
         await supabase
           .from('rotas')
           .update({ ativa: false })
-          .eq('id', selectedRotaId);
-      } catch (err) {
-        console.error('Erro ao desativar rota no logout:', err);
+          .eq('motorista_id', user.id);
       }
+    } catch (err) {
+      console.error('Erro ao desativar rota no logout:', err);
     }
     await supabase.auth.signOut();
     document.cookie = "sb-mock-login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";

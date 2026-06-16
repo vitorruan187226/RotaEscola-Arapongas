@@ -14,4 +14,4 @@
 2026-06-16 16:25:00 [INFO] Corrigida a lógica de ativação automática do motorista ao alternar turnos no mock. Ajustadas as desativações globais (toggle off, logout e beforeunload) para abranger todas as rotas do motorista (motorista_id) no Supabase. Atualizado o formulário admin para que novas rotas iniciem desativadas.
 2026-06-16 16:35:00 [INFO] Criada rota de API /api/motorista/status-rota para contornar restrições de RLS no banco de dados e garantir desativação persistente. Atualizado o dashboard do motorista para consumir este novo endpoint seguro.
 2026-06-16 16:45:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionado shrink-0 aos cards do modal Rastreamento GPS para evitar que o layout dos cards e do motorista responsável encolham e cortem o texto.
-
+2026-06-16 16:50:00 [INFO] Modificado app/responsavel/carteirinha/[id]/page.tsx: ajustada a geração da imagem (canvas) da carteirinha para alinhar a foto como retângulo arredondado (coincidindo com a tela), implementada a função drawImageCover para prevenir distorções na imagem do aluno e adicionado parâmetro time-based para contornar problemas de cache CORS do navegador.

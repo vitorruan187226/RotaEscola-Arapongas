@@ -53,6 +53,22 @@ export default function CarteirinhaDigitalPage() {
       return;
     }
 
+    // Helper to draw image like object-fit: cover
+    const drawImageCover = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) => {
+      const imgRatio = img.width / img.height;
+      const targetRatio = w / h;
+      let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+
+      if (imgRatio > targetRatio) {
+        sWidth = img.height * targetRatio;
+        sx = (img.width - sWidth) / 2;
+      } else {
+        sHeight = img.width / targetRatio;
+        sy = (img.height - sHeight) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
+    };
+
     // Background gradient (navy blue)
     const grad = ctx.createLinearGradient(0, 0, 0, 600);
     grad.addColorStop(0, '#0f172a');
@@ -138,40 +154,44 @@ export default function CarteirinhaDigitalPage() {
         if (!qrLoaded) return;
         if (aluno.fotoUrl && !fotoLoaded && !fotoFailed) return;
 
-        // Draw Student Photo/Silhouette
+        // Draw Student Photo/Silhouette as rounded rectangle (matching HTML view)
         if (aluno.fotoUrl && fotoLoaded) {
           ctx.save();
-          // Draw circular clip path
           ctx.beginPath();
-          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.roundRect(155, 75, 90, 115, 16);
           ctx.clip();
-          // Draw image inside clip
-          ctx.drawImage(imgFoto, 155, 95, 90, 90);
+          drawImageCover(ctx, imgFoto, 155, 75, 90, 115);
           ctx.restore();
 
-          // Stroke border around circular photo
+          // Stroke border around photo
           ctx.lineWidth = 2;
           ctx.strokeStyle = '#f59e0b';
           ctx.beginPath();
-          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.roundRect(155, 75, 90, 115, 16);
           ctx.stroke();
         } else {
           // Silhouette placeholder
           ctx.fillStyle = '#334155';
           ctx.beginPath();
-          ctx.arc(200, 140, 45, 0, Math.PI * 2);
+          ctx.roundRect(155, 75, 90, 115, 16);
           ctx.fill();
           ctx.lineWidth = 2;
           ctx.strokeStyle = '#f59e0b';
           ctx.stroke();
           
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(155, 75, 90, 115, 16);
+          ctx.clip();
+          
           ctx.fillStyle = '#94a3b8';
           ctx.beginPath();
-          ctx.arc(200, 130, 15, 0, Math.PI * 2);
+          ctx.arc(200, 115, 16, 0, Math.PI * 2);
           ctx.fill();
           ctx.beginPath();
-          ctx.arc(200, 175, 25, Math.PI, 0, false);
+          ctx.arc(200, 165, 28, Math.PI, 0, false);
           ctx.fill();
+          ctx.restore();
         }
 
         // Draw QR Code Background
@@ -220,25 +240,32 @@ export default function CarteirinhaDigitalPage() {
           fotoFailed = true;
           finishDrawing();
         };
-        imgFoto.src = aluno.fotoUrl;
+        // Add cache busting timestamp to prevent browser caching from delivering non-CORS response
+        imgFoto.src = aluno.fotoUrl + (aluno.fotoUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
       }
     } else {
       // Fallback silhouette when QR SVG is not found
       ctx.fillStyle = '#334155';
       ctx.beginPath();
-      ctx.arc(200, 140, 45, 0, Math.PI * 2);
+      ctx.roundRect(155, 75, 90, 115, 16);
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#f59e0b';
       ctx.stroke();
       
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(155, 75, 90, 115, 16);
+      ctx.clip();
+      
       ctx.fillStyle = '#94a3b8';
       ctx.beginPath();
-      ctx.arc(200, 130, 15, 0, Math.PI * 2);
+      ctx.arc(200, 115, 16, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(200, 175, 25, Math.PI, 0, false);
+      ctx.arc(200, 165, 28, Math.PI, 0, false);
       ctx.fill();
+      ctx.restore();
 
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(135, 385, 130, 130);

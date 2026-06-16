@@ -106,6 +106,8 @@ interface Aluno {
 | 15/06/2026 | Correção do bug de timezone/shifting de data: unificação de datas locais via `getLocalDateString()`, garantindo que faltas reportadas fiquem trancadas e riscadas sem poder ser sobrescritas pelo motorista. |
 | 15/06/2026 | Implementação do seletor manual premium de sentido da viagem (Ida/Volta) no painel do motorista, integrado ao fluxo de envio em lote para `logs_embarque`. |
 | 16/06/2026 | Implementação do controle operacional real de status "Em Rota" (switch interativo) atualizando a coluna `ativa` na tabela `rotas`. |
+| 16/06/2026 | Correção das tags JSX na renderização da lista de passageiros, adição do bloqueio completo via `pointer-events-none` e desabilitação do envio do lote quando inativo ("Fora de Rota"). |
+
 
 
 

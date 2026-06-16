@@ -8,3 +8,5 @@
 2026-06-16 15:31:00 [INFO] Modificado app/responsavel/rastreio/[rota_id]/page.tsx: inserida a consulta e verificação de rota ativa (tabela rotas) e implementada a exibição do overlay informativo de bloqueio "Motorista Fora de Rota".
 2026-06-16 15:32:00 [INFO] Modificado app/dashboard/admin/page.tsx: traduzido o status das rotas para "Em Rota" ou "Fora de Rota" e ajustada a estilização de cores na tabela gerencial.
 2026-06-16 15:33:00 [INFO] Execução de todas as tarefas concluída com sucesso. Gerando walkthrough para o usuário.
+2026-06-16 15:47:00 [INFO] Correção do erro JSX de tag div não fechada no arquivo app/dashboard/motorista/page.tsx, travamento interativo da lista com pointer-events-none e desabilitação do envio do lote quando inativo ("Fora de Rota").
+

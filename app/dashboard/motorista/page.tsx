@@ -342,6 +342,14 @@ export default function MotoristaDashboardPage() {
 
   // Cicla o status entre Pendente -> Presente -> Ausente -> Pendente ao clicar
   const cycleAlunoStatus = (alunoId: number | string) => {
+    // Se a rota não estiver ativa (Fora de Rota), o motorista não pode fazer alterações
+    if (!rotaAtiva?.ativa) {
+      setToastMessage('A rota precisa estar ativa para fazer alterações.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      return;
+    }
+
     // Se a ausência foi notificada pelo responsável, o motorista não pode alterar o status
     const targetAluno = rotaAtiva?.alunos.find(a => a.id === alunoId);
     if (targetAluno?.ausenciaNotificada) {
@@ -380,13 +388,19 @@ export default function MotoristaDashboardPage() {
   };
 
   const handleQrCodeScanned = (decodedText: string) => {
+    const activeRoute = rotaAtivaRef.current;
+    if (!activeRoute || !activeRoute.ativa) {
+      setScanState('error');
+      setScanErrorMsg('A ROTA DEVE ESTAR ATIVA PARA VALIDAR');
+      return;
+    }
+
     // Evita múltiplas leituras em lote do mesmo ID em seguida
     if (decodedText === lastScannedId && scanState === 'success') return;
     
     const scannedId = decodedText.trim();
     setLastScannedId(scannedId);
     
-    const activeRoute = rotaAtivaRef.current;
     if (!activeRoute) return;
     const currentSelectedRotaId = selectedRotaIdRef.current;
     
@@ -1157,13 +1171,27 @@ export default function MotoristaDashboardPage() {
               {loading && <span className="text-[9px] text-amber-500 font-bold animate-pulse">CARREGANDO...</span>}
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden divide-y divide-slate-800/40">
-              {rotas.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider">
-                  Você não possui nenhuma rota vinculada ao seu perfil.
+            <div className="relative bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden shadow-inner">
+              {/* Overlay de Bloqueio: Rota Inativa (Fora de Rota) */}
+              {rotaAtiva && !rotaAtiva.ativa && (
+                <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1.5px] z-30 flex flex-col items-center justify-center gap-2 select-none pointer-events-auto transition-all duration-300">
+                  <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-450">
+                    <Lock size={16} />
+                  </div>
+                  <span className="text-xs font-black text-white uppercase tracking-wider">Fora de Rota</span>
+                  <p className="text-[9px] text-slate-400 text-center px-6 leading-relaxed">
+                    Ative a operação no painel superior para liberar o checklist.
+                  </p>
                 </div>
-              ) : rotaAtiva && rotaAtiva.alunos.length > 0 ? (
-                rotaAtiva.alunos.map((aluno) => (
+              )}
+
+              <div className={`divide-y divide-slate-800/40 transition-opacity duration-300 ${rotaAtiva && !rotaAtiva.ativa ? 'opacity-30 pointer-events-none select-none' : ''}`}>
+                {rotas.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                    Você não possui nenhuma rota vinculada ao seu perfil.
+                  </div>
+                ) : rotaAtiva && rotaAtiva.alunos.length > 0 ? (
+                  rotaAtiva.alunos.map((aluno) => (
                   <div
                     key={aluno.id}
                     onClick={() => cycleAlunoStatus(aluno.id)}
@@ -1256,6 +1284,7 @@ export default function MotoristaDashboardPage() {
                   Nenhum aluno cadastrado nesta rota para o turno selecionado.
                 </div>
               )}
+              </div>
             </div>
             
             {/* Botão de Envio em Lote (Checklist Finalizado) */}
@@ -1263,7 +1292,7 @@ export default function MotoristaDashboardPage() {
               <div className="pt-4 pb-2">
                 <button
                   onClick={handleSendBatch}
-                  disabled={loading || isSentSuccessfully}
+                  disabled={loading || isSentSuccessfully || !rotaAtiva?.ativa}
                   className={`w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase transition-all transform border-0 flex items-center justify-center gap-2 ${
                     isSentSuccessfully
                       ? 'bg-emerald-600 text-white shadow-[0_8px_20px_rgba(16,185,129,0.2)]'

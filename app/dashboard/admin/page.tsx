@@ -138,7 +138,7 @@ export default async function AdminDashboardPage() {
         linha: `${r.codigo} — ${r.nome}`,
         motorista: r.perfis?.nome || 'Motorista não designado',
         placa: r.veiculos?.placa || 'Sem Veículo',
-        status: r.ativa ? 'In Transit' : 'Stopped',
+        status: r.ativa ? 'Em Rota' : 'Fora de Rota',
         ultimaSincronizacao: new Date(r.created_at || new Date()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       }));
     }
@@ -332,12 +332,12 @@ export default async function AdminDashboardPage() {
                       <td className="py-3.5 px-4 text-slate-500 font-mono font-medium">{rota.placa}</td>
                       <td className="py-3.5 px-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                          rota.status === 'In Transit'
+                          rota.status === 'Em Rota'
                             ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                             : 'bg-slate-100 border-slate-200 text-slate-500'
                         }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${rota.status === 'In Transit' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                          {rota.status === 'In Transit' ? 'In Transit' : 'Stopped'}
+                          <span className={`w-1.5 h-1.5 rounded-full ${rota.status === 'Em Rota' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                          {rota.status}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-slate-400 font-mono text-right font-medium">{rota.ultimaSincronizacao}</td>

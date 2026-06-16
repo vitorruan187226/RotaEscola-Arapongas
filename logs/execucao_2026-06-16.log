@@ -1,0 +1,10 @@
+2026-06-16 15:18:00 [INFO] Iniciado o protocolo de reconhecimento para a tarefa de controle de status "Em Rota" do motorista.
+2026-06-16 15:18:25 [INFO] Arquivos consultados: indice.txt, _docs/0200_Indice_Telas.md, _docs/0207_PainelMotorista.md, _docs/0208_PortalPais.md, _docs/0205_AdminDashboard.md.
+2026-06-16 15:18:50 [INFO] Analisadas as tabelas public.rotas (coluna ativa) e public.localizacao_veiculo.
+2026-06-16 15:19:15 [INFO] Criando o plano de implementação detalhado para obter aprovação do usuário.
+2026-06-16 15:26:00 [INFO] Início da fase de execução do plano de implementação aprovado.
+2026-06-16 15:27:00 [INFO] Modificado app/dashboard/motorista/page.tsx: adicionada a propriedade ativa na interface RotaConfig, a coluna ativa na consulta do Supabase, a função handleToggleRotaAtiva e o componente visual de switch de status operacional no card do topo.
+2026-06-16 15:29:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionada a coluna ativa no select e mapeada para rotaAtiva no objeto Filho, inserido o indicador visual no card de alunos aprovados e atualizado o RastreioModal para validar a propriedade ativa antes de exibir o mapa GPS.
+2026-06-16 15:31:00 [INFO] Modificado app/responsavel/rastreio/[rota_id]/page.tsx: inserida a consulta e verificação de rota ativa (tabela rotas) e implementada a exibição do overlay informativo de bloqueio "Motorista Fora de Rota".
+2026-06-16 15:32:00 [INFO] Modificado app/dashboard/admin/page.tsx: traduzido o status das rotas para "Em Rota" ou "Fora de Rota" e ajustada a estilização de cores na tabela gerencial.
+2026-06-16 15:33:00 [INFO] Execução de todas as tarefas concluída com sucesso. Gerando walkthrough para o usuário.

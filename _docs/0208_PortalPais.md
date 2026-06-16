@@ -127,3 +127,4 @@ Fallback de localização: `{ latitude: -23.4178, longitude: -51.4269, foraDeTur
 | 27/05/2026 | AntiGravity | Migration SQL: status_carteirinha + tabela localizacao_veiculo |
 | 02/06/2026 | AntiGravity | Correção no cadastro de filhos: data_nascimento, exibição de erro real no frontend, RLS de documentos_aluno e perfis, e ajuste da query multinível (erro 400 Bad Request de join) |
 | 12/06/2026 | AntiGravity | Padronização: Conversão automática do campo Turma para maiúsculo (UI e banco de dados) |
+| 16/06/2026 | AntiGravity | Integração do status de rota ativa (`rotas.ativa`) no dashboard do responsável e bloqueio informativo ("Motorista Fora de Rota") no rastreio GPS. |

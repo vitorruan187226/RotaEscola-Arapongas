@@ -32,6 +32,7 @@ export default function RastreioAusenciaPage() {
   const supabase = createClient();
 
   const [localizacao,      setLocalizacao]      = useState<LocalizacaoVeiculo | null>(null);
+  const [isRouteActive,    setIsRouteActive]    = useState<boolean>(true);
   const [loadingLocalizacao, setLoadingLocalizacao] = useState(true);
   const [loadingAusencia,  setLoadingAusencia]  = useState(false);
   const [ausenciaNotificada, setAusenciaNotificada] = useState(false);
@@ -42,6 +43,18 @@ export default function RastreioAusenciaPage() {
   useEffect(() => {
     async function fetchLocalizacao() {
       try {
+        // Busca se a rota está ativa no Supabase
+        if (rotaId && rotaId.length > 10) {
+          const { data: routeData } = await supabase
+            .from('rotas')
+            .select('ativa')
+            .eq('id', rotaId)
+            .maybeSingle();
+          if (routeData) {
+            setIsRouteActive(routeData.ativa);
+          }
+        }
+
         const { data, error } = await supabase
           .from('localizacao_veiculo')
           .select('latitude, longitude, velocidade_kmh, atualizado_em')
@@ -96,12 +109,12 @@ export default function RastreioAusenciaPage() {
 
   // Simula ônibus se aproximando no mapa SVG a cada 15s
   useEffect(() => {
-    if (localizacao?.foraDeTurno) return;
+    if (localizacao?.foraDeTurno || !isRouteActive) return;
     const interval = setInterval(() => {
       setTempoEstimado(prev => (prev > 1 ? prev - 1 : 12));
     }, 15_000);
     return () => clearInterval(interval);
-  }, [localizacao?.foraDeTurno]);
+  }, [localizacao?.foraDeTurno, isRouteActive]);
 
   // ─── Registrar Ausência ───────────────────────────────────────────────────
   const handleReportarAusencia = async () => {
@@ -200,7 +213,7 @@ export default function RastreioAusenciaPage() {
             </div>
 
             {/* Marcador: Ônibus em Movimento */}
-            {!localizacao?.foraDeTurno && (
+            {!localizacao?.foraDeTurno && isRouteActive && (
               <div
                 className="absolute flex flex-col items-center transition-all duration-[1000ms] z-20"
                 style={{
@@ -219,16 +232,20 @@ export default function RastreioAusenciaPage() {
               </div>
             )}
 
-            {/* Overlay: veículo fora de turno */}
-            {localizacao?.foraDeTurno && (
+            {/* Overlay: veículo fora de turno ou inativo */}
+            {(!isRouteActive || localizacao?.foraDeTurno) && (
               <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-30">
                 <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
                   <WifiOff size={22} className="text-slate-400" />
                 </div>
                 <div className="text-center px-8">
-                  <p className="text-sm font-bold text-white">Veículo fora do horário de turno</p>
+                  <p className="text-sm font-bold text-white">
+                    {!isRouteActive ? 'Motorista Fora de Rota' : 'Veículo fora do horário de turno'}
+                  </p>
                   <p className="text-[10px] text-slate-400 mt-1">
-                    A localização GPS não está sendo transmitida no momento.
+                    {!isRouteActive 
+                      ? 'O motorista desativou o início da rota no painel dele.' 
+                      : 'A localização GPS não está sendo transmitida no momento.'}
                   </p>
                 </div>
               </div>
@@ -266,13 +283,15 @@ export default function RastreioAusenciaPage() {
               Chegada ao Ponto
             </h3>
             <span className="text-sm font-extrabold text-slate-900 mt-1 block">
-              {localizacao?.foraDeTurno
+              {!isRouteActive
+                ? 'Fora de Rota'
+                : localizacao?.foraDeTurno
                 ? 'Fora do horário de operação'
                 : `Atualizado às ${localizacao?.atualizado_em ?? '--:--'}`}
             </span>
           </div>
         </div>
-        {!localizacao?.foraDeTurno && (
+        {!localizacao?.foraDeTurno && isRouteActive && (
           <div className="text-right">
             <span className="text-2xl font-black text-slate-900 font-mono">~{tempoEstimado}</span>
             <span className="text-xs text-slate-500 font-semibold block leading-none">min</span>

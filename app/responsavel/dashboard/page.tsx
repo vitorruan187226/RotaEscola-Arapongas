@@ -29,6 +29,7 @@ interface Filho {
   motorista_nome?: string;
   motorista_telefone?: string | null;
   veiculo_numero?: string;
+  rotaAtiva?: boolean;
 }
 
 const getLocalDateString = () => {
@@ -155,6 +156,7 @@ export default function ResponsavelDashboard() {
               rotas (
                 id,
                 nome,
+                ativa,
                 perfis (
                   id,
                   nome,
@@ -197,6 +199,7 @@ export default function ResponsavelDashboard() {
                 veiculo_numero:    veiculoNumero,
                 periodo:           a.periodo ?? 'manha',
                 observacao_secretaria: a.observacao_secretaria ?? null,
+                rotaAtiva:         rota?.ativa ?? false,
               };
             });
             setFilhos(mapeados);
@@ -486,9 +489,15 @@ export default function ResponsavelDashboard() {
                   )}
                   
                   {filho.statusCarteirinha === 'Aprovado' ? (
-                    <div className="mt-1 flex flex-col gap-0.5 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-md font-medium">
-                      <span className="flex items-center gap-1"><User size={10} /> Motorista: {filho.motorista_nome || 'Aguardando'}</span>
-                      <span className="flex items-center gap-1"><Bus size={10} /> Veículo: {filho.veiculo_numero || 'Aguardando'}</span>
+                    <div className="mt-1.5 flex flex-col gap-1 text-[10px] text-emerald-800 bg-emerald-50/60 border border-emerald-100 p-2 rounded-xl font-medium shadow-sm">
+                      <span className="flex items-center gap-1.5"><User size={11} className="text-emerald-600" /> Motorista: <strong className="font-bold text-slate-800">{filho.motorista_nome || 'Aguardando'}</strong></span>
+                      <span className="flex items-center gap-1.5"><Bus size={11} className="text-emerald-600" /> Veículo: <strong className="font-bold text-slate-800">{filho.veiculo_numero || 'Aguardando'}</strong></span>
+                      <div className="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-emerald-100/50">
+                        <span className={`w-2 h-2 rounded-full ${filho.rotaAtiva ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                        <span className="font-bold uppercase tracking-wider text-[9px] text-slate-700">
+                          {filho.rotaAtiva ? 'Motorista em Rota' : 'Motorista Fora de Rota'}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <span className="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -1662,6 +1671,7 @@ interface RastreioModalProps {
 function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   const supabase = createClient();
   const [localizacao, setLocalizacao] = useState<LocalizacaoVeiculo | null>(null);
+  const [isRouteActive, setIsRouteActive] = useState<boolean>(true);
   const [loadingLoc, setLoadingLoc] = useState(true);
   const [loadingAusencia, setLoadingAusencia] = useState(false);
   const [ausenciaNotificada, setAusenciaNotificada] = useState(false);
@@ -1673,6 +1683,21 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     async function fetchLoc() {
       try {
         const queryRouteId = aluno.rotaUuid || aluno.rotaId;
+
+        // Busca o status ativo da rota
+        if (queryRouteId && queryRouteId.length > 10) {
+          const { data: routeData } = await supabase
+            .from('rotas')
+            .select('ativa')
+            .eq('id', queryRouteId)
+            .maybeSingle();
+          if (routeData) {
+            setIsRouteActive(routeData.ativa);
+          }
+        } else {
+          setIsRouteActive(aluno.rotaAtiva ?? true);
+        }
+
         const { data, error } = await supabase
           .from('localizacao_veiculo')
           .select('latitude, longitude, velocidade_kmh, atualizado_em')
@@ -1742,12 +1767,12 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
 
   // Simulação de aproximação se estiver em turno
   useEffect(() => {
-    if (localizacao?.foraDeTurno) return;
+    if (localizacao?.foraDeTurno || !isRouteActive) return;
     const interval = setInterval(() => {
       setTempoEstimado(prev => (prev > 1 ? prev - 1 : 12));
     }, 12000);
     return () => clearInterval(interval);
-  }, [localizacao?.foraDeTurno]);
+  }, [localizacao?.foraDeTurno, isRouteActive]);
 
   const handleReportarAusencia = async () => {
     setLoadingAusencia(true);
@@ -1885,7 +1910,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 </div>
 
                 {/* Ônibus (Baseado em Coordenadas GPS Reais) */}
-                {busCoords ? (
+                {busCoords && isRouteActive ? (
                   <div
                     className="absolute flex flex-col items-center transition-all duration-1000 z-10 -translate-x-1/2 -translate-y-1/2"
                     style={{ left: `${busCoords.x}%`, top: `${busCoords.y}%` }}
@@ -1901,12 +1926,18 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   null
                 )}
 
-                {/* Fora de turno */}
-                {localizacao?.foraDeTurno && (
+                {/* Fora de turno ou Rota Inativa */}
+                {(!isRouteActive || localizacao?.foraDeTurno) && (
                   <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1.5 p-4 z-20">
                     <WifiOff size={20} className="text-slate-400" />
-                    <span className="text-xs font-black text-white">Veículo Fora de Turno</span>
-                    <span className="text-[9px] text-slate-300 text-center">Nenhum sinal de GPS ativo para esta linha no momento.</span>
+                    <span className="text-xs font-black text-white">
+                      {!isRouteActive ? 'Motorista Fora de Rota' : 'Veículo Fora de Turno'}
+                    </span>
+                    <span className="text-[9px] text-slate-300 text-center">
+                      {!isRouteActive 
+                        ? 'O motorista desativou o início da rota no painel dele.' 
+                        : 'Nenhum sinal de GPS ativo para esta linha no momento.'}
+                    </span>
                   </div>
                 )}
 
@@ -1938,11 +1969,11 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               <div>
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">Estimativa de Chegada</h4>
                 <span className="text-xs font-extrabold text-slate-900 mt-1 block">
-                  {localizacao?.foraDeTurno ? 'Fora de turno' : `Atualizado às ${localizacao?.atualizado_em}`}
+                  {!isRouteActive ? 'Fora de Rota' : localizacao?.foraDeTurno ? 'Fora de turno' : `Atualizado às ${localizacao?.atualizado_em}`}
                 </span>
               </div>
             </div>
-            {!localizacao?.foraDeTurno && (
+            {!localizacao?.foraDeTurno && isRouteActive && (
               <div className="text-right">
                 <span className="text-xl font-black font-mono text-slate-900">~{tempoEstimado}</span>
                 <span className="text-[9px] text-slate-500 block leading-none font-bold">min</span>
@@ -1971,14 +2002,14 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
                   ausenciaNotificada 
                     ? 'border-rose-500' 
-                    : localizacao?.foraDeTurno 
+                    : (localizacao?.foraDeTurno || !isRouteActive) 
                     ? 'border-slate-350' 
                     : 'border-amber-500 animate-pulse'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     ausenciaNotificada 
                       ? 'bg-rose-500' 
-                      : localizacao?.foraDeTurno 
+                      : (localizacao?.foraDeTurno || !isRouteActive) 
                       ? 'bg-slate-350' 
                       : 'bg-amber-500'
                   }`} />
@@ -1989,7 +2020,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                     <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       Falta Avisada
                     </span>
-                  ) : !localizacao?.foraDeTurno ? (
+                  ) : (!localizacao?.foraDeTurno && isRouteActive) ? (
                     <span className="text-[8px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       A Caminho
                     </span>
@@ -1998,7 +2029,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className="text-[9px] text-slate-500">
                   {ausenciaNotificada 
                     ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
-                    : localizacao?.foraDeTurno 
+                    : (!isRouteActive || localizacao?.foraDeTurno) 
                     ? 'Previsão indisponível' 
                     : `Previsão de chegada: ~${tempoEstimado} min`}
                 </span>

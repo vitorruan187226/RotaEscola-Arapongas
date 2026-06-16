@@ -136,5 +136,6 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 12/06/2026 | **Desmock do Dashboard de Relatórios:** Remoção total de dados simulados de fallback e do indicador 'Modo Simulação', conectando a UI estritamente à resposta da RPC do banco de dados. |
 | 12/06/2026 | **Simplificação de UX:** Remoção do botão redundante 'Alterar Rota' da listagem de alunos aprovados nos detalhes de escolas, mantendo apenas a atribuição e edição via modal unificado. |
 | 12/06/2026 | **Correção de Mismatch de Opções:** Implementada injeção dinâmica de escola e série do estudante nos dropdowns do modal de edição de alunos para impedir a perda de dados em escolas não cadastradas (como Marques de Caravelas) ou formatações de séries personalizadas. |
+| 16/06/2026 | **Tradução e Status de Rota Ativa:** Traduzido o status das rotas para o português na tabela gerencial do dashboard central, refletindo de forma correta e síncrona o estado real de "Em Rota" ou "Fora de Rota" atualizado pelos motoristas. |
 
 

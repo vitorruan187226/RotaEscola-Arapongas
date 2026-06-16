@@ -53,6 +53,7 @@ interface RotaConfig {
   placa: string;
   veiculo: string;
   alunos: Aluno[];
+  ativa?: boolean;
 }
 
 const ROTAS_MOCK: RotaConfig[] = [
@@ -175,7 +176,7 @@ export default function MotoristaDashboardPage() {
           // Na tabela public.rotas, a coluna motorista_id referencia public.perfis.id
           const { data: dbRotas } = await supabase
             .from('rotas')
-            .select('id, nome, codigo, turno')
+            .select('id, nome, codigo, turno, ativa')
             .eq('motorista_id', perfil.id);
 
           if (dbRotas && dbRotas.length > 0) {
@@ -217,6 +218,7 @@ export default function MotoristaDashboardPage() {
                 nome: r.nome || 'Rota sem Nome',
                 placa: driverPerfil?.placa_veiculo || 'SEM PLACA',
                 veiculo: driverPerfil?.modelo_veiculo || 'Veículo',
+                ativa: r.ativa,
                 alunos: (dbAlunos || []).map((aluno: any) => {
                   const hash = (aluno.carteirinhas && aluno.carteirinhas.length > 0)
                     ? aluno.carteirinhas[0].qr_code_hash
@@ -271,7 +273,7 @@ export default function MotoristaDashboardPage() {
           { id: '201', nome: 'Rodrigo Barbosa', escola: r.alunos[0].escola, nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente' }
         ];
       }
-      return { ...r, alunos: filteredAlunos };
+      return { ...r, ativa: true, alunos: filteredAlunos };
     });
 
     setRotas(fallbackRotas);
@@ -767,6 +769,29 @@ export default function MotoristaDashboardPage() {
     setTimeout(() => handleFecharOcorrenciaModal(), 2500);
   };
 
+  const handleToggleRotaAtiva = async (newVal: boolean) => {
+    if (!rotaAtiva) return;
+    try {
+      const { error } = await supabase
+        .from('rotas')
+        .update({ ativa: newVal })
+        .eq('id', selectedRotaId);
+
+      if (error) throw error;
+
+      setRotas(prev => prev.map(r => r.id === selectedRotaId ? { ...r, ativa: newVal } : r));
+      setToastMessage(newVal ? 'Rota iniciada com sucesso!' : 'Rota encerrada com sucesso!');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    } catch (err) {
+      console.error('Erro ao alternar status da rota:', err);
+      setRotas(prev => prev.map(r => r.id === selectedRotaId ? { ...r, ativa: newVal } : r));
+      setToastMessage(newVal ? '[MOCK] Rota iniciada!' : '[MOCK] Rota encerrada!');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     document.cookie = "sb-mock-login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
@@ -908,6 +933,38 @@ export default function MotoristaDashboardPage() {
           {/* Card de Rota e Turno (Topo) */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
             
+            {/* Controle de Rota Ativa (Iniciar/Parar Rota) */}
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 flex items-center justify-between shadow-inner">
+              <div className="flex-1 pr-3">
+                <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">
+                  Status de Operação
+                </label>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <span className={`w-2 h-2 rounded-full ${rotaAtiva?.ativa ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                  <span className="text-xs font-black text-white uppercase tracking-wide">
+                    {rotaAtiva?.ativa ? 'Em Rota (Ativo)' : 'Fora de Rota'}
+                  </span>
+                </div>
+                <span className="text-[8px] text-slate-500 font-medium block mt-1 leading-snug">
+                  {rotaAtiva?.ativa ? 'Pais e secretaria visualizam GPS ativo' : 'Acesso ao mapa suspenso para os pais'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleRotaAtiva(!rotaAtiva?.ativa)}
+                className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 relative border-0 cursor-pointer ${
+                  rotaAtiva?.ativa ? 'bg-emerald-500' : 'bg-slate-800'
+                }`}
+                aria-label="Alternar status em rota"
+              >
+                <div 
+                  className={`w-5 h-5 rounded-full bg-white transition-all duration-300 absolute top-0.5 ${
+                    rotaAtiva?.ativa ? 'left-[22px]' : 'left-0.5'
+                  }`} 
+                />
+              </button>
+            </div>
+
             {/* Seletor de Turno Premium */}
             <div>
               <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2.5">

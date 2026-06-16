@@ -16,4 +16,7 @@
 2026-06-16 16:45:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionado shrink-0 aos cards do modal Rastreamento GPS para evitar que o layout dos cards e do motorista responsável encolham e cortem o texto.
 2026-06-16 16:50:00 [INFO] Modificado app/responsavel/carteirinha/[id]/page.tsx: ajustada a geração da imagem (canvas) da carteirinha para alinhar a foto como retângulo arredondado (coincidindo com a tela), implementada a função drawImageCover para prevenir distorções na imagem do aluno e adicionado parâmetro time-based para contornar problemas de cache CORS do navegador.
 2026-06-16 16:57:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: corrigida a geração da foto do aluno na exportação do canvas no modal do dashboard de responsáveis (alinhando com o retângulo arredondado da tela, inserindo drawImageCover e cache buster anti-CORS).
+2026-06-16 17:15:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: corrigida a tela de Gestão de Alunos (Dashboard de Relatórios) adicionando um fallback de agregação local via JavaScript no frontend para quando o RPC get_dashboard_metrics falhar.
+2026-06-16 17:16:00 [INFO] Modificado supabase/migrations/20260612190000_dashboard_metrics_rpc.sql: corrigida a comparação de tipos date = text na cláusula where da RPC get_dashboard_metrics.
+
 

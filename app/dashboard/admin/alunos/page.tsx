@@ -55,18 +55,181 @@ export default function AlunosPage() {
     try {
       const { data, error } = await supabase.rpc('get_dashboard_metrics');
       if (error) {
-        console.error('Erro ao chamar RPC get_dashboard_metrics:', error.message);
-        setMetrics(INITIAL_METRICS);
+        console.warn('RPC get_dashboard_metrics falhou. Executando fallback em JS local...', error.message);
+        await fetchMetricsFallback();
       } else if (data) {
         setMetrics(data as MetricsData);
       } else {
-        setMetrics(INITIAL_METRICS);
+        await fetchMetricsFallback();
       }
     } catch (err) {
-      console.error('Erro na consulta de métricas:', err);
-      setMetrics(INITIAL_METRICS);
+      console.warn('Erro ao chamar RPC. Executando fallback em JS local...', err);
+      await fetchMetricsFallback();
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchMetricsFallback() {
+    try {
+      // 1. Buscar todos os alunos
+      const { data: dbAlunos, error: errAlunos } = await supabase
+        .from('alunos')
+        .select('id, nome, escola, turno, rota_id');
+
+      if (errAlunos) throw errAlunos;
+      const Alunos = dbAlunos || [];
+
+      // 2. Buscar todas as rotas
+      const { data: dbRotas } = await supabase
+        .from('rotas')
+        .select('id, codigo, nome');
+
+      const Rotas = dbRotas || [];
+
+      // 3. Buscar logs de embarque de hoje e histórico
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data: dbLogsToday } = await supabase
+        .from('logs_embarque')
+        .select('aluno_id, data_registro, status')
+        .eq('data_registro', todayStr);
+
+      const LogsToday = dbLogsToday || [];
+
+      // Histórico de logs para os mais assíduos
+      const { data: dbAllLogs } = await supabase
+        .from('logs_embarque')
+        .select('aluno_id, status')
+        .eq('status', 'PRESENTE')
+        .limit(2000);
+
+      const AllLogs = dbAllLogs || [];
+
+      // 4. Buscar presenças diárias (faltas) de hoje e histórico
+      const { data: dbFaltasToday } = await supabase
+        .from('presencas_diarias')
+        .select('aluno_id, compareceu')
+        .eq('data_presenca', todayStr)
+        .eq('compareceu', false);
+
+      const FaltasToday = dbFaltasToday || [];
+
+      // Histórico de faltas para os mais faltosos
+      const { data: dbAllAbsences } = await supabase
+        .from('presencas_diarias')
+        .select('aluno_id, compareceu')
+        .eq('compareceu', false)
+        .limit(2000);
+
+      const AllAbsences = dbAllAbsences || [];
+
+      // 5. Agregações locais
+      const total_alunos = Alunos.length;
+
+      // Alunos por escola (ranking)
+      const escolaMap: Record<string, number> = {};
+      Alunos.forEach(a => {
+        if (a.escola) {
+          escolaMap[a.escola] = (escolaMap[a.escola] || 0) + 1;
+        }
+      });
+      const alunos_por_escola = Object.entries(escolaMap)
+        .map(([escola, total]) => ({ escola, total }))
+        .sort((a, b) => b.total - a.total);
+
+      // Alunos por turno
+      const turnoMap: Record<string, number> = {};
+      Alunos.forEach(a => {
+        const tRaw = a.turno || 'Manhã';
+        let t = tRaw;
+        if (tRaw.toLowerCase().includes('manhã') || tRaw.toLowerCase() === 'manha') t = 'Manhã';
+        else if (tRaw.toLowerCase().includes('tarde')) t = 'Tarde';
+        else if (tRaw.toLowerCase().includes('noite')) t = 'Noite';
+        turnoMap[t] = (turnoMap[t] || 0) + 1;
+      });
+      const alunos_por_turno = Object.entries(turnoMap)
+        .map(([turno, total]) => ({ turno, total }))
+        .sort((a, b) => b.total - a.total);
+
+      // Alunos por rota
+      const rotasMap: Record<string, string> = {};
+      Rotas.forEach(r => {
+        rotasMap[r.id] = r.codigo ? `${r.codigo} — ${r.nome}` : r.nome;
+      });
+      const alunosRotaMap: Record<string, number> = {};
+      Alunos.forEach(a => {
+        const rotaName = a.rota_id ? (rotasMap[a.rota_id] || a.rota_id) : 'Sem Rota';
+        alunosRotaMap[rotaName] = (alunosRotaMap[rotaName] || 0) + 1;
+      });
+      const alunos_por_rota = Object.entries(alunosRotaMap)
+        .map(([rota, total]) => ({ rota, total }))
+        .sort((a, b) => b.total - a.total);
+
+      // Presenças hoje
+      const uniquePresencasToday = new Set(LogsToday.map(l => l.aluno_id));
+      const presencasHoje = uniquePresencasToday.size;
+
+      // Faltas hoje
+      const uniqueFaltasToday = new Set(FaltasToday.map(p => p.aluno_id));
+      const faltasHoje = uniqueFaltasToday.size;
+
+      // Alunos mapeados por id para nomes e escolas
+      const alunosLookup: Record<string, { nome: string; escola: string }> = {};
+      Alunos.forEach(a => {
+        alunosLookup[a.id] = { nome: a.nome, escola: a.escola };
+      });
+
+      // Mais assíduos
+      const logsCountMap: Record<string, number> = {};
+      AllLogs.forEach(l => {
+        if (l.aluno_id) {
+          logsCountMap[l.aluno_id] = (logsCountMap[l.aluno_id] || 0) + 1;
+        }
+      });
+      const mais_assiduos = Object.entries(logsCountMap)
+        .map(([alunoId, total]) => {
+          const a = alunosLookup[alunoId];
+          return {
+            nome: a ? a.nome : 'Estudante',
+            escola: a ? a.escola : 'Escola',
+            total_presencas: total
+          };
+        })
+        .sort((a, b) => b.total_presencas - a.total_presencas)
+        .slice(0, 5);
+
+      // Mais faltosos
+      const faltasCountMap: Record<string, number> = {};
+      AllAbsences.forEach(p => {
+        if (p.aluno_id) {
+          faltasCountMap[p.aluno_id] = (faltasCountMap[p.aluno_id] || 0) + 1;
+        }
+      });
+      const mais_faltosos = Object.entries(faltasCountMap)
+        .map(([alunoId, total]) => {
+          const a = alunosLookup[alunoId];
+          return {
+            nome: a ? a.nome : 'Estudante',
+            escola: a ? a.escola : 'Escola',
+            total_faltas: total
+          };
+        })
+        .sort((a, b) => b.total_faltas - a.total_faltas)
+        .slice(0, 5);
+
+      setMetrics({
+        total_alunos,
+        presencas_hoje: presencasHoje,
+        faltas_hoje: faltasHoje,
+        alunos_por_escola,
+        alunos_por_rota,
+        alunos_por_turno,
+        mais_assiduos,
+        mais_faltosos
+      });
+    } catch (err) {
+      console.error('Erro no fallback local de métricas:', err);
+      setMetrics(INITIAL_METRICS);
     }
   }
 

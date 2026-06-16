@@ -55,7 +55,7 @@ begin
   -- 6. Faltas de hoje (ausências justificadas/informadas hoje)
   select count(distinct p.aluno_id) into v_faltas_hoje
   from public.presencas_diarias p
-  where p.data_presenca = to_char(current_date, 'YYYY-MM-DD') and p.compareceu = false;
+  where p.data_presenca = current_date and p.compareceu = false;
 
   -- 7. Mais assíduos (ranking de check-in)
   select json_agg(t) into v_mais_assiduos

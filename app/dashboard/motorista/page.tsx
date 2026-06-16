@@ -295,18 +295,14 @@ export default function MotoristaDashboardPage() {
   useEffect(() => {
     const handleUnload = () => {
       const mId = motoristaIdRef.current;
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-      if (mId && supabaseUrl && supabaseKey) {
+      if (mId) {
         // Usando fetch nativo com keepalive para persistir a requisição mesmo após destruição da página
-        fetch(`${supabaseUrl}/rest/v1/rotas?motorista_id=eq.${mId}`, {
-          method: 'PATCH',
+        fetch('/api/motorista/status-rota', {
+          method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ ativa: false }),
+          body: JSON.stringify({ status: false, global: true }),
           keepalive: true
         }).catch(() => {});
       }
@@ -814,16 +810,19 @@ export default function MotoristaDashboardPage() {
   const handleToggleRotaAtiva = async (newVal: boolean) => {
     if (!rotaAtiva) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      let query = supabase.from('rotas').update({ ativa: newVal });
-      if (newVal === false && user) {
-        query = query.eq('motorista_id', user.id);
-      } else {
-        query = query.eq('id', selectedRotaId);
+      const res = await fetch('/api/motorista/status-rota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newVal,
+          global: newVal === false,
+          rotaId: selectedRotaId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao alternar status da rota');
       }
-      const { error } = await query;
-
-      if (error) throw error;
 
       setRotas(prev => prev.map(r => {
         if (newVal === false) {
@@ -852,13 +851,14 @@ export default function MotoristaDashboardPage() {
 
   const handleLogout = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('rotas')
-          .update({ ativa: false })
-          .eq('motorista_id', user.id);
-      }
+      await fetch('/api/motorista/status-rota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: false,
+          global: true
+        })
+      });
     } catch (err) {
       console.error('Erro ao desativar rota no logout:', err);
     }

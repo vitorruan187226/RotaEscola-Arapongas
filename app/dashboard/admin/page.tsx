@@ -14,6 +14,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
+import AutoRefresh from '../../../components/AutoRefresh';
 
 export const dynamic = 'force-dynamic';
 
@@ -194,6 +195,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 bg-slate-50 min-h-screen p-1 sm:p-4">
+      <AutoRefresh intervalMs={10000} />
       
       {/* ── Cabeçalho do Dashboard ── */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

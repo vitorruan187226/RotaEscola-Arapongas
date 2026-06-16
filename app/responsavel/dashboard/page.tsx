@@ -254,6 +254,39 @@ export default function ResponsavelDashboard() {
     loadUserAndFilhos();
   }, [supabase]);
 
+  // Escuta atualizações de rota ativa em tempo real para refletir nos cards dos filhos
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-rotas-responsavel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rotas',
+        },
+        (payload) => {
+          const updatedRoute = payload.new as any;
+          if (updatedRoute) {
+            setFilhos(prev => 
+              prev.map(filho => {
+                if (filho.rotaUuid === updatedRoute.id) {
+                  return { ...filho, rotaAtiva: updatedRoute.ativa };
+                }
+                return filho;
+              })
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
+
+
 
   // Função para atualizar o status do aluno localmente após upload bem-sucedido
   const handleUpdateStatusLocal = (alunoId: string, newStatus: Filho['statusCarteirinha']) => {

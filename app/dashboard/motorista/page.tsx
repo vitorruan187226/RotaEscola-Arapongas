@@ -287,6 +287,31 @@ export default function MotoristaDashboardPage() {
     loadData(selectedTurno);
   }, [selectedTurno]);
 
+  // Desativa a rota caso o motorista feche a aba/janela do navegador/app
+  useEffect(() => {
+    const handleUnload = () => {
+      if (selectedRotaId && selectedRotaId.length > 10) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+        if (supabaseUrl && supabaseKey) {
+          // Usando fetch nativo com keepalive para persistir a requisição mesmo após destruição da página
+          fetch(`${supabaseUrl}/rest/v1/rotas?id=eq.${selectedRotaId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`
+            },
+            body: JSON.stringify({ ativa: false }),
+            keepalive: true
+          }).catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [selectedRotaId]);
+
   useEffect(() => {
     setSelectedSentido(selectedTurno === 'Manhã' ? 'IDA' : 'VOLTA');
   }, [selectedTurno]);
@@ -807,6 +832,16 @@ export default function MotoristaDashboardPage() {
   };
 
   const handleLogout = async () => {
+    if (selectedRotaId && selectedRotaId.length > 10) {
+      try {
+        await supabase
+          .from('rotas')
+          .update({ ativa: false })
+          .eq('id', selectedRotaId);
+      } catch (err) {
+        console.error('Erro ao desativar rota no logout:', err);
+      }
+    }
     await supabase.auth.signOut();
     document.cookie = "sb-mock-login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push('/login');

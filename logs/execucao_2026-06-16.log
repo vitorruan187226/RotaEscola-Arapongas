@@ -9,4 +9,5 @@
 2026-06-16 15:32:00 [INFO] Modificado app/dashboard/admin/page.tsx: traduzido o status das rotas para "Em Rota" ou "Fora de Rota" e ajustada a estilização de cores na tabela gerencial.
 2026-06-16 15:33:00 [INFO] Execução de todas as tarefas concluída com sucesso. Gerando walkthrough para o usuário.
 2026-06-16 15:47:00 [INFO] Correção do erro JSX de tag div não fechada no arquivo app/dashboard/motorista/page.tsx, travamento interativo da lista com pointer-events-none e desabilitação do envio do lote quando inativo ("Fora de Rota").
+2026-06-16 15:58:00 [INFO] Adicionada a desativação automática da rota no logout do motorista e no evento beforeunload (via fetch nativo keepalive), inscrição em tempo real na tabela rotas no painel dos responsáveis, e AutoRefresh no painel administrativo.
 

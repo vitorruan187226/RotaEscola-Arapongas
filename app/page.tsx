@@ -438,7 +438,7 @@ export default function LandingPage() {
               </Button>
             </div>
             <p className="lp-cta-hint">
-              Prazo: até 31 de julho de 2025 · Documentos exigidos: RG, CPF e comprovante de matrícula
+              Documentos exigidos: RG, CPF e comprovante de matrícula
             </p>
           </div>
           {/* Decoração */}
@@ -475,8 +475,8 @@ export default function LandingPage() {
                 </div>
                 <h3>E-mail</h3>
                 <p>Envie sua dúvida por e-mail</p>
-                <a href="mailto:transporte.educacao@arapongas.pr.gov.br" className="lp-suporte-link" id="link-email">
-                  transporte.educacao@<br />arapongas.pr.gov.br
+                <a href="mailto:fosfosilvio@gmail.com" className="lp-suporte-link" id="link-email">
+                  fosfosilvio@<br />gmail.com
                 </a>
               </div>
               <div className="lp-suporte-card">

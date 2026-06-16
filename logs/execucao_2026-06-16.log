@@ -18,5 +18,7 @@
 2026-06-16 16:57:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: corrigida a geração da foto do aluno na exportação do canvas no modal do dashboard de responsáveis (alinhando com o retângulo arredondado da tela, inserindo drawImageCover e cache buster anti-CORS).
 2026-06-16 17:15:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: corrigida a tela de Gestão de Alunos (Dashboard de Relatórios) adicionando um fallback de agregação local via JavaScript no frontend para quando o RPC get_dashboard_metrics falhar.
 2026-06-16 17:16:00 [INFO] Modificado supabase/migrations/20260612190000_dashboard_metrics_rpc.sql: corrigida a comparação de tipos date = text na cláusula where da RPC get_dashboard_metrics.
+2026-06-16 17:44:00 [INFO] Modificado app/page.tsx: removido o prazo de recadastro ("31 de julho de 2025") e alterado o e-mail de suporte da SEMED para fosfosilvio@gmail.com.
+
 
 

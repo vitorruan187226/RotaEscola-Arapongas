@@ -109,11 +109,19 @@ interface AtividadeRecente {
 | Análise de Docs | `documentos/page.tsx` | ✅ Ativo (Acessado por atalho / Oculto na sidebar) | `alunos` + `rotas` + Storage |
 | Rotas e Itinerários | `rotas/page.tsx` | ✅ Ativo (CRUD real + Motorista Designado) | `rotas` + `perfis` |
 
-## Novo Fluxo de Aprovação e Designação de Rota
-No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimentada em tempo real com registros no status `'Em análise'`. 
-- **Botão Aprovar**: Ao clicar em Aprovar, abre-se um modal popup que permite ao administrador selecionar a **Rota Escolar** da lista de rotas ativas (carregadas da tabela `rotas`).
-- **Confirmação**: Ao confirmar no modal, o sistema atualiza `status_carteirinha` para `'Aprovado'` e associa o `rota_id` selecionado ao estudante.
-- **Botão Rejeitar**: Atualiza o status do aluno para `'Pendente'` e define seu `rota_id` como `null`, liberando-o da fila de análise.
+## Fila de Auditoria Cadastral (documentos/page.tsx)
+O módulo de **Aprovação de Docs** (`documentos/page.tsx`) foi reestruturado de uma árvore complexa de 4 níveis colapsáveis para uma fila linear direta e moderna:
+- **Botão de Voltar**: Botão contextual superior ligando de volta à Visão Geral do painel.
+- **Abas de Status (Tabs)**:
+  - **Aguardando Análise**: Solicitações com status `'aguardando'` (status_carteirinha = `'Em análise'`).
+  - **Aprovados**: Solicitações com status `'aprovado'`.
+  - **Pendências / Rejeitados**: Solicitações com status `'rejeitado'` ou `'pendente_correcao'`.
+- **Filtros e Busca**: Barra de pesquisa direta por nome do estudante e seletor dropdown para filtragem por instituição escolar.
+- **Visualização Linear**: Alunos listados diretamente em um grid de cards contendo a foto real do aluno (`foto_url`) ou avatar com as iniciais correspondentes.
+- **Ações Rápidas**:
+  - **Ver Anexos**: Abre modal para auditoria dos documentos anexados (Storage).
+  - **Aprovar**: Abre modal para vincular a rota de transporte (tabela `rotas`), alterando `status_carteirinha` para `'Aprovado'`.
+  - **Corrigir**: Envia solicitação de correção com feedback textual ao responsável, definindo status para `'pendente_correcao'`.
 
 ## Histórico de Alterações
 | Data | Alteração |
@@ -138,3 +146,5 @@ No módulo **Aprovação de Docs** (`documentos/page.tsx`), a listagem é alimen
 | 12/06/2026 | **Correção de Mismatch de Opções:** Implementada injeção dinâmica de escola e série do estudante nos dropdowns do modal de edição de alunos para impedir a perda de dados em escolas não cadastradas (como Marques de Caravelas) ou formatações de séries personalizadas. |
 | 16/06/2026 | Tradução e Status de Rota Ativa: Traduzido o status das rotas para o português na tabela gerencial do dashboard central, refletindo de forma correta e síncrona o estado real de "Em Rota" ou "Fora de Rota" atualizado pelos motoristas. |
 | 16/06/2026 | Adicionado o componente cliente `<AutoRefresh>` no painel administrativo principal para re-renderizar em segundo plano as métricas operacionais e o status de rotas a cada 10 segundos. |
+| 17/06/2026 | **Ajustes de Fotos e Redesign do Fluxo de Análise:** Integração do campo `foto_url` na fila e na listagem de Últimas Solicitações do admin; reestruturação de `/dashboard/admin/documentos` para exibir uma fila linear simplificada com abas por status, busca direta, filtro de escolas e suporte a foto real do estudante. |
+

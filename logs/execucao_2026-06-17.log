@@ -16,3 +16,10 @@
 2026-06-17 17:33:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: ajustada a agregação de faltas local e corrigido o typo slate-55 para slate-50 com efeitos táteis.
 2026-06-17 17:35:00 [INFO] Modificado app/responsavel/rastreio/[rota_id]/page.tsx: corrigido o ID de aluno que estava hardcoded 'aluno-01' para buscar via query parameter alunoId.
 2026-06-17 17:40:00 [INFO] Modificado app/dashboard/admin/layout.tsx: corrigidos os hooks de useState que eram usados incorretamente para chamadas assíncronas durante o SSR. Substituídos por useEffect para eliminar erros de Hydration mismatch.
+2026-06-17 17:41:00 [INFO] Criado o plano de implementação para correção das fotos e reestruturação da tela de documentos.
+2026-06-17 17:48:00 [INFO] Modificado app/dashboard/admin/page.tsx: adicionada recuperação de foto_url e renderização de fotos de alunos na listagem de Últimas Solicitações.
+2026-06-17 17:49:00 [INFO] Modificado app/dashboard/admin/documentos/page.tsx: reestruturada a fila de auditoria cadastral para exibir lista linear/grid de cards com abas, busca direta, seletor de escolas, contadores e fotos reais de alunos.
+2026-06-17 17:50:00 [INFO] Executado build geral do Next.js (npm run build) com sucesso total (0 erros).
+2026-06-17 17:51:00 [INFO] Atualizada documentação em _docs/0205_AdminDashboard.md.
+
+

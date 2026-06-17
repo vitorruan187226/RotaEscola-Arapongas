@@ -35,6 +35,7 @@ interface SolicitacaoCarteirinha {
   status: 'Aguardando Análise' | 'Aprovado' | 'Documento Inválido';
   avatarColor: string;
   iniciais: string;
+  fotoUrl?: string | null;
 }
 
 // ─── Mocks Premium Arapongas ──────────────────────────────────────────────
@@ -109,7 +110,7 @@ export default async function AdminDashboardPage() {
         .limit(5),
       supabase
         .from('alunos')
-        .select('id, nome, escola, status_carteirinha, created_at')
+        .select('id, nome, escola, status_carteirinha, created_at, foto_url')
         .order('created_at', { ascending: false })
         .limit(5)
     ]);
@@ -164,7 +165,8 @@ export default async function AdminDashboardPage() {
           escola: s.escola || 'Escola Municipal',
           status: statusLabel,
           avatarColor,
-          iniciais
+          iniciais,
+          fotoUrl: s.foto_url
         };
       });
     }
@@ -393,8 +395,18 @@ export default async function AdminDashboardPage() {
                 <div key={sol.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50 transition-colors">
                   
                   {/* Avatar Circular */}
-                  <div className={`w-8 h-8 rounded-full ${sol.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm`}>
-                    {sol.iniciais}
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm flex items-center justify-center relative bg-slate-100">
+                    {sol.fotoUrl ? (
+                      <img 
+                        src={sol.fotoUrl} 
+                        alt={sol.aluno} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className={`w-full h-full ${sol.avatarColor} text-white flex items-center justify-center font-bold text-xs`}>
+                        {sol.iniciais}
+                      </div>
+                    )}
                   </div>
 
                   {/* Detalhes do Aluno */}

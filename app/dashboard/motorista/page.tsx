@@ -988,7 +988,7 @@ export default function MotoristaDashboardPage() {
 
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/35 text-slate-400 hover:text-rose-400 transition-colors"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/35 text-slate-400 hover:text-rose-400 transition-colors active-press"
               title="Sair do Sistema"
             >
               <LogOut size={12} />
@@ -1021,7 +1021,7 @@ export default function MotoristaDashboardPage() {
               <button
                 type="button"
                 onClick={() => handleToggleRotaAtiva(!rotaAtiva?.ativa)}
-                className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 relative border-0 cursor-pointer ${
+                className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 relative border-0 cursor-pointer active-press ${
                   rotaAtiva?.ativa ? 'bg-emerald-500' : 'bg-slate-800'
                 }`}
                 aria-label="Alternar status em rota"
@@ -1044,7 +1044,7 @@ export default function MotoristaDashboardPage() {
                   <button
                     key={t}
                     onClick={() => setSelectedTurno(t)}
-                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 ${
+                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 active-press ${
                       selectedTurno === t 
                         ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold' 
                         : 'text-slate-400 hover:text-white bg-transparent hover:bg-slate-900/40'
@@ -1067,7 +1067,7 @@ export default function MotoristaDashboardPage() {
                     key={s}
                     type="button"
                     onClick={() => setSelectedSentido(s)}
-                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 ${
+                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 active-press ${
                       selectedSentido === s 
                         ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold' 
                         : 'text-slate-400 hover:text-white bg-transparent hover:bg-slate-900/40'
@@ -1143,7 +1143,7 @@ export default function MotoristaDashboardPage() {
                 <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
                 
                 {/* Overlay visual do Scanner (laser + cantoneiras) */}
-                <div className="absolute left-4 right-4 h-0.5 bg-rose-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] z-20 scanner-line pointer-events-none" />
+                <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_20px_#ef4444,0_0_8px_#ef4444] z-20 scanner-line pointer-events-none" />
                 
                 <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-amber-400 rounded-tl-md z-10 pointer-events-none" />
                 <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-amber-400 rounded-tr-md z-10 pointer-events-none" />
@@ -1246,11 +1246,12 @@ export default function MotoristaDashboardPage() {
                     Você não possui nenhuma rota vinculada ao seu perfil.
                   </div>
                 ) : rotaAtiva && rotaAtiva.alunos.length > 0 ? (
-                  rotaAtiva.alunos.map((aluno) => (
+                  rotaAtiva.alunos.map((aluno, index) => (
                   <div
                     key={aluno.id}
                     onClick={() => cycleAlunoStatus(aluno.id)}
-                    className={`flex items-center justify-between p-4 transition-all duration-200 select-none ${
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    className={`flex items-center justify-between p-4 transition-all duration-200 select-none animate-slide-up ${
                       aluno.ausenciaNotificada 
                         ? 'bg-rose-950/5 border-l-4 border-rose-600/40 opacity-75 cursor-not-allowed'
                         : aluno.statusLocal === 'presente' 
@@ -1348,7 +1349,7 @@ export default function MotoristaDashboardPage() {
                 <button
                   onClick={handleSendBatch}
                   disabled={loading || isSentSuccessfully || !rotaAtiva?.ativa}
-                  className={`w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase transition-all transform border-0 flex items-center justify-center gap-2 ${
+                  className={`w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase transition-all transform border-0 flex items-center justify-center gap-2 active-press ${
                     isSentSuccessfully
                       ? 'bg-emerald-600 text-white shadow-[0_8px_20px_rgba(16,185,129,0.2)]'
                       : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.2)] hover:shadow-[0_12px_24px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer'
@@ -1414,7 +1415,7 @@ export default function MotoristaDashboardPage() {
                   <div className="relative w-52 h-52 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
                     <div id="ocorrencia-reader" className="w-full h-full absolute inset-0 z-0" />
                     {/* Laser */}
-                    <div className="absolute left-4 right-4 h-0.5 bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.8)] z-20 scanner-line pointer-events-none" />
+                    <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-orange-500 to-transparent shadow-[0_0_20px_#f97316,0_0_8px_#f97316] z-20 scanner-line pointer-events-none" />
                     {/* Cantoneiras */}
                     <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-orange-400 rounded-tl-md z-10 pointer-events-none" />
                     <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-orange-400 rounded-tr-md z-10 pointer-events-none" />
@@ -1626,7 +1627,7 @@ export default function MotoristaDashboardPage() {
         <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60 p-4 grid grid-cols-4 gap-3 z-40 rounded-b-[36px]">
           <button
             onClick={handleAbrirOcorrenciaModal}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-orange-950/20 hover:bg-orange-950/40 transition-all cursor-pointer border border-orange-900/20 active:scale-95"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-orange-950/20 hover:bg-orange-950/40 transition-all cursor-pointer border border-orange-900/20 active-press"
           >
             <div className="w-10 h-10 rounded-full bg-orange-500/15 flex items-center justify-center shadow-inner">
               <ShieldAlert size={16} className="text-orange-400" />
@@ -1636,7 +1637,7 @@ export default function MotoristaDashboardPage() {
 
           <button
             onClick={() => alert('Ocorrência de "Problema Mecânico" enviada à prefeitura!')}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95 border-0"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 shadow-inner">
               <Wrench size={16} />
@@ -1646,7 +1647,7 @@ export default function MotoristaDashboardPage() {
 
           <button
             onClick={() => alert('Ocorrência de "Via Interditada" enviada à prefeitura!')}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active:scale-95 border-0"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-slate-800/40 flex items-center justify-center text-slate-300 shadow-inner">
               <Map size={16} />
@@ -1656,7 +1657,7 @@ export default function MotoristaDashboardPage() {
 
           <button
             onClick={() => alert('Emergência reportada à prefeitura!')}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-rose-950/20 hover:bg-rose-950/40 transition-all cursor-pointer border border-rose-900/20 active:scale-95 border-0"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-rose-950/20 hover:bg-rose-950/40 transition-all cursor-pointer border border-rose-900/20 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-rose-900/80 flex items-center justify-center text-rose-200 border border-rose-800/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">
               <AlertOctagon size={16} className="text-rose-400" />

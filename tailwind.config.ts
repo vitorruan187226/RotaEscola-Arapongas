@@ -70,9 +70,13 @@ const config: Config = {
         'glow-yellow': '0 0 24px rgba(251,191,36,0.30)',
       },
       animation: {
-        'fade-in':    'fadeIn 0.4s ease-out',
-        'slide-up':   'slideUp 0.5s ease-out',
+        'fade-in':    'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'slide-up':   'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
         'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+        'shimmer':    'shimmer 2s infinite',
+        'laser-sweep': 'laserSweep 2.5s infinite ease-in-out',
+        'scale-up':   'scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'bounce-soft': 'bounceSoft 2.5s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -86,6 +90,21 @@ const config: Config = {
         pulseSoft: {
           '0%, 100%': { opacity: '1' },
           '50%':      { opacity: '0.7' },
+        },
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+        laserSweep: {
+          '0%, 100%': { top: '5%' },
+          '50%':      { top: '95%' },
+        },
+        scaleUp: {
+          from: { transform: 'scale(0.96)', opacity: '0' },
+          to:   { transform: 'scale(1)', opacity: '1' },
+        },
+        bounceSoft: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%':      { transform: 'translateY(-4px)' },
         },
       },
     },

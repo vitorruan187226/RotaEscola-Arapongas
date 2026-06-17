@@ -105,11 +105,13 @@ Centralizar os tokens de design, paleta de cores, tipografia e componentes base 
 
 ## Animações Globais
 
-| Classe utilitária | Keyframe | Uso |
+| Classe utilitária | Keyframe / Propriedade | Uso |
 |---|---|---|
 | `.animate-fade-in` | `fadeIn` (opacity 0→1, 0.4s) | Elementos que aparecem |
-| `.animate-slide-up` | `slideUp` (opacity + translateY, 0.5s) | Hero content, seções |
+| `.animate-slide-up` | `slideUp` (opacity + translateY, 0.5s) | Hero content, seções, listas |
 | `.glass` | — | Glassmorphism: backdrop-filter blur 12px |
+| `.shimmer-bg` | `shimmer` (reflexo brilhante contínuo) | Background de esqueletos de loading |
+| `.active-press` | `active:scale-95` (escala tátil ao clique, 100ms) | Botões e elementos clicáveis interativos |
 
 ---
 
@@ -131,3 +133,4 @@ Centralizar os tokens de design, paleta de cores, tipografia e componentes base 
 | `app/globals.css` | Diretivas Tailwind + classes de componentes CSS |
 | `app/layout.tsx` | Fonte Inter via next/font + Metadata + Viewport |
 | `components/ui/` | Componentes shadcn/ui |
+| `components/SkeletonLoader.tsx` | Componente de carregamento premium estruturado |

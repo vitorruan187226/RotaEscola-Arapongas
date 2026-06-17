@@ -5,3 +5,10 @@
 2026-06-17 16:22:00 [INFO] Criado arquivo de migração supabase/migrations/20260617190000_fix_logs_embarque_rls_and_rpc.sql para ajustar as políticas RLS e recriar a RPC get_dashboard_metrics.
 2026-06-17 16:24:00 [INFO] Executado build de validação com sucesso (npm run build).
 2026-06-17 16:25:00 [INFO] Criado walkthrough.md e atualizado task.md.
+2026-06-17 17:09:00 [INFO] Adicionadas as classes utilitárias @layer utilities (shimmer, active-press, glass, etc.) no app/globals.css
+2026-06-17 17:12:00 [INFO] Criado o componente components/SkeletonLoader.tsx para carregamento de layouts premium.
+2026-06-17 17:15:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: integrados skeletons, active-press e micro-animações de hover nos cards de KPIs.
+2026-06-17 17:22:00 [INFO] Modificado app/dashboard/motorista/page.tsx: adicionados efeitos laser sweep de scanner real glow radial e transições active-press em botões, além de cascateamento na lista de passageiros.
+2026-06-17 17:23:00 [INFO] Iniciado build de validação geral com 'npm run build'.
+2026-06-17 17:25:00 [INFO] Build finalizado com sucesso. Nenhuma quebra de tipagem ou de build detectada.
+2026-06-17 17:27:00 [INFO] Sincronizada a documentação de design e atualizado task.md e walkthrough.md. Todas as etapas concluídas com sucesso.

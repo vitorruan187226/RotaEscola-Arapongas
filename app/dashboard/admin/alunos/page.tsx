@@ -17,6 +17,7 @@ import {
   Search
 } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
+import SkeletonLoader from '../../../../components/SkeletonLoader';
 
 interface MetricsData {
   total_alunos: number;
@@ -248,7 +249,7 @@ export default function AlunosPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6 relative font-sans animate-fadeIn">
+    <div className="flex flex-col gap-6 relative font-sans animate-fade-in">
       
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -265,7 +266,7 @@ export default function AlunosPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchMetrics}
-            className="flex items-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-50 transition-colors bg-white shadow-sm"
+            className="flex items-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all active-press bg-white shadow-sm"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             <span>Atualizar</span>
@@ -276,10 +277,14 @@ export default function AlunosPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Alunos */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-5 shadow-sm border border-slate-800 flex items-center justify-between relative overflow-hidden group">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-5 shadow-sm border border-slate-800 flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 hover:shadow-lg transition-all duration-300 ease-out">
           <div className="flex flex-col gap-1 z-10">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Total de Estudantes</span>
-            <span className="text-3xl font-black">{loading ? '...' : metrics.total_alunos}</span>
+            {loading ? (
+              <SkeletonLoader variant="rect" className="h-8 w-20 bg-slate-800 rounded-lg mt-1" />
+            ) : (
+              <span className="text-3xl font-black">{metrics.total_alunos}</span>
+            )}
             <span className="text-[10px] text-slate-550 font-bold">Cadastros ativos no transporte</span>
           </div>
           <div className="p-4 bg-slate-800/40 rounded-2xl z-10">
@@ -289,15 +294,21 @@ export default function AlunosPage() {
         </div>
 
         {/* Presenças de Hoje */}
-        <div className="bg-white border rounded-3xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden group">
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 hover:shadow-lg transition-all duration-300 ease-out">
           <div className="flex flex-col gap-1 z-10">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450">Presentes Hoje (Check-in)</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">{loading ? '...' : metrics.presencas_hoje}</span>
-              {metrics.total_alunos > 0 && (
-                <span className="text-xs text-emerald-600 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded-md">
-                  {Math.round((metrics.presencas_hoje / metrics.total_alunos) * 100)}%
-                </span>
+              {loading ? (
+                <SkeletonLoader variant="rect" className="h-8 w-20 rounded-lg mt-1" />
+              ) : (
+                <>
+                  <span className="text-3xl font-black text-slate-900">{metrics.presencas_hoje}</span>
+                  {metrics.total_alunos > 0 && (
+                    <span className="text-xs text-emerald-600 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                      {Math.round((metrics.presencas_hoje / metrics.total_alunos) * 100)}%
+                    </span>
+                  )}
+                </>
               )}
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-emerald-650 font-extrabold">
@@ -312,15 +323,21 @@ export default function AlunosPage() {
         </div>
 
         {/* Ausências de Hoje */}
-        <div className="bg-white border rounded-3xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden group">
+        <div className="bg-white border rounded-3xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 hover:shadow-lg transition-all duration-300 ease-out">
           <div className="flex flex-col gap-1 z-10">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450">Ausências Informadas</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">{loading ? '...' : metrics.faltas_hoje}</span>
-              {metrics.total_alunos > 0 && (
-                <span className="text-xs text-rose-600 font-extrabold bg-rose-50 px-1.5 py-0.5 rounded-md">
-                  {Math.round((metrics.faltas_hoje / metrics.total_alunos) * 100)}%
-                </span>
+              {loading ? (
+                <SkeletonLoader variant="rect" className="h-8 w-20 rounded-lg mt-1" />
+              ) : (
+                <>
+                  <span className="text-3xl font-black text-slate-900">{metrics.faltas_hoje}</span>
+                  {metrics.total_alunos > 0 && (
+                    <span className="text-xs text-rose-600 font-extrabold bg-rose-50 px-1.5 py-0.5 rounded-md">
+                      {Math.round((metrics.faltas_hoje / metrics.total_alunos) * 100)}%
+                    </span>
+                  )}
+                </>
               )}
             </div>
             <span className="text-[10px] text-slate-400 font-bold">Faltas justificadas pelos responsáveis</span>
@@ -356,9 +373,7 @@ export default function AlunosPage() {
 
           <div className="flex flex-col gap-4 py-2">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              </div>
+              <SkeletonLoader variant="list" count={4} className="h-10 w-full rounded-2xl" />
             ) : filteredEscolas.length === 0 ? (
               <p className="text-xs text-slate-400 text-center py-10">Nenhuma escola corresponde ao filtro.</p>
             ) : (
@@ -415,9 +430,7 @@ export default function AlunosPage() {
 
             <div className="flex flex-col justify-center gap-3.5 py-2">
               {loading ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-                </div>
+                <SkeletonLoader variant="text" count={3} className="h-5 w-full rounded" />
               ) : (
                 metrics.alunos_por_turno.map((item) => {
                   const total = metrics.total_alunos || 1;
@@ -451,11 +464,9 @@ export default function AlunosPage() {
               <span>Volume por Rota Ativa</span>
             </div>
 
-            <div className="flex flex-col gap-3.5 py-2 overflow-y-auto max-h-[180px] custom-scrollbar">
+            <div className="flex flex-col gap-3.5 py-2 overflow-y-auto max-h-[180px] scrollbar-thin">
               {loading ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-                </div>
+                <SkeletonLoader variant="text" count={4} className="h-5 w-full rounded" />
               ) : metrics.alunos_por_rota.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center">Nenhuma rota ativa.</p>
               ) : (
@@ -486,9 +497,7 @@ export default function AlunosPage() {
 
           <div className="flex flex-col gap-3 py-1">
             {loading ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              </div>
+              <SkeletonLoader variant="list" count={5} className="h-12 w-full rounded-xl" />
             ) : metrics.mais_assiduos.length === 0 ? (
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de embarque disponíveis.</p>
             ) : (
@@ -521,9 +530,7 @@ export default function AlunosPage() {
 
           <div className="flex flex-col gap-3 py-1">
             {loading ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              </div>
+              <SkeletonLoader variant="list" count={5} className="h-12 w-full rounded-xl" />
             ) : metrics.mais_faltosos.length === 0 ? (
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de faltas disponíveis.</p>
             ) : (

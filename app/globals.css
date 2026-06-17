@@ -705,30 +705,61 @@
    4. Utilitários Globais (@layer utilities)
    ---------------------------------------------------------- */
 @layer utilities {
-  /* Animação de entrada */
-  .animate-fade-in { animation: fadeIn 0.4s ease-out both; }
-  .animate-slide-up { animation: slideUp 0.5s ease-out both; }
+  .shimmer-bg {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(226, 232, 240, 0.6); /* Slate 200 light */
+  }
+  
+  .dark .shimmer-bg {
+    background-color: rgba(30, 41, 59, 0.6); /* Slate 800 dark */
+  }
 
-  /* Gradiente de texto */
+  .shimmer-bg::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 20%,
+      rgba(255, 255, 255, 0.6) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 2s infinite;
+    content: '';
+  }
+
+  .active-press {
+    @apply active:scale-95 transition-all duration-100 ease-out;
+  }
+
+  .glass {
+    @apply backdrop-blur-md bg-slate-900/80 border border-slate-800/60;
+  }
+
   .text-gradient-navy {
-    background: linear-gradient(135deg, var(--primary-navy) 0%, #2d5fa6 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #1e3a70 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
-  /* Scrollbar fina e discreta */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color) transparent;
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
-
-  /* Glassmorphism helper */
-  .glass {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.2);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.4);
   }
 }
 

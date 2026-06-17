@@ -15,7 +15,7 @@ import {
   Building2,
   FileWarning,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../lib/mocks/alunos';
 
@@ -96,7 +96,7 @@ export default function AdminLayout({
   const [ocorrenciasCount, setOcorrenciasCount] = useState<number>(0);
 
   // Busca e escuta a contagem global de alunos com status 'Em análise'
-  useState(() => {
+  useEffect(() => {
     async function fetchEmAnaliseCount() {
       try {
         const supabase = createClient();
@@ -129,10 +129,10 @@ export default function AdminLayout({
     fetchEmAnaliseCount();
     const interval = setInterval(fetchEmAnaliseCount, 20000); // pooling leve de 20s
     return () => clearInterval(interval);
-  });
+  }, []);
 
   // Busca contagem de ocorrências pendentes
-  useState(() => {
+  useEffect(() => {
     async function fetchOcorrenciasCount() {
       try {
         const supabase = createClient();
@@ -148,7 +148,7 @@ export default function AdminLayout({
     fetchOcorrenciasCount();
     const interval = setInterval(fetchOcorrenciasCount, 20000);
     return () => clearInterval(interval);
-  });
+  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();

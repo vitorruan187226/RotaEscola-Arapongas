@@ -88,7 +88,12 @@ export default function AlunosPage() {
       const Rotas = dbRotas || [];
 
       // 3. Buscar logs de embarque de hoje e histórico
-      const todayStr = new Date().toISOString().split('T')[0];
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+
       const { data: dbLogsToday } = await supabase
         .from('logs_embarque')
         .select('aluno_id, data_registro, status')
@@ -165,8 +170,12 @@ export default function AlunosPage() {
         .map(([rota, total]) => ({ rota, total }))
         .sort((a, b) => b.total - a.total);
 
-      // Presenças hoje
-      const uniquePresencasToday = new Set(LogsToday.map(l => l.aluno_id));
+      // Presenças hoje (filtrando apenas status PRESENTE)
+      const uniquePresencasToday = new Set(
+        LogsToday
+          .filter(l => l.status === 'PRESENTE')
+          .map(l => l.aluno_id)
+      );
       const presencasHoje = uniquePresencasToday.size;
 
       // Faltas hoje

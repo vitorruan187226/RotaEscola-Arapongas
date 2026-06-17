@@ -1,0 +1,7 @@
+2026-06-17 16:00:00 [INFO] Iniciada a análise da falha nos relatórios do dashboard administrativo.
+2026-06-17 16:02:00 [INFO] Documentos consultados: indice.txt, _docs/0200_Indice_Telas.md, _docs/0205_AdminDashboard.md, _docs/0104_Status_Sistema_Arapongas.md.
+2026-06-17 16:05:00 [INFO] Criando plano de implementação para corrigir o dashboard e as políticas RLS.
+2026-06-17 16:20:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: corrigido o fuso horário local e adicionado o filtro por status = 'PRESENTE' no local fallback.
+2026-06-17 16:22:00 [INFO] Criado arquivo de migração supabase/migrations/20260617190000_fix_logs_embarque_rls_and_rpc.sql para ajustar as políticas RLS e recriar a RPC get_dashboard_metrics.
+2026-06-17 16:24:00 [INFO] Executado build de validação com sucesso (npm run build).
+2026-06-17 16:25:00 [INFO] Criado walkthrough.md e atualizado task.md.

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { createClient } from '../../../../utils/supabase/client';
 import {
   MapPin, Navigation, Bus, Clock, CalendarX,
@@ -30,6 +30,8 @@ export default function RastreioAusenciaPage() {
   const rawRotaId = params.rota_id as string;
   const rotaId   = decodeURIComponent(rawRotaId);
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const alunoId = searchParams.get('alunoId') || 'aluno-01';
 
   const [localizacao,      setLocalizacao]      = useState<LocalizacaoVeiculo | null>(null);
   const [isRouteActive,    setIsRouteActive]    = useState<boolean>(true);
@@ -122,7 +124,7 @@ export default function RastreioAusenciaPage() {
     setMsg(null);
     try {
       const { error } = await supabase.from('presencas_diarias').upsert({
-        aluno_id:       'aluno-01',
+        aluno_id:       alunoId,
         data_presenca:  getLocalDateString(),
         compareceu:     false,
         motivo:         'Notificado pelo responsável',
@@ -147,7 +149,7 @@ export default function RastreioAusenciaPage() {
       const { error } = await supabase
         .from('presencas_diarias')
         .delete()
-        .eq('aluno_id', 'aluno-01')
+        .eq('aluno_id', alunoId)
         .eq('data_presenca', getLocalDateString());
       if (error) throw error;
       setAusenciaNotificada(false);

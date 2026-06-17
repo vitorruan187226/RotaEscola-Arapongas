@@ -96,10 +96,17 @@ begin
   from public.logs_embarque l
   where l.data_registro = current_date and l.status = 'PRESENTE';
 
-  -- 6. Faltas de hoje (ausências justificadas/informadas hoje)
-  select count(distinct p.aluno_id) into v_faltas_hoje
-  from public.presencas_diarias p
-  where p.data_presenca = current_date and p.compareceu = false;
+  -- 6. Faltas de hoje (ausências justificadas/informadas ou registradas hoje)
+  select count(distinct f.aluno_id) into v_faltas_hoje
+  from (
+    select aluno_id
+    from public.logs_embarque
+    where data_registro = current_date and status = 'AUSENTE'
+    union
+    select aluno_id
+    from public.presencas_diarias
+    where data_presenca = current_date and compareceu = false
+  ) f;
 
   -- 7. Mais assíduos (ranking de check-in com status PRESENTE)
   select json_agg(t) into v_mais_assiduos
@@ -113,13 +120,20 @@ begin
     limit 5
   ) t;
 
-  -- 8. Mais faltosos (ranking de ausências justificadas ou registradas)
+  -- 8. Mais faltosos (ranking de ausências registradas por motorista ou notificadas por responsáveis)
   select json_agg(t) into v_mais_faltosos
   from (
-    select a.nome, a.escola, count(p.aluno_id) as total_faltas
-    from public.presencas_diarias p
-    join public.alunos a on p.aluno_id = a.id
-    where p.compareceu = false
+    select a.nome, a.escola, count(f.data_falta) as total_faltas
+    from (
+      select aluno_id, data_registro as data_falta
+      from public.logs_embarque
+      where status = 'AUSENTE'
+      union
+      select aluno_id, data_presenca as data_falta
+      from public.presencas_diarias
+      where compareceu = false
+    ) f
+    join public.alunos a on f.aluno_id = a.id
     group by a.id, a.nome, a.escola
     order by total_faltas desc
     limit 5

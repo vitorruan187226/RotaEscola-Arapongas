@@ -12,3 +12,6 @@
 2026-06-17 17:23:00 [INFO] Iniciado build de validação geral com 'npm run build'.
 2026-06-17 17:25:00 [INFO] Build finalizado com sucesso. Nenhuma quebra de tipagem ou de build detectada.
 2026-06-17 17:27:00 [INFO] Sincronizada a documentação de design e atualizado task.md e walkthrough.md. Todas as etapas concluídas com sucesso.
+2026-06-17 17:30:00 [INFO] Modificada a RPC get_dashboard_metrics() para unificar as faltas e ausências das tabelas presencas_diarias e logs_embarque.
+2026-06-17 17:33:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: ajustada a agregação de faltas local e corrigido o typo slate-55 para slate-50 com efeitos táteis.
+2026-06-17 17:35:00 [INFO] Modificado app/responsavel/rastreio/[rota_id]/page.tsx: corrigido o ID de aluno que estava hardcoded 'aluno-01' para buscar via query parameter alunoId.

@@ -114,7 +114,7 @@ export default function AlunosPage() {
       // 4. Buscar presenças diárias (faltas) de hoje e histórico
       const { data: dbFaltasToday } = await supabase
         .from('presencas_diarias')
-        .select('aluno_id, compareceu')
+        .select('aluno_id, compareceu, data_presenca')
         .eq('data_presenca', todayStr)
         .eq('compareceu', false);
 
@@ -123,11 +123,20 @@ export default function AlunosPage() {
       // Histórico de faltas para os mais faltosos
       const { data: dbAllAbsences } = await supabase
         .from('presencas_diarias')
-        .select('aluno_id, compareceu')
+        .select('aluno_id, compareceu, data_presenca')
         .eq('compareceu', false)
         .limit(2000);
 
       const AllAbsences = dbAllAbsences || [];
+
+      // Buscar também ausências registradas por motoristas (status = 'AUSENTE')
+      const { data: dbAllDriverAbsences } = await supabase
+        .from('logs_embarque')
+        .select('aluno_id, data_registro')
+        .eq('status', 'AUSENTE')
+        .limit(2000);
+
+      const AllDriverAbsences = dbAllDriverAbsences || [];
 
       // 5. Agregações locais
       const total_alunos = Alunos.length;
@@ -179,8 +188,11 @@ export default function AlunosPage() {
       );
       const presencasHoje = uniquePresencasToday.size;
 
-      // Faltas hoje
-      const uniqueFaltasToday = new Set(FaltasToday.map(p => p.aluno_id));
+      // Faltas hoje (driver marked absent today OR parent notified absent today)
+      const uniqueFaltasToday = new Set([
+        ...LogsToday.filter(l => l.status === 'AUSENTE').map(l => l.aluno_id),
+        ...FaltasToday.map(p => p.aluno_id)
+      ]);
       const faltasHoje = uniqueFaltasToday.size;
 
       // Alunos mapeados por id para nomes e escolas
@@ -208,20 +220,34 @@ export default function AlunosPage() {
         .sort((a, b) => b.total_presencas - a.total_presencas)
         .slice(0, 5);
 
-      // Mais faltosos
-      const faltasCountMap: Record<string, number> = {};
+      // Mais faltosos (combinando logs_embarque status AUSENTE e presencas_diarias compareceu false por dia)
+      const faltasCountMap: Record<string, Set<string>> = {}; // alunoId -> Set de datas
       AllAbsences.forEach(p => {
         if (p.aluno_id) {
-          faltasCountMap[p.aluno_id] = (faltasCountMap[p.aluno_id] || 0) + 1;
+          const date = p.data_presenca || todayStr;
+          if (!faltasCountMap[p.aluno_id]) {
+            faltasCountMap[p.aluno_id] = new Set();
+          }
+          faltasCountMap[p.aluno_id].add(date);
         }
       });
+      AllDriverAbsences.forEach(l => {
+        if (l.aluno_id) {
+          const date = l.data_registro || todayStr;
+          if (!faltasCountMap[l.aluno_id]) {
+            faltasCountMap[l.aluno_id] = new Set();
+          }
+          faltasCountMap[l.aluno_id].add(date);
+        }
+      });
+
       const mais_faltosos = Object.entries(faltasCountMap)
-        .map(([alunoId, total]) => {
+        .map(([alunoId, datesSet]) => {
           const a = alunosLookup[alunoId];
           return {
             nome: a ? a.nome : 'Estudante',
             escola: a ? a.escola : 'Escola',
-            total_faltas: total
+            total_faltas: datesSet.size
           };
         })
         .sort((a, b) => b.total_faltas - a.total_faltas)
@@ -502,7 +528,7 @@ export default function AlunosPage() {
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de embarque disponíveis.</p>
             ) : (
               metrics.mais_assiduos.map((item, idx) => (
-                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-50 hover:bg-slate-55/50 transition-colors">
+                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-emerald-700 bg-emerald-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
                       #{idx + 1}
@@ -535,7 +561,7 @@ export default function AlunosPage() {
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de faltas disponíveis.</p>
             ) : (
               metrics.mais_faltosos.map((item, idx) => (
-                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-50 hover:bg-slate-55/50 transition-colors">
+                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-rose-700 bg-rose-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
                       #{idx + 1}

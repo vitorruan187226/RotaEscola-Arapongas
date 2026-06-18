@@ -11,7 +11,10 @@ import {
   Navigation,
   ChevronLeft,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  Wrench,
+  Map,
+  AlertOctagon
 } from 'lucide-react';
 import Link from 'next/link';
 import AutoRefresh from '../../../components/AutoRefresh';
@@ -69,14 +72,14 @@ export default async function AdminDashboardPage() {
   let rotasAtivas: any[] = [];
   let ultimasSolicitacoes: any[] = [];
 
-  let sosAtivos: any[] = [];
+  let alertasAtivos: any[] = [];
 
   try {
     const [
       { count: alunosCount },
       { count: veiculosCount },
       { count: pendentesCount },
-      { count: recusadosCount },
+      { count: ocorrenciasCount },
       { count: ativasCount },
       { data: logsData },
       { data: rotasData },
@@ -86,7 +89,7 @@ export default async function AdminDashboardPage() {
       supabase.from('alunos').select('*', { count: 'exact', head: true }),
       supabase.from('veiculos').select('*', { count: 'exact', head: true }),
       supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('status_carteirinha', 'Em análise'),
-      supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('status_carteirinha', 'Pendente'),
+      supabase.from('ocorrencias').select('*', { count: 'exact', head: true }).eq('status', 'pendente'),
       supabase.from('rotas').select('*', { count: 'exact', head: true }).eq('ativa', true),
       supabase
         .from('logs_embarque')
@@ -126,12 +129,19 @@ export default async function AdminDashboardPage() {
     if (alunosCount !== null) totalAlunos = alunosCount;
     if (veiculosCount !== null) totalVeiculos = veiculosCount;
     if (pendentesCount !== null) solicitacoesPendentes = pendentesCount;
-    if (recusadosCount !== null) alertasOcorrencia = recusadosCount;
     if (ativasCount !== null) rotasAtivasCount = ativasCount;
 
     if (notificationsData) {
-      sosAtivos = notificationsData.filter((n: any) => n.titulo.includes('SOS') || n.titulo.includes('EMERGÊNCIA'));
+      alertasAtivos = notificationsData.filter((n: any) =>
+        n.titulo.includes('SOS') ||
+        n.titulo.includes('EMERGÊNCIA') ||
+        n.titulo.includes('Mecânica') ||
+        n.titulo.includes('Via')
+      );
     }
+
+    // Alertas de Ocorrência = Ocorrências de Estudantes Pendentes + Alertas de Frota Ativos
+    alertasOcorrencia = (ocorrenciasCount || 0) + alertasAtivos.length;
 
     if (logsData && logsData.length > 0) {
       logsEmbarqueRecentes = logsData.map((log: any) => ({
@@ -211,31 +221,58 @@ export default async function AdminDashboardPage() {
     <div className="space-y-8 bg-slate-50 min-h-screen p-1 sm:p-4">
       <AutoRefresh intervalMs={10000} />
 
-      {/* 🚨 Alerta de SOS Emergencial Piscante 🚨 */}
-      {sosAtivos && sosAtivos.length > 0 && (
-        <div 
-          className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg animate-pulse"
-          style={{ animationDuration: '2s' }}
-        >
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0 shadow-[0_0_15px_rgba(244,63,94,0.6)]">
-              <AlertTriangle size={24} className="animate-bounce" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-rose-800 uppercase tracking-wider">
-                🚨 ALERTA SOS ATIVO (EMERGÊNCIA)
-              </h3>
-              <p className="text-xs text-rose-650 font-bold mt-1 max-w-xl">
-                {sosAtivos[0].mensagem}
-              </p>
-            </div>
-          </div>
-          <Link 
-            href="/dashboard/admin/ocorrencias"
-            className="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_12px_rgba(225,29,72,0.3)] hover:-translate-y-0.5 text-center cursor-pointer border-0 shrink-0 text-decoration-none"
-          >
-            ATENDER AGORA
-          </Link>
+      {/* 🚨 Alertas Operacionais Ativos (SOS, Mecânico, Vias) 🚨 */}
+      {alertasAtivos && alertasAtivos.length > 0 && (
+        <div className="space-y-3">
+          {alertasAtivos.map((alert: any) => {
+            const isSos = alert.titulo.includes('SOS') || alert.titulo.includes('EMERGÊNCIA');
+            const isMecanico = alert.titulo.includes('Mecânica');
+            
+            let bgClass = 'bg-blue-50 border-blue-200 text-blue-800';
+            let iconBgClass = 'bg-blue-500 text-white';
+            let btnClass = 'bg-blue-600 hover:bg-blue-500 text-white';
+            let Icon = Map;
+            
+            if (isSos) {
+              bgClass = 'bg-rose-50 border-rose-200 text-rose-800 animate-pulse';
+              iconBgClass = 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)]';
+              btnClass = 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_4px_12px_rgba(225,29,72,0.3)]';
+              Icon = AlertOctagon;
+            } else if (isMecanico) {
+              bgClass = 'bg-amber-50 border-amber-250 text-amber-900';
+              iconBgClass = 'bg-amber-500 text-slate-950';
+              btnClass = 'bg-amber-600 hover:bg-amber-500 text-white';
+              Icon = Wrench;
+            }
+
+            return (
+              <div 
+                key={alert.id}
+                className={`border rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md ${bgClass}`}
+              >
+                <div className="flex items-center gap-4 text-left">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${iconBgClass}`}>
+                    <Icon size={24} className={isSos ? 'animate-bounce' : ''} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                      {alert.titulo}
+                      {!isSos && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />}
+                    </h3>
+                    <p className="text-xs font-semibold mt-1">
+                      {alert.mensagem}
+                    </p>
+                  </div>
+                </div>
+                <Link 
+                  href="/dashboard/admin/ocorrencias"
+                  className={`w-full sm:w-auto px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all hover:-translate-y-0.5 text-center cursor-pointer border-0 shrink-0 text-decoration-none ${btnClass}`}
+                >
+                  VER DETALHES
+                </Link>
+              </div>
+            );
+          })}
         </div>
       )}
       

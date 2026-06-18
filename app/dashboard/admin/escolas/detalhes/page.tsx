@@ -664,12 +664,8 @@ export default function EscolaDetalhesPage() {
 
         <div className="flex items-start justify-between flex-wrap gap-4 mt-1">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-500 shrink-0 shadow-sm border border-amber-100 overflow-hidden">
-              {escolaInfo?.logo_url ? (
-                <img src={escolaInfo.logo_url} alt={escolaNome} className="w-full h-full object-cover" />
-              ) : (
-                <Building2 size={28} />
-              )}
+            <div className="p-4 bg-amber-50 rounded-3xl text-amber-500 shrink-0 shadow-sm border border-amber-100">
+              <Building2 size={28} />
             </div>
             <div>
               <span className="text-[10px] text-amber-600 font-extrabold uppercase tracking-widest flex items-center gap-1.5">

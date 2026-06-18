@@ -13,7 +13,6 @@ interface Escola {
   turnos: string[]; // ['Manhã', 'Tarde', 'Noite']
   tipo?: 'municipal' | 'estadual';
   series?: string[]; // ['1º Ano', '2º Ano']
-  logo_url?: string;
 }
 
 const SERIES_MUNICIPAIS = ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
@@ -68,9 +67,6 @@ export default function EscolasPage() {
   const [turnos, setTurnos] = useState<string[]>([]); // ['Manhã', 'Tarde']
   const [tipo, setTipo] = useState<'municipal' | 'estadual'>('municipal');
   const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoUrl, setLogoUrl] = useState('');
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const toggleSerieSelection = (serie: string) => {
     if (selectedSeries.includes(serie)) {
@@ -100,7 +96,7 @@ export default function EscolasPage() {
       // 1. Busca as escolas do banco de dados
       const { data: escolasDB, error: escolasError } = await supabase
         .from('escolas')
-        .select('id, nome, endereco, turnos, tipo, series, logo_url')
+        .select('id, nome, endereco, turnos, tipo, series')
         .order('nome', { ascending: true });
 
       if (!escolasError && escolasDB && escolasDB.length > 0) {
@@ -174,28 +170,8 @@ export default function EscolasPage() {
     setLoadingAction(true);
     try {
       let createdId = `escola-gen-${Date.now()}`;
-      let uploadedLogoUrl = '';
-
+      
       if (!usandoMock) {
-        // Upload da logo se houver arquivo
-        if (logoFile) {
-          try {
-            const ext = logoFile.name.split('.').pop() || 'png';
-            const fileName = `logos/${Date.now()}_logo.${ext}`;
-            const { error: uploadError } = await supabase.storage
-              .from('logos-escolas')
-              .upload(fileName, logoFile);
-
-            if (uploadError) throw uploadError;
-
-            uploadedLogoUrl = supabase.storage
-              .from('logos-escolas')
-              .getPublicUrl(fileName).data.publicUrl;
-          } catch (uploadErr: any) {
-            console.error('Erro ao fazer upload da logo:', uploadErr);
-          }
-        }
-
         const { data, error } = await supabase
           .from('escolas')
           .insert({
@@ -203,19 +179,13 @@ export default function EscolasPage() {
             endereco,
             turnos,
             tipo,
-            series: selectedSeries,
-            logo_url: uploadedLogoUrl || null
+            series: selectedSeries
           })
           .select('id')
           .maybeSingle();
 
         if (error) throw error;
         if (data?.id) createdId = data.id;
-      } else {
-        // Fallback simulação
-        if (logoFile) {
-          uploadedLogoUrl = logoUrl || `https://picsum.photos/150/150?random=${Date.now()}`;
-        }
       }
 
       const nova: Escola = {
@@ -224,8 +194,7 @@ export default function EscolasPage() {
         endereco,
         turnos,
         tipo,
-        series: selectedSeries,
-        logo_url: uploadedLogoUrl || undefined
+        series: selectedSeries
       };
 
       setEscolas(prev => [nova, ...prev]);
@@ -235,8 +204,6 @@ export default function EscolasPage() {
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
-      setLogoFile(null);
-      setLogoUrl('');
       showToast('Escola cadastrada com sucesso!', 'success');
     } catch (err: any) {
       console.warn('Erro ao salvar no banco. Salvando simulado localmente.', err.message);
@@ -246,8 +213,7 @@ export default function EscolasPage() {
         endereco,
         turnos,
         tipo,
-        series: selectedSeries,
-        logo_url: logoUrl || undefined
+        series: selectedSeries
       };
       setEscolas(prev => [mockNova, ...prev]);
       setModalNovo(false);
@@ -256,8 +222,6 @@ export default function EscolasPage() {
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
-      setLogoFile(null);
-      setLogoUrl('');
       showToast('Cadastro simulado com sucesso!', 'success');
     } finally {
       setLoadingAction(false);
@@ -268,28 +232,7 @@ export default function EscolasPage() {
     if (!modalEditar || !nome.trim() || !endereco.trim() || turnos.length === 0) return;
     setLoadingAction(true);
     try {
-      let uploadedLogoUrl = logoUrl;
-
       if (!usandoMock && !modalEditar.id.startsWith('escola-mock')) {
-        // Upload da logo se houver novo arquivo
-        if (logoFile) {
-          try {
-            const ext = logoFile.name.split('.').pop() || 'png';
-            const fileName = `logos/${Date.now()}_logo.${ext}`;
-            const { error: uploadError } = await supabase.storage
-              .from('logos-escolas')
-              .upload(fileName, logoFile);
-
-            if (uploadError) throw uploadError;
-
-            uploadedLogoUrl = supabase.storage
-              .from('logos-escolas')
-              .getPublicUrl(fileName).data.publicUrl;
-          } catch (uploadErr: any) {
-            console.error('Erro ao fazer upload da logo:', uploadErr);
-          }
-        }
-
         const { error } = await supabase
           .from('escolas')
           .update({
@@ -297,17 +240,11 @@ export default function EscolasPage() {
             endereco,
             turnos,
             tipo,
-            series: selectedSeries,
-            logo_url: uploadedLogoUrl || null
+            series: selectedSeries
           })
           .eq('id', modalEditar.id);
 
         if (error) throw error;
-      } else {
-        // Fallback simulação
-        if (logoFile) {
-          uploadedLogoUrl = logoUrl || `https://picsum.photos/150/150?random=${Date.now()}`;
-        }
       }
 
       setEscolas(prev => prev.map(e => e.id === modalEditar.id ? {
@@ -316,8 +253,7 @@ export default function EscolasPage() {
         endereco,
         turnos,
         tipo,
-        series: selectedSeries,
-        logo_url: uploadedLogoUrl || undefined
+        series: selectedSeries
       } : e));
       
       setModalEditar(null);
@@ -326,8 +262,6 @@ export default function EscolasPage() {
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
-      setLogoFile(null);
-      setLogoUrl('');
       showToast('Cadastro atualizado com sucesso!', 'success');
     } catch {
       setEscolas(prev => prev.map(e => e.id === modalEditar.id ? {
@@ -336,8 +270,7 @@ export default function EscolasPage() {
         endereco,
         turnos,
         tipo,
-        series: selectedSeries,
-        logo_url: logoUrl || undefined
+        series: selectedSeries
       } : e));
       setModalEditar(null);
       setNome('');
@@ -345,8 +278,6 @@ export default function EscolasPage() {
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
-      setLogoFile(null);
-      setLogoUrl('');
       showToast('Cadastro atualizado localmente!', 'success');
     } finally {
       setLoadingAction(false);
@@ -401,8 +332,6 @@ export default function EscolasPage() {
             setTurnos([]);
             setTipo('municipal');
             setSelectedSeries([]);
-            setLogoFile(null);
-            setLogoUrl('');
             setModalNovo(true);
           }}
           className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow"
@@ -467,14 +396,10 @@ export default function EscolasPage() {
                 )}
 
                 <div className="flex flex-col gap-3">
-                  {/* Ícone/Logo e Título da Escola */}
+                  {/* Ícone e Título da Escola */}
                   <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:bg-amber-100 transition-colors shrink-0 overflow-hidden border border-slate-100">
-                      {escola.logo_url ? (
-                        <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
-                      ) : (
-                        <Building2 size={18} />
-                      )}
+                    <div className="p-3 bg-amber-50 rounded-2xl text-amber-500 group-hover:bg-amber-100 transition-colors shrink-0">
+                      <Building2 size={18} />
                     </div>
                     <div className="flex-1 pr-6">
                       <h3 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-amber-600 transition-colors">
@@ -534,8 +459,6 @@ export default function EscolasPage() {
                         setTurnos(escola.turnos);
                         setTipo(escola.tipo || 'municipal');
                         setSelectedSeries(escola.series || []);
-                        setLogoFile(null);
-                        setLogoUrl(escola.logo_url || '');
                         setModalEditar(escola);
                       }}
                       className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
@@ -576,44 +499,6 @@ export default function EscolasPage() {
             </div>
             
             <div className="p-5 flex flex-col gap-3">
-              
-              {/* Seletor de Logo da Escola */}
-              <div className="flex flex-col items-center gap-2 mb-2">
-                <div 
-                  onClick={() => document.getElementById('school-logo-input')?.click()}
-                  className="w-20 h-20 rounded-2xl bg-amber-50 border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer relative group transition-all duration-200 hover:border-amber-500 hover:scale-[1.02]"
-                  title="Clique para alterar a logo da escola"
-                >
-                  {logoUrl ? (
-                    <img src={logoUrl} alt="Logo da Escola" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center p-2 flex flex-col items-center gap-1">
-                      <Building2 size={24} className="text-amber-500" />
-                      <span className="text-[8px] text-slate-500 font-bold uppercase leading-none">Sem Logo</span>
-                    </div>
-                  )}
-
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white gap-1 select-none">
-                    <span className="text-[8px] font-black uppercase tracking-wider text-amber-400">Alterar</span>
-                  </div>
-                </div>
-
-                <input
-                  type="file"
-                  id="school-logo-input"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setLogoFile(file);
-                      setLogoUrl(URL.createObjectURL(file));
-                    }
-                  }}
-                />
-                <span className="text-[9px] text-slate-400 font-bold">Emblema recomendado (1:1)</span>
-              </div>
-
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nome da Escola</label>
                 <input
@@ -723,44 +608,6 @@ export default function EscolasPage() {
             </div>
             
             <div className="p-5 flex flex-col gap-3">
-              
-              {/* Seletor de Logo da Escola */}
-              <div className="flex flex-col items-center gap-2 mb-2">
-                <div 
-                  onClick={() => document.getElementById('school-logo-input-edit')?.click()}
-                  className="w-20 h-20 rounded-2xl bg-amber-50 border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer relative group transition-all duration-200 hover:border-amber-500 hover:scale-[1.02]"
-                  title="Clique para alterar a logo da escola"
-                >
-                  {logoUrl ? (
-                    <img src={logoUrl} alt="Logo da Escola" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center p-2 flex flex-col items-center gap-1">
-                      <Building2 size={24} className="text-amber-500" />
-                      <span className="text-[8px] text-slate-500 font-bold uppercase leading-none">Sem Logo</span>
-                    </div>
-                  )}
-
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white gap-1 select-none">
-                    <span className="text-[8px] font-black uppercase tracking-wider text-amber-400">Alterar</span>
-                  </div>
-                </div>
-
-                <input
-                  type="file"
-                  id="school-logo-input-edit"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setLogoFile(file);
-                      setLogoUrl(URL.createObjectURL(file));
-                    }
-                  }}
-                />
-                <span className="text-[9px] text-slate-400 font-bold">Emblema recomendado (1:1)</span>
-              </div>
-
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nome da Escola</label>
                 <input

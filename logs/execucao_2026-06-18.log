@@ -8,3 +8,4 @@
 2026-06-18 15:38:00 [INFO] Modificado app/dashboard/admin/escolas/detalhes/page.tsx: ajustada a exibição do emblema da escola no banner superior.
 2026-06-18 15:39:00 [INFO] Executado build geral de validação do projeto (npm run build) obtendo sucesso total (0 erros, 0 avisos).
 2026-06-18 15:40:00 [INFO] Atualizada documentação técnica em _docs/0210_GestaoEscolas.md e _docs/0404_Table_Escolas.md.
+2026-06-18 15:56:00 [INFO] Revertida a funcionalidade de upload e exibição de logo das escolas para restaurar o estado operacional anterior e desativar o modo demonstração.

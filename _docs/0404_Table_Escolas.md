@@ -16,7 +16,6 @@ create table public.escolas (
   nome text not null,
   endereco text not null,
   turnos text[] not null default '{}',
-  logo_url text,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 ```
@@ -28,7 +27,6 @@ create table public.escolas (
 | `nome` | `text` | `not null` | Nome oficial da instituição escolar |
 | `endereco` | `text` | `not null` | Endereço físico completo da escola |
 | `turnos` | `text[]` | `not null` default `'{}'` | Array de turnos em atividade (ex: `{'Manhã', 'Tarde'}`) |
-| `logo_url` | `text` | | URL pública do emblema/logo da escola |
 | `created_at` | `timestamptz` | default `now()` | Timestamp de registro no banco |
 
 ---
@@ -70,4 +68,3 @@ values
 | Data | Alteração |
 |---|---|
 | 30/05/2026 | **Criação da Tabela:** DDL inicial de `escolas`, FK `escola_id` em `alunos` e migração executada. |
-| 18/06/2026 | **Coluna de Logo/Emblema:** Adicionada coluna `logo_url` para guardar o logotipo da escola e criação do bucket `logos-escolas` no Supabase Storage. |

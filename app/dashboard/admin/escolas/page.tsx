@@ -97,11 +97,22 @@ export default function EscolasPage() {
   async function loadEscolas() {
     setLoading(true);
     try {
-      // 1. Busca as escolas do banco de dados
-      const { data: escolasDB, error: escolasError } = await supabase
+      // 1. Busca as escolas do banco de dados (tentando logo_url)
+      let res: any = await supabase
         .from('escolas')
         .select('id, nome, endereco, turnos, tipo, series, logo_url')
         .order('nome', { ascending: true });
+
+      // Se a coluna logo_url não existir no banco (erro 400 ou código PGRST100)
+      if (res.error && (res.error.message?.includes('logo_url') || res.error.code === 'PGRST100' || res.error.message?.includes('column'))) {
+        console.warn('Coluna logo_url não encontrada na tabela escolas. Tentando carregar sem logo_url.');
+        res = await supabase
+          .from('escolas')
+          .select('id, nome, endereco, turnos, tipo, series')
+          .order('nome', { ascending: true });
+      }
+
+      const { data: escolasDB, error: escolasError } = res;
 
       if (!escolasError && escolasDB && escolasDB.length > 0) {
         setEscolas(escolasDB as Escola[]);
@@ -196,18 +207,33 @@ export default function EscolasPage() {
           }
         }
 
-        const { data, error } = await supabase
+        let insertData: any = {
+          nome,
+          endereco,
+          turnos,
+          tipo,
+          series: selectedSeries,
+          logo_url: uploadedLogoUrl || null
+        };
+
+        let { data, error } = await supabase
           .from('escolas')
-          .insert({
-            nome,
-            endereco,
-            turnos,
-            tipo,
-            series: selectedSeries,
-            logo_url: uploadedLogoUrl || null
-          })
+          .insert(insertData)
           .select('id')
           .maybeSingle();
+
+        // Se falhar por causa da coluna logo_url (erro 400 ou código PGRST100)
+        if (error && (error.message?.includes('logo_url') || error.code === 'PGRST100' || error.message?.includes('column'))) {
+          console.warn('Falha ao inserir com logo_url (coluna ausente). Tentando sem logo_url.');
+          delete insertData.logo_url;
+          const retry = await supabase
+            .from('escolas')
+            .insert(insertData)
+            .select('id')
+            .maybeSingle();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) throw error;
         if (data?.id) createdId = data.id;
@@ -290,17 +316,30 @@ export default function EscolasPage() {
           }
         }
 
-        const { error } = await supabase
+        let updateData: any = {
+          nome,
+          endereco,
+          turnos,
+          tipo,
+          series: selectedSeries,
+          logo_url: uploadedLogoUrl || null
+        };
+
+        let { error } = await supabase
           .from('escolas')
-          .update({
-            nome,
-            endereco,
-            turnos,
-            tipo,
-            series: selectedSeries,
-            logo_url: uploadedLogoUrl || null
-          })
+          .update(updateData)
           .eq('id', modalEditar.id);
+
+        // Se falhar por causa da coluna logo_url (erro 400 ou código PGRST100)
+        if (error && (error.message?.includes('logo_url') || error.code === 'PGRST100' || error.message?.includes('column'))) {
+          console.warn('Falha ao atualizar com logo_url (coluna ausente). Tentando sem logo_url.');
+          delete updateData.logo_url;
+          const retry = await supabase
+            .from('escolas')
+            .update(updateData)
+            .eq('id', modalEditar.id);
+          error = retry.error;
+        }
 
         if (error) throw error;
       } else {

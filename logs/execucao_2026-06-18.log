@@ -14,3 +14,4 @@
 2026-06-18 16:20:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionado input para preenchimento de endereço no formulário de cadastro de aluno, exibição do endereço no card do aluno e lógica resiliente para colunas ausentes.
 2026-06-18 16:25:00 [INFO] Modificado app/dashboard/admin/escolas/detalhes/page.tsx: adicionada exibição e edição de endereço no modal de auditoria de alunos e lógica resiliente.
 2026-06-18 16:30:00 [INFO] Corrigidos erros de inferência de tipo TypeScript ao reatribuir respostas do Supabase sem a coluna endereco. Build verificado com sucesso.
+2026-06-18 16:35:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionado botão Pencil no card de aluno e modal EditarFilhoModal para edição cadastral completa do estudante com rebaixamento de status para 'Pendente' / 'aguardando' ao concluir.

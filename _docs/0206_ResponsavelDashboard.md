@@ -88,5 +88,6 @@ Constante `FILHOS_MOCK` tipada como `Filho[]` para uso demonstrativo. É carrega
 | 15/06/2026 | Implementação da exportação da carteirinha digital para imagem PNG via HTML5 Canvas, unificada no modal do responsável e na página de detalhes. |
 | 15/06/2026 | Adicionado trigger interativo de upload de foto do aluno direto no avatar do painel com feedback visual (spinner/overlay) e integração assíncrona com renderização no HTML5 Canvas de exportação. |
 | 16/06/2026 | Implementação da inscrição em tempo real (`postgres_changes` no canal `rotas`) para atualização imediata dos badges e controle de status de rota no dashboard sem refresh de página. |
+| 18/06/2026 | **Edição de Cadastro de Filho:** Adicionado modal de edição `EditarFilhoModal` acessível via botão de Lápis no card do estudante. Salvar a edição reverte o status da carteirinha para `'Pendente'` (banco `'aguardando'`) e reseta rota e motorista, exigindo nova aprovação pela secretaria (SEMED). |
 
 

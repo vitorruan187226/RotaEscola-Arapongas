@@ -29,7 +29,8 @@ import {
   UserCheck,
   ChevronRight,
   X,
-  Lock
+  Lock,
+  MapPin
 } from 'lucide-react';
 
 interface Aluno {
@@ -44,6 +45,7 @@ interface Aluno {
   statusLocal: 'pendente' | 'presente' | 'ausente';
   ausenciaNotificada?: boolean;
   qrCodeHash?: string;
+  endereco?: string;
 }
 
 interface RotaConfig {
@@ -64,11 +66,11 @@ const ROTAS_MOCK: RotaConfig[] = [
     placa: 'BBB-5678',
     veiculo: 'Ônibus Mercedes-Benz',
     alunos: [
-      { id: 1, nome: 'Lucas Lima Souza', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
-      { id: 2, nome: 'Enzo Gabriel Silva', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente' },
-      { id: 3, nome: 'Ana Beatriz Silveira', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Autismo', aBordo: false, fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80', responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
-      { id: 4, nome: 'Maria Eduarda Costa', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, statusLocal: 'pendente' },
-      { id: 5, nome: 'Arthur Ramos Barbosa', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Cadeirante', aBordo: false, statusLocal: 'pendente' }
+      { id: 1, nome: 'Lucas Lima Souza', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente', endereco: 'Colônia Esperança, Km 4 - Zona Rural, Arapongas' },
+      { id: 2, nome: 'Enzo Gabriel Silva', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, responsavelId: '2aec5cb3-45d0-4754-821d-ff00eecd7fbf', statusLocal: 'pendente', endereco: 'Estância Santa Maria, Chácara 12 - Arapongas' },
+      { id: 3, nome: 'Ana Beatriz Silveira', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Autismo', aBordo: false, fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80', responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente', endereco: 'Sítio Novo Horizonte - Zona Rural, Arapongas' },
+      { id: 4, nome: 'Maria Eduarda Costa', escola: 'Esc. Dorcelina Folador', nee: false, aBordo: false, statusLocal: 'pendente', endereco: 'Chácara São João, Lote 4B - Arapongas' },
+      { id: 5, nome: 'Arthur Ramos Barbosa', escola: 'Esc. Dorcelina Folador', nee: true, tipoNee: 'Cadeirante', aBordo: false, statusLocal: 'pendente', endereco: 'Colônia Centenário - Zona Rural, Arapongas' }
     ]
   },
   {
@@ -78,10 +80,10 @@ const ROTAS_MOCK: RotaConfig[] = [
     placa: 'AAA-1234',
     veiculo: 'Microônibus Volare',
     alunos: [
-      { id: 7, nome: 'João Pedro Santos', escola: 'Col. Olímpia', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente' },
-      { id: 8, nome: 'Júlia Nogueira Melo', escola: 'Col. Olímpia', nee: false, aBordo: false, statusLocal: 'pendente' },
-      { id: 9, nome: 'Gustavo Reis Pinheiro', escola: 'Col. Olímpia', nee: true, tipoNee: 'D. Visual', aBordo: false, statusLocal: 'pendente' },
-      { id: 10, nome: 'Mariana Almeida Ortiz', escola: 'Col. Olímpia', nee: false, aBordo: false, statusLocal: 'pendente' },
+      { id: 7, nome: 'João Pedro Santos', escola: 'Col. Olímpia', nee: false, aBordo: false, responsavelId: '1e45bfd4-2113-4e06-b231-e8f2f1136151', statusLocal: 'pendente', endereco: 'Rua Harpia, 452 - Jardim Bandeirantes, Arapongas' },
+      { id: 8, nome: 'Júlia Nogueira Melo', escola: 'Col. Olímpia', nee: false, aBordo: false, statusLocal: 'pendente', endereco: 'Av. Gralha Azul, 890 - Jardim do Cafe, Arapongas' },
+      { id: 9, nome: 'Gustavo Reis Pinheiro', escola: 'Col. Olímpia', nee: true, tipoNee: 'D. Visual', aBordo: false, statusLocal: 'pendente', endereco: 'Rua Garças, 123 - Centro, Arapongas' },
+      { id: 10, nome: 'Mariana Almeida Ortiz', escola: 'Col. Olímpia', nee: false, aBordo: false, statusLocal: 'pendente', endereco: 'Rua Falcão, 789 - Jardim San Raphael, Arapongas' },
     ]
   }
 ];
@@ -185,7 +187,7 @@ export default function MotoristaDashboardPage() {
             const mappedRotas: RotaConfig[] = [];
             
             for (const r of dbRotas) {
-              const { data: dbAlunos } = await supabase
+              const primaryAlunosRes = await supabase
                 .from('alunos')
                 .select(`
                   id, 
@@ -193,12 +195,36 @@ export default function MotoristaDashboardPage() {
                   escola, 
                   foto_url, 
                   responsavel_id,
+                  endereco,
                   carteirinhas (
                     qr_code_hash
                   )
                 `)
                 .eq('rota_id', r.id)
                 .eq('turno', turno === 'Manhã' ? 'Manhã' : turno === 'Tarde' ? 'Tarde' : 'Noite');
+
+              let dbAlunos: any[] | null = null;
+
+              if (primaryAlunosRes.error && (primaryAlunosRes.error.message?.includes('endereco') || primaryAlunosRes.error.code === 'PGRST100' || primaryAlunosRes.error.message?.includes('column'))) {
+                console.warn('Coluna endereco não encontrada na tabela alunos. Tentando sem endereco.');
+                const secondaryAlunosRes = await supabase
+                  .from('alunos')
+                  .select(`
+                    id, 
+                    nome, 
+                    escola, 
+                    foto_url, 
+                    responsavel_id,
+                    carteirinhas (
+                      qr_code_hash
+                    )
+                  `)
+                  .eq('rota_id', r.id)
+                  .eq('turno', turno === 'Manhã' ? 'Manhã' : turno === 'Tarde' ? 'Tarde' : 'Noite');
+                dbAlunos = secondaryAlunosRes.data;
+              } else {
+                dbAlunos = primaryAlunosRes.data;
+              }
 
               // Busca ausências para os alunos desta rota no dia de hoje
               const dbAlunosIds = (dbAlunos || []).map(a => a.id);
@@ -236,7 +262,8 @@ export default function MotoristaDashboardPage() {
                     ausenciaNotificada: isAusente,
                     fotoUrl: aluno.foto_url || undefined,
                     responsavelId: aluno.responsavel_id || undefined,
-                    qrCodeHash: hash
+                    qrCodeHash: hash,
+                    endereco: aluno.endereco || undefined
                   };
                 })
               });
@@ -1313,6 +1340,12 @@ export default function MotoristaDashboardPage() {
                             </span>
                           )}
                         </div>
+                        {aluno.endereco && (
+                          <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-0.5 leading-snug">
+                            <MapPin size={10} className="shrink-0 text-slate-500" />
+                            <span className="truncate max-w-[200px]" title={aluno.endereco}>{aluno.endereco}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 

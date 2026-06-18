@@ -15,3 +15,4 @@
 2026-06-18 16:25:00 [INFO] Modificado app/dashboard/admin/escolas/detalhes/page.tsx: adicionada exibição e edição de endereço no modal de auditoria de alunos e lógica resiliente.
 2026-06-18 16:30:00 [INFO] Corrigidos erros de inferência de tipo TypeScript ao reatribuir respostas do Supabase sem a coluna endereco. Build verificado com sucesso.
 2026-06-18 16:35:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionado botão Pencil no card de aluno e modal EditarFilhoModal para edição cadastral completa do estudante com rebaixamento de status para 'Pendente' / 'aguardando' ao concluir.
+2026-06-18 16:40:00 [INFO] Modificado app/dashboard/motorista/page.tsx: incluída a busca da coluna endereco na tabela alunos (com fallback resiliente) e a renderização do endereço residencial abaixo do nome da escola na lista de passageiros com ícone MapPin.

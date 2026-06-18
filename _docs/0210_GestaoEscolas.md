@@ -17,7 +17,6 @@ Interface administrativa da Secretaria de Educação (SEMED) para a catalogaçã
 | `useState`, `useEffect` | Lifecycle, estados do modal e formulários |
 
 ---
-
 ## Contrato de Dados (Frontend)
 ```typescript
 interface Escola {
@@ -25,9 +24,9 @@ interface Escola {
   nome: string;
   endereco: string;
   turnos: string[]; // ['Manhã', 'Tarde', 'Noite']
+  logo_url?: string;
 }
 ```
-
 ---
 
 ## Funcionalidades e Ações
@@ -53,4 +52,5 @@ interface Escola {
 | 01/06/2026 | **Modal de Auditoria e Fluxo Contínuo:** Implementado o fluxo "Aprovar e Próximo" para transição de fila transparente e automática de análise de documentos por instituição de ensino. |
 | 01/06/2026 | **Remediação de Sintaxe e Erro 400**: Corrigidas as consultas à tabela `rotas` (remoção de colunas inexistentes) e blindado o filtro de escolas mocks (`escola-mock-2`) do tipo UUID no PostgREST, eliminando erros 400 de API no console. |
 | 01/06/2026 | **Correção de Colunas no Banco (Supabase Erro 400)**: Migração total das referências a `status` para `status_carteirinha` na tabela `alunos` (selects, updates, filtros e contagens) e remoção da coluna `status` de `rotas` nas páginas de detalhes, listagem de escolas, documentos e layout de sidebar. Mapeamento mantido localmente para manter a consistência da UI. |
+| 18/06/2026 | **Logo da Escola / Emblema:** Integração de upload de emblema no cadastro/edição de escolas, salvando URLs públicas no Supabase Storage e exibindo o logotipo nos cards e na página de detalhes de cada escola. |
 

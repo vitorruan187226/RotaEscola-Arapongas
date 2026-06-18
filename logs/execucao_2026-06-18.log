@@ -3,3 +3,8 @@
 2026-06-18 15:19:00 [INFO] Modificado middleware.ts para verificar tipo_usuario/role tanto a partir dos metadados de autenticação do Supabase quanto da tabela public.perfis em banco de dados.
 2026-06-18 15:20:00 [INFO] Validado fluxo de redirecionamento para garantir que motoristas e administradores (semed) sejam levados para suas respectivas dashboards quando clicarem em 'Acessar Sistema' estando logados.
 2026-06-18 15:22:00 [INFO] Executado build de validação (npm run build) com sucesso total (0 erros, 0 avisos).
+2026-06-18 15:35:00 [INFO] Criada migração SQL 20260618160000_add_logo_url_and_bucket_escolas.sql para adicionar a coluna logo_url e o bucket logos-escolas no Supabase.
+2026-06-18 15:37:00 [INFO] Modificado app/dashboard/admin/escolas/page.tsx: adicionados seletores e lógica de upload de logo no cadastro/edição de escolas, e renderização da imagem da logo em vez do ícone de fallback nos cards.
+2026-06-18 15:38:00 [INFO] Modificado app/dashboard/admin/escolas/detalhes/page.tsx: ajustada a exibição do emblema da escola no banner superior.
+2026-06-18 15:39:00 [INFO] Executado build geral de validação do projeto (npm run build) obtendo sucesso total (0 erros, 0 avisos).
+2026-06-18 15:40:00 [INFO] Atualizada documentação técnica em _docs/0210_GestaoEscolas.md e _docs/0404_Table_Escolas.md.

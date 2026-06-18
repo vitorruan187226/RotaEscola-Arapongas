@@ -39,6 +39,7 @@ interface AlunoAuditoria {
   status: 'Em análise' | 'Aprovado' | 'Rejeitado' | 'Pendente';
   enviadoEm: string;
   rotaId?: string;
+  fotoUrl?: string;
 }
 
 interface DocumentoAnexo {
@@ -244,7 +245,7 @@ export default function EscolaDetalhesPage() {
     try {
       const { data, error } = await supabase
         .from('alunos')
-        .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie')
+        .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url')
         .eq('escola', escolaNome);
 
       if (error) {
@@ -279,7 +280,8 @@ export default function EscolaDetalhesPage() {
             turno: a.turno || (a.periodo ? (a.periodo === 'manha' ? 'Manhã' : a.periodo === 'tarde' ? 'Tarde' : 'Noite') : 'Manhã'),
             status: (a.status_carteirinha === 'Pendente' ? 'Rejeitado' as const : a.status_carteirinha as AlunoAuditoria['status']) ?? 'Pendente',
             enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
-            rotaId: a.rota_id ?? undefined
+            rotaId: a.rota_id ?? undefined,
+            fotoUrl: a.foto_url ?? undefined
           };
         });
         setAlunos(mapped);
@@ -856,7 +858,29 @@ export default function EscolaDetalhesPage() {
                                 <tbody className="divide-y divide-slate-100 font-medium">
                                   {list.map((a) => (
                                     <tr key={a.id} className="hover:bg-slate-50/30 transition-colors">
-                                      <td className="py-3 px-3 font-bold text-slate-900">{a.nome}</td>
+                                      <td className="py-2.5 px-3 font-bold text-slate-900">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-150 bg-slate-100 flex items-center justify-center">
+                                            {a.fotoUrl ? (
+                                              <img 
+                                                src={a.fotoUrl} 
+                                                alt={a.nome} 
+                                                className="w-full h-full object-cover" 
+                                              />
+                                            ) : (
+                                              <div className="w-full h-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-extrabold text-[10px]">
+                                                {(() => {
+                                                  const partes = a.nome.split(' ');
+                                                  return partes.length > 1 
+                                                    ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() 
+                                                    : `${partes[0][0]}${partes[0][1] || ''}`.toUpperCase();
+                                                })()}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <span>{a.nome}</span>
+                                        </div>
+                                      </td>
                                       <td className="py-3 px-3 text-slate-450 font-mono">
                                         <div className="flex items-center gap-1">
                                           <Calendar size={11} className="text-slate-350" />

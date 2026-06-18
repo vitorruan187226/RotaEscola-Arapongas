@@ -69,6 +69,8 @@ export default async function AdminDashboardPage() {
   let rotasAtivas: any[] = [];
   let ultimasSolicitacoes: any[] = [];
 
+  let sosAtivos: any[] = [];
+
   try {
     const [
       { count: alunosCount },
@@ -78,7 +80,8 @@ export default async function AdminDashboardPage() {
       { count: ativasCount },
       { data: logsData },
       { data: rotasData },
-      { data: solicitacoesData }
+      { data: solicitacoesData },
+      { data: notificationsData }
     ] = await Promise.all([
       supabase.from('alunos').select('*', { count: 'exact', head: true }),
       supabase.from('veiculos').select('*', { count: 'exact', head: true }),
@@ -112,7 +115,12 @@ export default async function AdminDashboardPage() {
         .from('alunos')
         .select('id, nome, escola, status_carteirinha, created_at, foto_url')
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5),
+      supabase
+        .from('notificacoes')
+        .select('id, titulo, mensagem, criado_em')
+        .is('aluno_id', null)
+        .eq('lida', false)
     ]);
 
     if (alunosCount !== null) totalAlunos = alunosCount;
@@ -120,6 +128,10 @@ export default async function AdminDashboardPage() {
     if (pendentesCount !== null) solicitacoesPendentes = pendentesCount;
     if (recusadosCount !== null) alertasOcorrencia = recusadosCount;
     if (ativasCount !== null) rotasAtivasCount = ativasCount;
+
+    if (notificationsData) {
+      sosAtivos = notificationsData.filter((n: any) => n.titulo.includes('SOS') || n.titulo.includes('EMERGÊNCIA'));
+    }
 
     if (logsData && logsData.length > 0) {
       logsEmbarqueRecentes = logsData.map((log: any) => ({
@@ -198,6 +210,34 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8 bg-slate-50 min-h-screen p-1 sm:p-4">
       <AutoRefresh intervalMs={10000} />
+
+      {/* 🚨 Alerta de SOS Emergencial Piscante 🚨 */}
+      {sosAtivos && sosAtivos.length > 0 && (
+        <div 
+          className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg animate-pulse"
+          style={{ animationDuration: '2s' }}
+        >
+          <div className="flex items-center gap-4 text-left">
+            <div className="w-12 h-12 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0 shadow-[0_0_15px_rgba(244,63,94,0.6)]">
+              <AlertTriangle size={24} className="animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-rose-800 uppercase tracking-wider">
+                🚨 ALERTA SOS ATIVO (EMERGÊNCIA)
+              </h3>
+              <p className="text-xs text-rose-650 font-bold mt-1 max-w-xl">
+                {sosAtivos[0].mensagem}
+              </p>
+            </div>
+          </div>
+          <Link 
+            href="/dashboard/admin/ocorrencias"
+            className="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_12px_rgba(225,29,72,0.3)] hover:-translate-y-0.5 text-center cursor-pointer border-0 shrink-0 text-decoration-none"
+          >
+            ATENDER AGORA
+          </Link>
+        </div>
+      )}
       
       {/* ── Cabeçalho do Dashboard ── */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

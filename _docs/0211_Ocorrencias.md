@@ -77,22 +77,25 @@ supabase/migrations/
 ```
 
 ## Componentes da Página Admin (`page.tsx`)
-- **Cabeçalho** com contador de pendências e botão de refresh
-- **Banner mock** — aviso amigável quando a tabela não existe no banco (fallback para `OCORRENCIAS_MOCK`)
-- **Filtros** — pílulas "Todas / Pendentes / Enviadas ao Pai"
-- **Cards de Ocorrência** com:
-  - Badge de status (laranja = Pendente, verde = Enviada ao Pai)
-  - Timestamp relativo ("25min atrás")
-  - Info do aluno (avatar + nome + escola)
-  - Chip do motorista responsável
-  - Bloco de descrição com fundo âmbar
-  - Botão **"Enviar ao Pai"** (laranja, gradiente) ou status de enviada (verde)
-- **Toast de confirmação** (slide-in direita)
+- **Abas de Segmentação (Tabs):**
+  * **Ocorrências de Alunos:** Painel para auditoria e envio das ocorrências disciplinares aos pais (tabela `ocorrencias`).
+  * **Ocorrências de Frota e Vias:** Painel para monitoramento operacional de falhas mecânicas, bloqueios de vias e SOS ativos (tabela `notificacoes` onde `aluno_id IS NULL`).
+- **Filtros (Segmented Control):**
+  * Estudantes: "Todas / Pendentes / Enviadas ao Pai".
+  * Frota/Vias: "Todas / Pendentes / Resolvidas" (com contagem em vermelho dos alertas ativos).
+- **Cards de Ocorrência de Estudante** com badge, info do aluno, chip do motorista e botão **"Enviar ao Pai"**.
+- **Cards de Ocorrência de Frota e Vias** com badge colorido por gravidade (vermelha para SOS, âmbar para Mecânica, azul para Vias), descrição textual, e botão de ação interativa:
+  * **"Resolver Emergência"** (SOS) -> Define `lida = true` no banco.
+  * **"Confirmar Ciente"** (Mecânica/Vias) -> Define `lida = true` no banco.
+
+## Alerta Emergencial no Painel Geral
+Se houver qualquer alerta SOS ativo (`lida = false`), um banner vermelho piscante de alta prioridade será renderizado no topo do dashboard principal do administrador, contendo a mensagem do incidente e um botão de ação imediata direcionando para a tratativa na aba correspondente.
 
 ## Badge na Sidebar Admin
-O item "Ocorrências" na sidebar mostra badge vermelho com a contagem de registros com `status = 'pendente'`, com polling de 20 segundos (igual ao padrão do restante do layout admin).
+O item "Ocorrências" na sidebar exibe um badge com a contagem total de ocorrências pendentes de alunos, atualizado via polling periódico.
 
 ## Histórico de Alterações
 | Data | Alteração |
 |---|---|
 | 03/06/2026 | Criação inicial. Tabela `ocorrencias`, migração SQL, página admin, fluxo motorista → secretaria → pai. |
+| 18/06/2026 | **Ocorrências de Frota e Vias:** Integração dos relatórios operacionais dos motoristas (Mecânico, Vias, SOS) na página de ocorrências via abas, criação de RLS select/update no Supabase e banner emergencial de SOS ativo no dashboard. |

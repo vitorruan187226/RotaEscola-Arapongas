@@ -12,6 +12,10 @@ import {
   RefreshCw,
   ChevronRight,
   MessageSquare,
+  Wrench,
+  Map,
+  AlertOctagon,
+  Check
 } from 'lucide-react';
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -32,7 +36,15 @@ interface OcorrenciaRow {
   } | null;
 }
 
-// ─── Mock de fallback (quando a tabela ainda não existe no banco) ─────────────
+interface NotificacaoFrotaRow {
+  id: string;
+  titulo: string;
+  mensagem: string;
+  lida: boolean;
+  criado_em: string;
+}
+
+// ─── Mocks de Fallback ───────────────────────────────────────────────────────
 const OCORRENCIAS_MOCK: OcorrenciaRow[] = [
   {
     id: '1',
@@ -60,6 +72,30 @@ const OCORRENCIAS_MOCK: OcorrenciaRow[] = [
   },
 ];
 
+const NOTIFICACOES_FROTA_MOCK: NotificacaoFrotaRow[] = [
+  {
+    id: 'f1',
+    titulo: '🚨 ALERTA DE EMERGÊNCIA (SOS) 🚨',
+    mensagem: '🚨 EMERGÊNCIA SOS DISPARADA! O motorista da Rota Rota 04 - Zona Rural / Esc. Dorcelina Folador (Veículo Placa: BBB-5678) enviou um sinal de pânico imediato.',
+    lida: false,
+    criado_em: new Date(Date.now() - 1000 * 60 * 3).toISOString()
+  },
+  {
+    id: 'f2',
+    titulo: '🔧 Falha Mecânica Reportada',
+    mensagem: 'O motorista relatou um problema de "Pneu Furado" na Rota Rota 07 - Região Norte / Col. Olímpia. Detalhes: Pneu traseiro direito estourou na Av. Gralha Azul.',
+    lida: false,
+    criado_em: new Date(Date.now() - 1000 * 60 * 45).toISOString()
+  },
+  {
+    id: 'f3',
+    titulo: '🚧 Alerta de Via / Tráfego',
+    mensagem: 'O motorista relatou "Alagamento / Enchente" no trajeto da Rota Rota 04. Detalhes: Córrego transbordou na entrada da Colônia Esperança, impossibilitando passagem.',
+    lida: true,
+    criado_em: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
+  }
+];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatarTempo(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
@@ -73,15 +109,26 @@ function formatarTempo(isoString: string): string {
 // ─── Componente Principal ────────────────────────────────────────────────────
 export default function OcorrenciasAdminPage() {
   const supabase = createClient();
+  const [abaAtiva, setAbaAtiva] = useState<'estudantes' | 'frota_vias'>('estudantes');
+  
+  // Ocorrências de Alunos
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [enviandoId, setEnviandoId] = useState<string | null>(null);
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'pendente' | 'enviada_ao_pai'>('todos');
+  
+  // Ocorrências de Frota
+  const [notificacoesFrota, setNotificacoesFrota] = useState<NotificacaoFrotaRow[]>([]);
+  const [loadingFrota, setLoadingFrota] = useState(true);
+  const [filtroFrota, setFiltroFrota] = useState<'todas' | 'pendentes' | 'resolvidos'>('pendentes');
+  const [resolvendoId, setResolvendoId] = useState<string | null>(null);
+
+  // Estados Globais
+  const [usandoMock, setUsandoMock] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'pendente' | 'enviada_ao_pai'>('todos');
-  const [usandoMock, setUsandoMock] = useState(false);
 
-  // ── Carrega ocorrências ─────────────────────────────────────────────────
+  // ── Carrega Ocorrências de Alunos ─────────────────────────────────────────
   const carregarOcorrencias = async () => {
     setLoading(true);
     try {
@@ -119,11 +166,41 @@ export default function OcorrenciasAdminPage() {
     setLoading(false);
   };
 
+  // ── Carrega Ocorrências de Frota/Vias ─────────────────────────────────────
+  const carregarNotificacoesFrota = async () => {
+    setLoadingFrota(true);
+    try {
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('id, titulo, mensagem, lida, criado_em')
+        .is('aluno_id', null)
+        .order('criado_em', { ascending: false });
+
+      if (!error && data) {
+        // Filtra para manter somente as que combinam com os títulos operacionais
+        const filtradas = data.filter((notif: any) =>
+          notif.titulo.includes('Mecânica') ||
+          notif.titulo.includes('Via') ||
+          notif.titulo.includes('EMERGÊNCIA') ||
+          notif.titulo.includes('SOS')
+        );
+        setNotificacoesFrota(filtradas as NotificacaoFrotaRow[]);
+      } else {
+        setNotificacoesFrota(NOTIFICACOES_FROTA_MOCK);
+      }
+    } catch {
+      setNotificacoesFrota(NOTIFICACOES_FROTA_MOCK);
+    }
+    setLoadingFrota(false);
+  };
+
   useEffect(() => {
     carregarOcorrencias();
+    carregarNotificacoesFrota();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Enviar ao Pai ────────────────────────────────────────────────────────
+  // ── Enviar Ocorrência de Aluno ao Pai ─────────────────────────────────────
   const handleEnviarAoPai = async (ocorrencia: OcorrenciaRow) => {
     if (!ocorrencia.aluno?.responsavel_id) {
       exibirToast('Responsável não encontrado para este aluno.');
@@ -136,13 +213,10 @@ export default function OcorrenciasAdminPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!usandoMock && user) {
-        // 1. Insere notificação para o responsável
+        // 1. Insere notificação para o responsável no banco real
         await supabase.from('notificacoes').insert({
-          destinatario_id: ocorrencia.aluno.responsavel_id,
-          remetente_id: user.id,
-          tipo: 'ocorrencia',
+          aluno_id: ocorrencia.aluno.id,
           titulo: '⚠️ Ocorrência Escolar Registrada',
-          canal: 'app',
           mensagem: `Seu filho(a) ${ocorrencia.aluno?.nome ?? 'seu filho'} foi registrado(a) em uma ocorrência escolar: "${ocorrencia.descricao}". Por favor, entre em contato com a secretaria.`,
           lida: false,
         });
@@ -154,7 +228,7 @@ export default function OcorrenciasAdminPage() {
           .eq('id', ocorrencia.id);
       }
 
-      // Atualiza local
+      // Atualiza estado local
       setOcorrencias(prev =>
         prev.map(o =>
           o.id === ocorrencia.id ? { ...o, status: 'enviada_ao_pai' } : o
@@ -170,6 +244,28 @@ export default function OcorrenciasAdminPage() {
     setEnviandoId(null);
   };
 
+  // ── Resolver Ocorrência de Frota/SOS ──────────────────────────────────────
+  const handleResolverNotificacao = async (id: string) => {
+    setResolvendoId(id);
+    try {
+      if (!usandoMock) {
+        await supabase
+          .from('notificacoes')
+          .update({ lida: true })
+          .eq('id', id);
+      }
+      
+      setNotificacoesFrota(prev =>
+        prev.map(n => n.id === id ? { ...n, lida: true } : n)
+      );
+      exibirToast('Alerta resolvido / marcado como ciente!');
+    } catch (err) {
+      console.error('Erro ao resolver alerta:', err);
+      exibirToast('Erro ao atualizar. Tente novamente.');
+    }
+    setResolvendoId(null);
+  };
+
   const exibirToast = (msg: string) => {
     setToastMsg(msg);
     setShowToast(true);
@@ -181,6 +277,11 @@ export default function OcorrenciasAdminPage() {
     filtroStatus === 'todos' ? true : o.status === filtroStatus
   );
   const totalPendentes = ocorrencias.filter(o => o.status === 'pendente').length;
+
+  const notificacoesFrotaFiltradas = notificacoesFrota.filter(n =>
+    filtroFrota === 'todas' ? true : filtroFrota === 'pendentes' ? !n.lida : n.lida
+  );
+  const totalPendentesFrota = notificacoesFrota.filter(n => !n.lida).length;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -201,20 +302,23 @@ export default function OcorrenciasAdminPage() {
             <ShieldAlert size={22} />
           </div>
           <div>
-            <h1 className="occ-title">Ocorrências Disciplinares</h1>
+            <h1 className="occ-title">Ocorrências & Alertas</h1>
             <p className="occ-subtitle">
-              {totalPendentes > 0
-                ? `${totalPendentes} ocorrência${totalPendentes > 1 ? 's' : ''} aguardando resposta`
-                : 'Todas as ocorrências foram tratadas'}
+              {abaAtiva === 'estudantes'
+                ? (totalPendentes > 0 ? `${totalPendentes} ocorrência(s) de alunos pendente(s)` : 'Nenhuma ocorrência de estudante pendente')
+                : (totalPendentesFrota > 0 ? `${totalPendentesFrota} alerta(s) de veículos e vias ativo(s)` : 'Sem alertas de frota ativos')}
             </p>
           </div>
         </div>
         <button
-          onClick={carregarOcorrencias}
+          onClick={async () => {
+            await carregarOcorrencias();
+            await carregarNotificacoesFrota();
+          }}
           className="occ-refresh-btn"
           title="Atualizar lista"
         >
-          <RefreshCw size={15} className={loading ? 'occ-spin' : ''} />
+          <RefreshCw size={15} className={loading || loadingFrota ? 'occ-spin' : ''} />
           <span>Atualizar</span>
         </button>
       </div>
@@ -223,107 +327,272 @@ export default function OcorrenciasAdminPage() {
       {usandoMock && (
         <div className="occ-mock-banner">
           <AlertTriangle size={14} />
-          <span>Exibindo dados de demonstração. A tabela <code>ocorrencias</code> será ativada após aplicar a migração SQL.</span>
+          <span>Exibindo dados de demonstração. As tabelas correspondentes serão sincronizadas dinamicamente.</span>
         </div>
       )}
 
-      {/* ── Filtros ───────────────────────────────────────────────────────── */}
-      <div className="occ-filters">
-        {(['todos', 'pendente', 'enviada_ao_pai'] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFiltroStatus(f)}
-            className={`occ-filter-btn ${filtroStatus === f ? 'occ-filter-btn--active' : ''}`}
-          >
-            {f === 'todos' ? 'Todas' : f === 'pendente' ? 'Pendentes' : 'Enviadas ao Pai'}
-            {f === 'pendente' && totalPendentes > 0 && (
-              <span className="occ-filter-badge">{totalPendentes}</span>
-            )}
-          </button>
-        ))}
+      {/* ── Abas de Segmentação ── */}
+      <div className="occ-tabs" style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #E2E8F0', marginBottom: '24px', paddingBottom: '10px' }}>
+        <button
+          onClick={() => setAbaAtiva('estudantes')}
+          className={`occ-tab-btn ${abaAtiva === 'estudantes' ? 'occ-tab-btn--active' : ''}`}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            color: abaAtiva === 'estudantes' ? '#F97316' : '#64748B',
+            cursor: 'pointer',
+            paddingBottom: '8px',
+            position: 'relative',
+            transition: 'color 0.15s'
+          }}
+        >
+          Ocorrências de Alunos
+          {totalPendentes > 0 && (
+            <span className="occ-filter-badge" style={{ marginLeft: '6px', transform: 'scale(0.95)' }}>{totalPendentes}</span>
+          )}
+          {abaAtiva === 'estudantes' && (
+            <div style={{ position: 'absolute', bottom: '-11px', left: 0, right: 0, height: '3px', background: '#F97316', borderRadius: '999px' }} />
+          )}
+        </button>
+        <button
+          onClick={() => setAbaAtiva('frota_vias')}
+          className={`occ-tab-btn ${abaAtiva === 'frota_vias' ? 'occ-tab-btn--active' : ''}`}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            color: abaAtiva === 'frota_vias' ? '#F97316' : '#64748B',
+            cursor: 'pointer',
+            paddingBottom: '8px',
+            position: 'relative',
+            transition: 'color 0.15s'
+          }}
+        >
+          Ocorrências de Frota e Vias
+          {totalPendentesFrota > 0 && (
+            <span className="occ-filter-badge" style={{ marginLeft: '6px', transform: 'scale(0.95)', backgroundColor: '#EF4444' }}>{totalPendentesFrota}</span>
+          )}
+          {abaAtiva === 'frota_vias' && (
+            <div style={{ position: 'absolute', bottom: '-11px', left: 0, right: 0, height: '3px', background: '#F97316', borderRadius: '999px' }} />
+          )}
+        </button>
       </div>
 
-      {/* ── Lista de Ocorrências ──────────────────────────────────────────── */}
-      {loading ? (
-        <div className="occ-loading">
-          <div className="occ-spinner" />
-          <span>Carregando ocorrências...</span>
-        </div>
-      ) : ocorrenciasFiltradas.length === 0 ? (
-        <div className="occ-empty">
-          <ShieldAlert size={40} color="#CBD5E1" />
-          <p>Nenhuma ocorrência encontrada</p>
-          <span>Quando um motorista registrar uma ocorrência, ela aparecerá aqui.</span>
-        </div>
-      ) : (
-        <div className="occ-list">
-          {ocorrenciasFiltradas.map((ocorrencia) => (
-            <div
-              key={ocorrencia.id}
-              className={`occ-card ${ocorrencia.status === 'pendente' ? 'occ-card--pendente' : 'occ-card--enviada'}`}
-            >
-              {/* Status badge */}
-              <div className="occ-card-header">
-                <span className={`occ-status-badge ${ocorrencia.status === 'pendente' ? 'occ-status-badge--pendente' : 'occ-status-badge--enviada'}`}>
-                  {ocorrencia.status === 'pendente' ? (
-                    <><Clock size={10} /> Pendente</>
-                  ) : (
-                    <><CheckCircle2 size={10} /> Enviada ao Pai</>
-                  )}
-                </span>
-                <span className="occ-card-time">{formatarTempo(ocorrencia.criado_em)}</span>
-              </div>
+      {/* ── ABA 1: OCORRÊNCIAS DE ALUNOS ────────────────────────────────────── */}
+      {abaAtiva === 'estudantes' && (
+        <>
+          {/* Filtros */}
+          <div className="occ-filters">
+            {(['todos', 'pendente', 'enviada_ao_pai'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFiltroStatus(f)}
+                className={`occ-filter-btn ${filtroStatus === f ? 'occ-filter-btn--active' : ''}`}
+              >
+                {f === 'todos' ? 'Todas' : f === 'pendente' ? 'Pendentes' : 'Enviadas ao Pai'}
+                {f === 'pendente' && totalPendentes > 0 && (
+                  <span className="occ-filter-badge">{totalPendentes}</span>
+                )}
+              </button>
+            ))}
+          </div>
 
-              {/* Info do aluno */}
-              <div className="occ-aluno-row">
-                <div className="occ-aluno-avatar">
-                  {ocorrencia.aluno?.foto_url ? (
-                    <img src={ocorrencia.aluno.foto_url} alt={ocorrencia.aluno.nome} className="occ-avatar-img" />
-                  ) : (
-                    <User size={18} color="#94A3B8" />
-                  )}
-                </div>
-                <div className="occ-aluno-info">
-                  <p className="occ-aluno-nome">{ocorrencia.aluno?.nome ?? '—'}</p>
-                  <p className="occ-aluno-escola">{ocorrencia.aluno?.escola ?? '—'}</p>
-                </div>
-                <div className="occ-motorista-chip">
-                  <span>por {ocorrencia.motorista?.nome ?? 'Motorista'}</span>
-                  <ChevronRight size={10} />
-                </div>
-              </div>
-
-              {/* Descrição */}
-              <div className="occ-descricao">
-                <MessageSquare size={13} color="#F97316" />
-                <p>"{ocorrencia.descricao}"</p>
-              </div>
-
-              {/* Ação */}
-              {ocorrencia.status === 'pendente' && (
-                <button
-                  onClick={() => handleEnviarAoPai(ocorrencia)}
-                  disabled={enviandoId === ocorrencia.id}
-                  className="occ-enviar-btn"
-                  id={`btn-enviar-pai-${ocorrencia.id}`}
-                >
-                  {enviandoId === ocorrencia.id ? (
-                    <><div className="occ-btn-spinner" /> Enviando...</>
-                  ) : (
-                    <><Send size={14} /> Enviar ao Pai</>
-                  )}
-                </button>
-              )}
-
-              {ocorrencia.status === 'enviada_ao_pai' && (
-                <div className="occ-enviada-info">
-                  <CheckCircle2 size={14} color="#10b981" />
-                  <span>Responsável notificado com sucesso</span>
-                </div>
-              )}
+          {/* Lista */}
+          {loading ? (
+            <div className="occ-loading">
+              <div className="occ-spinner" />
+              <span>Carregando ocorrências...</span>
             </div>
-          ))}
-        </div>
+          ) : ocorrenciasFiltradas.length === 0 ? (
+            <div className="occ-empty">
+              <ShieldAlert size={40} color="#CBD5E1" />
+              <p>Nenhuma ocorrência encontrada</p>
+              <span>Quando um motorista registrar uma ocorrência, ela aparecerá aqui.</span>
+            </div>
+          ) : (
+            <div className="occ-list">
+              {ocorrenciasFiltradas.map((ocorrencia) => (
+                <div
+                  key={ocorrencia.id}
+                  className={`occ-card ${ocorrencia.status === 'pendente' ? 'occ-card--pendente' : 'occ-card--enviada'}`}
+                >
+                  <div className="occ-card-header">
+                    <span className={`occ-status-badge ${ocorrencia.status === 'pendente' ? 'occ-status-badge--pendente' : 'occ-status-badge--enviada'}`}>
+                      {ocorrencia.status === 'pendente' ? (
+                        <><Clock size={10} /> Pendente</>
+                      ) : (
+                        <><CheckCircle2 size={10} /> Enviada ao Pai</>
+                      )}
+                    </span>
+                    <span className="occ-card-time">{formatarTempo(ocorrencia.criado_em)}</span>
+                  </div>
+
+                  <div className="occ-aluno-row">
+                    <div className="occ-aluno-avatar">
+                      {ocorrencia.aluno?.foto_url ? (
+                        <img src={ocorrencia.aluno.foto_url} alt={ocorrencia.aluno.nome} className="occ-avatar-img" />
+                      ) : (
+                        <User size={18} color="#94A3B8" />
+                      )}
+                    </div>
+                    <div className="occ-aluno-info">
+                      <p className="occ-aluno-nome">{ocorrencia.aluno?.nome ?? '—'}</p>
+                      <p className="occ-aluno-escola">{ocorrencia.aluno?.escola ?? '—'}</p>
+                    </div>
+                    <div className="occ-motorista-chip">
+                      <span>por {ocorrencia.motorista?.nome ?? 'Motorista'}</span>
+                      <ChevronRight size={10} />
+                    </div>
+                  </div>
+
+                  <div className="occ-descricao">
+                    <MessageSquare size={13} color="#F97316" />
+                    <p>"{ocorrencia.descricao}"</p>
+                  </div>
+
+                  {ocorrencia.status === 'pendente' && (
+                    <button
+                      onClick={() => handleEnviarAoPai(ocorrencia)}
+                      disabled={enviandoId === ocorrencia.id}
+                      className="occ-enviar-btn"
+                      id={`btn-enviar-pai-${ocorrencia.id}`}
+                    >
+                      {enviandoId === ocorrencia.id ? (
+                        <><div className="occ-btn-spinner" /> Enviando...</>
+                      ) : (
+                        <><Send size={14} /> Enviar ao Pai</>
+                      )}
+                    </button>
+                  )}
+
+                  {ocorrencia.status === 'enviada_ao_pai' && (
+                    <div className="occ-enviada-info">
+                      <CheckCircle2 size={14} color="#10b981" />
+                      <span>Responsável notificado com sucesso</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── ABA 2: OCORRÊNCIAS DE FROTA E VIAS ────────────────────────────────── */}
+      {abaAtiva === 'frota_vias' && (
+        <>
+          {/* Filtros */}
+          <div className="occ-filters">
+            {(['todas', 'pendentes', 'resolvidos'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFiltroFrota(f)}
+                className={`occ-filter-btn ${filtroFrota === f ? 'occ-filter-btn--active' : ''}`}
+              >
+                {f === 'todas' ? 'Todas' : f === 'pendentes' ? 'Pendentes' : 'Resolvidas'}
+                {f === 'pendentes' && totalPendentesFrota > 0 && (
+                  <span className="occ-filter-badge" style={{ backgroundColor: '#EF4444' }}>{totalPendentesFrota}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Lista */}
+          {loadingFrota ? (
+            <div className="occ-loading">
+              <div className="occ-spinner" />
+              <span>Carregando alertas de frota...</span>
+            </div>
+          ) : notificacoesFrotaFiltradas.length === 0 ? (
+            <div className="occ-empty">
+              <ShieldAlert size={40} color="#CBD5E1" />
+              <p>Nenhum alerta encontrado</p>
+              <span>Quando os motoristas enviarem avisos de trânsito ou mecânica, eles aparecerão aqui.</span>
+            </div>
+          ) : (
+            <div className="occ-list">
+              {notificacoesFrotaFiltradas.map((notif) => {
+                const isSos = notif.titulo.includes('EMERGÊNCIA') || notif.titulo.includes('SOS');
+                const isMecanico = notif.titulo.includes('Mecânica');
+                
+                let Icone = AlertTriangle;
+                let classeCard = 'occ-card--vias';
+                let classeBadge = 'occ-status-badge--vias';
+                let labelTipo = '🚧 Tráfego / Vias';
+                
+                if (isSos) {
+                  Icone = AlertOctagon;
+                  classeCard = notif.lida ? 'occ-card--enviada' : 'occ-card--sos';
+                  classeBadge = notif.lida ? 'occ-status-badge--enviada' : 'occ-status-badge--sos';
+                  labelTipo = '🚨 Alerta Emergencial SOS';
+                } else if (isMecanico) {
+                  Icone = Wrench;
+                  classeCard = notif.lida ? 'occ-card--enviada' : 'occ-card--mecanico';
+                  classeBadge = notif.lida ? 'occ-status-badge--enviada' : 'occ-status-badge--mecanico';
+                  labelTipo = '🔧 Falha Mecânica';
+                }
+
+                return (
+                  <div
+                    key={notif.id}
+                    className={`occ-card ${classeCard}`}
+                  >
+                    <div className="occ-card-header">
+                      <span className={`occ-status-badge ${classeBadge}`}>
+                        <Icone size={10} />
+                        {labelTipo}
+                      </span>
+                      <span className="occ-card-time">{formatarTempo(notif.criado_em)}</span>
+                    </div>
+
+                    <div className="occ-descricao" style={{ background: isSos && !notif.lida ? '#fef2f2' : isMecanico && !notif.lida ? '#fffbeb' : '#f8fafc', border: isSos && !notif.lida ? '1px solid #fee2e2' : isMecanico && !notif.lida ? '1px solid #fef3c7' : '1px solid #e2e8f0' }}>
+                      <p style={{ color: isSos && !notif.lida ? '#991b1b' : isMecanico && !notif.lida ? '#92400e' : '#475569', fontStyle: 'normal' }}>
+                        {notif.mensagem}
+                      </p>
+                    </div>
+
+                    {!notif.lida ? (
+                      <button
+                        onClick={() => handleResolverNotificacao(notif.id)}
+                        disabled={resolvendoId === notif.id}
+                        className="occ-enviar-btn"
+                        style={{
+                          background: isSos 
+                            ? 'linear-gradient(135deg, #ef4444, #f43f5e)' 
+                            : isMecanico
+                            ? 'linear-gradient(135deg, #d97706, #f59e0b)'
+                            : 'linear-gradient(135deg, #3b82f6, #60a5fa)',
+                          boxShadow: isSos
+                            ? '0 4px 14px rgba(239, 68, 68, 0.28)'
+                            : isMecanico
+                            ? '0 4px 14px rgba(217, 119, 6, 0.28)'
+                            : '0 4px 14px rgba(59, 130, 246, 0.28)'
+                        }}
+                      >
+                        {resolvendoId === notif.id ? (
+                          <><div className="occ-btn-spinner" /> Processando...</>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={14} />
+                            <span>{isSos ? 'Resolver Emergência (Normalizado)' : 'Confirmar Ciente'}</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <div className="occ-enviada-info">
+                        <CheckCircle2 size={14} color="#10b981" />
+                        <span>Alerta resolvido / central SEMED ciente</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* ── Estilos ───────────────────────────────────────────────────────── */}
@@ -461,6 +730,7 @@ export default function OcorrenciasAdminPage() {
           font-weight: 800;
           padding: 1px 6px;
           border-radius: 999px;
+          margin-left: 5px;
           min-width: 18px;
           text-align: center;
         }
@@ -512,7 +782,7 @@ export default function OcorrenciasAdminPage() {
           gap: 14px;
         }
 
-        /* Card */
+        /* Cards */
         .occ-card {
           background: #fff;
           border-radius: 16px;
@@ -525,8 +795,13 @@ export default function OcorrenciasAdminPage() {
           transition: box-shadow 0.2s;
         }
         .occ-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+        
         .occ-card--pendente { border-left: 4px solid #F97316; }
         .occ-card--enviada  { border-left: 4px solid #10B981; }
+        
+        .occ-card--sos { border-left: 4px solid #ef4444; }
+        .occ-card--mecanico { border-left: 4px solid #f59e0b; }
+        .occ-card--vias { border-left: 4px solid #3b82f6; }
 
         /* Card header */
         .occ-card-header {
@@ -555,6 +830,23 @@ export default function OcorrenciasAdminPage() {
           color: #065F46;
           border: 1px solid #A7F3D0;
         }
+        
+        .occ-status-badge--sos {
+          background: #fef2f2;
+          color: #991b1b;
+          border: 1px solid #fca5a5;
+        }
+        .occ-status-badge--mecanico {
+          background: #fffbeb;
+          color: #92400e;
+          border: 1px solid #fcd34d;
+        }
+        .occ-status-badge--vias {
+          background: #eff6ff;
+          color: #1e40af;
+          border: 1px solid #bfdbfe;
+        }
+
         .occ-card-time {
           font-size: 0.72rem;
           color: #94A3B8;
@@ -624,7 +916,6 @@ export default function OcorrenciasAdminPage() {
         }
         .occ-descricao p {
           font-size: 0.82rem;
-          color: #7C3AED;
           color: #78350F;
           font-style: italic;
           margin: 0;
@@ -632,7 +923,7 @@ export default function OcorrenciasAdminPage() {
           font-weight: 500;
         }
 
-        /* Botão Enviar ao Pai */
+        /* Botão Enviar ao Pai / Resolver */
         .occ-enviar-btn {
           display: flex;
           align-items: center;

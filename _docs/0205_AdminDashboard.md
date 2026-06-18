@@ -147,4 +147,5 @@ O módulo de **Aprovação de Docs** (`documentos/page.tsx`) foi reestruturado d
 | 16/06/2026 | Tradução e Status de Rota Ativa: Traduzido o status das rotas para o português na tabela gerencial do dashboard central, refletindo de forma correta e síncrona o estado real de "Em Rota" ou "Fora de Rota" atualizado pelos motoristas. |
 | 16/06/2026 | Adicionado o componente cliente `<AutoRefresh>` no painel administrativo principal para re-renderizar em segundo plano as métricas operacionais e o status de rotas a cada 10 segundos. |
 | 17/06/2026 | **Ajustes de Fotos e Redesign do Fluxo de Análise:** Integração do campo `foto_url` na fila e na listagem de Últimas Solicitações do admin; reestruturação de `/dashboard/admin/documentos` para exibir uma fila linear simplificada com abas por status, busca direta, filtro de escolas e suporte a foto real do estudante. |
+| 18/06/2026 | **Correção de Cache e Status Ciente:** Implementado `fetchCache = 'force-no-store'` e desativação global do cache fetch do Supabase no servidor (`cache: 'no-store'`) para garantir que os alertas operacionais sumam imediatamente da tela inicial do administrador ao serem resolvidos. |
 

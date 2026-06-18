@@ -212,7 +212,7 @@ export default function OcorrenciasAdminPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (!usandoMock && user) {
+      if (user) {
         // 1. Insere notificação para o responsável no banco real
         const { error: insertErr } = await supabase.from('notificacoes').insert({
           aluno_id: ocorrencia.aluno.id,
@@ -250,13 +250,11 @@ export default function OcorrenciasAdminPage() {
   const handleResolverNotificacao = async (id: string) => {
     setResolvendoId(id);
     try {
-      if (!usandoMock) {
-        const { error } = await supabase
-          .from('notificacoes')
-          .update({ lida: true })
-          .eq('id', id);
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from('notificacoes')
+        .update({ lida: true })
+        .eq('id', id);
+      if (error) throw error;
       
       setNotificacoesFrota(prev =>
         prev.map(n => n.id === id ? { ...n, lida: true } : n)

@@ -20,6 +20,8 @@ import Link from 'next/link';
 import AutoRefresh from '../../../components/AutoRefresh';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 // ─── Interfaces de Dados ──────────────────────────────────────────────────
 interface RotaAtiva {

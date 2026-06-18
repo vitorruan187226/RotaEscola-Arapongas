@@ -99,3 +99,4 @@ O item "Ocorrências" na sidebar exibe um badge com a contagem total de ocorrên
 |---|---|
 | 03/06/2026 | Criação inicial. Tabela `ocorrencias`, migração SQL, página admin, fluxo motorista → secretaria → pai. |
 | 18/06/2026 | **Ocorrências de Frota e Vias:** Integração dos relatórios operacionais dos motoristas (Mecânico, Vias, SOS) na página de ocorrências via abas, criação de RLS select/update no Supabase e banner emergencial de SOS ativo no dashboard. |
+| 18/06/2026 | **Correção de Bypass de Mocks:** Removido o bloqueio `if (!usandoMock)` dos manipuladores de atualização e inserção da tela de ocorrências para garantir sincronização real persistente com o banco de dados independente de estados de carregamento. |

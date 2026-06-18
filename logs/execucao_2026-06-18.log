@@ -10,3 +10,7 @@
 2026-06-18 15:40:00 [INFO] Atualizada documentação técnica em _docs/0210_GestaoEscolas.md e _docs/0404_Table_Escolas.md.
 2026-06-18 16:01:00 [INFO] Restaurada a funcionalidade de logo com lógica resiliente de fallback para desativar o modo demonstração sem perder o upload de emblema.
 2026-06-18 16:11:00 [INFO] Modificado app/dashboard/admin/escolas/detalhes/page.tsx: adicionada renderização de avatares com as fotos (foto_url) dos alunos ou fallback de iniciais na listagem de estudantes.
+2026-06-18 16:15:00 [INFO] Criada migração SQL 20260618170000_add_endereco_to_alunos.sql para adicionar a coluna endereco na tabela alunos.
+2026-06-18 16:20:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: adicionado input para preenchimento de endereço no formulário de cadastro de aluno, exibição do endereço no card do aluno e lógica resiliente para colunas ausentes.
+2026-06-18 16:25:00 [INFO] Modificado app/dashboard/admin/escolas/detalhes/page.tsx: adicionada exibição e edição de endereço no modal de auditoria de alunos e lógica resiliente.
+2026-06-18 16:30:00 [INFO] Corrigidos erros de inferência de tipo TypeScript ao reatribuir respostas do Supabase sem a coluna endereco. Build verificado com sucesso.

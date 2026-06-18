@@ -40,6 +40,7 @@ interface AlunoAuditoria {
   enviadoEm: string;
   rotaId?: string;
   fotoUrl?: string;
+  endereco?: string;
 }
 
 interface DocumentoAnexo {
@@ -145,6 +146,7 @@ export default function EscolaDetalhesPage() {
   const [periodoSelect, setPeriodoSelect] = useState<'manha' | 'tarde' | 'noite'>('manha');
   const [rotaIdSelect, setRotaIdSelect] = useState('');
   const [statusSelect, setStatusSelect] = useState<AlunoAuditoria['status']>('Pendente');
+  const [enderecoInput, setEnderecoInput] = useState('');
 
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -243,10 +245,26 @@ export default function EscolaDetalhesPage() {
   async function loadAlunosDaEscola() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const primaryRes = await supabase
         .from('alunos')
-        .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url')
+        .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url, endereco')
         .eq('escola', escolaNome);
+
+      let data: any[] | null = null;
+      let error = null;
+
+      if (primaryRes.error && (primaryRes.error.message?.includes('endereco') || primaryRes.error.code === 'PGRST100' || primaryRes.error.message?.includes('column'))) {
+        console.warn('Coluna endereco não encontrada na tabela alunos. Tentando sem endereco.');
+        const secondaryRes = await supabase
+          .from('alunos')
+          .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url')
+          .eq('escola', escolaNome);
+        data = secondaryRes.data;
+        error = secondaryRes.error;
+      } else {
+        data = primaryRes.data;
+        error = primaryRes.error;
+      }
 
       if (error) {
         console.error('--- ERRO DETALHADO DO SUPABASE (Alunos da Escola) ---');
@@ -281,7 +299,8 @@ export default function EscolaDetalhesPage() {
             status: (a.status_carteirinha === 'Pendente' ? 'Rejeitado' as const : a.status_carteirinha as AlunoAuditoria['status']) ?? 'Pendente',
             enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
             rotaId: a.rota_id ?? undefined,
-            fotoUrl: a.foto_url ?? undefined
+            fotoUrl: a.foto_url ?? undefined,
+            endereco: a.endereco ?? undefined
           };
         });
         setAlunos(mapped);
@@ -502,21 +521,34 @@ export default function EscolaDetalhesPage() {
       const finalSerie = turmaInput.trim() ? `${anoSerieSelect} - ${turmaInput.trim().toUpperCase()}` : anoSerieSelect;
       
       if (!isMockAluno) {
-        const { error } = await supabase
+        let updateData: any = {
+          nome: nome.trim(),
+          escola: escola,
+          escola_id: escolaIdSelect || null,
+          ano_serie: anoSerieSelect,
+          turma: turmaInput.trim().toUpperCase(),
+          serie: finalSerie,
+          periodo: periodoSelect,
+          turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
+          status_carteirinha: statusSelect === 'Rejeitado' ? 'Pendente' : statusSelect,
+          rota_id: rotaIdSelect || null,
+          endereco: enderecoInput.trim()
+        };
+
+        let { error } = await supabase
           .from('alunos')
-          .update({
-            nome: nome.trim(),
-            escola: escola,
-            escola_id: escolaIdSelect || null,
-            ano_serie: anoSerieSelect,
-            turma: turmaInput.trim().toUpperCase(),
-            serie: finalSerie,
-            periodo: periodoSelect,
-            turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
-            status_carteirinha: statusSelect === 'Rejeitado' ? 'Pendente' : statusSelect,
-            rota_id: rotaIdSelect || null
-          })
+          .update(updateData)
           .eq('id', modalEditar.id);
+
+        if (error && (error.message?.includes('endereco') || error.code === 'PGRST100' || error.message?.includes('column'))) {
+          console.warn('Falha ao atualizar com endereco (coluna ausente). Tentando sem endereco.');
+          delete updateData.endereco;
+          const retry = await supabase
+            .from('alunos')
+            .update(updateData)
+            .eq('id', modalEditar.id);
+          error = retry.error;
+        }
 
         if (error) throw error;
       }
@@ -538,7 +570,8 @@ export default function EscolaDetalhesPage() {
           periodo: periodoSelect,
           turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
           status: statusSelect,
-          rotaId: rotaIdSelect || undefined
+          rotaId: rotaIdSelect || undefined,
+          endereco: enderecoInput.trim()
         } : a);
       });
 
@@ -993,6 +1026,7 @@ export default function EscolaDetalhesPage() {
                                               setPeriodoSelect((a.periodo as any) || 'manha');
                                               setRotaIdSelect(a.rotaId || '');
                                               setStatusSelect(a.status);
+                                              setEnderecoInput(a.endereco || '');
                                               setModalEditar(a);
                                             }}
                                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
@@ -1038,6 +1072,12 @@ export default function EscolaDetalhesPage() {
                 <span className="text-[10px] text-slate-500 font-bold block mt-0.5 truncate max-w-[280px]">
                   Estudante: {selectedAluno.nome}
                 </span>
+                {selectedAluno.endereco && (
+                  <span className="text-[10px] text-slate-500 font-semibold block mt-0.5 flex items-center gap-1">
+                    <MapPin size={11} className="text-slate-400 shrink-0" />
+                    <span>Endereço: {selectedAluno.endereco}</span>
+                  </span>
+                )}
               </div>
               <button onClick={() => setSelectedAluno(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
                 <X size={15} />
@@ -1223,6 +1263,17 @@ export default function EscolaDetalhesPage() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Nome do estudante"
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Endereço Residencial</label>
+                <input
+                  type="text"
+                  value={enderecoInput}
+                  onChange={(e) => setEnderecoInput(e.target.value)}
+                  placeholder="Endereço completo"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
                 />
               </div>

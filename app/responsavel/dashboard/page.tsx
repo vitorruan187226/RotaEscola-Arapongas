@@ -30,6 +30,7 @@ interface Filho {
   motorista_telefone?: string | null;
   veiculo_numero?: string;
   rotaAtiva?: boolean;
+  endereco?: string;
 }
 
 const getLocalDateString = () => {
@@ -148,11 +149,11 @@ export default function ResponsavelDashboard() {
             setUserCpf('');
           }
 
-          // Busca os alunos reais no Supabase com JOIN multinível para motorista e ônibus ajustado
-          const { data: alunosDB, error: alunosErr } = await supabase
+          // Busca os alunos reais no Supabase com JOIN multinível para motorista e ônibus ajustado (resiliente para endereco)
+          const primaryRes = await supabase
             .from('alunos')
             .select(`
-              id, nome, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria,
+              id, nome, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria, endereco,
               rotas (
                 id,
                 nome,
@@ -169,6 +170,38 @@ export default function ResponsavelDashboard() {
               )
             `)
             .eq('responsavel_id', user.id);
+
+          let alunosDB: any[] | null = null;
+          let alunosErr = null;
+
+          if (primaryRes.error && (primaryRes.error.message?.includes('endereco') || primaryRes.error.code === 'PGRST100' || primaryRes.error.message?.includes('column'))) {
+            console.warn('Coluna endereco não encontrada na tabela alunos. Tentando sem endereco.');
+            const secondaryRes = await supabase
+              .from('alunos')
+              .select(`
+                id, nome, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria,
+                rotas (
+                  id,
+                  nome,
+                  ativa,
+                  perfis (
+                    id,
+                    nome,
+                    telefone,
+                    motoristas_perfil (
+                      placa_veiculo,
+                      modelo_veiculo
+                    )
+                  )
+                )
+              `)
+              .eq('responsavel_id', user.id);
+            alunosDB = secondaryRes.data;
+            alunosErr = secondaryRes.error;
+          } else {
+            alunosDB = primaryRes.data;
+            alunosErr = primaryRes.error;
+          }
 
           if (!alunosErr && alunosDB) {
             const mapeados: Filho[] = (alunosDB as any[]).map((a: any) => {
@@ -200,6 +233,7 @@ export default function ResponsavelDashboard() {
                 periodo:           a.periodo ?? 'manha',
                 observacao_secretaria: a.observacao_secretaria ?? null,
                 rotaAtiva:         rota?.ativa ?? false,
+                endereco:          a.endereco ?? undefined
               };
             });
             setFilhos(mapeados);
@@ -509,6 +543,12 @@ export default function ResponsavelDashboard() {
                   </span>
                   <h4 className="text-sm font-bold text-slate-900 truncate mt-1.5">{filho.nome}</h4>
                   <span className="text-xs text-slate-500 mt-0.5 truncate">{filho.escola}</span>
+                  {filho.endereco && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1 leading-snug">
+                      <MapPin size={11} className="shrink-0 text-slate-400" />
+                      <span className="truncate" title={filho.endereco}>{filho.endereco}</span>
+                    </div>
+                  )}
                   
                   {filho.status === 'pendente_correcao' && filho.observacao_secretaria && (
                     <div className="mt-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold flex flex-col gap-1.5 animate-fadeIn">
@@ -675,6 +715,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
   const [anoSerie, setAnoSerie] = useState('');
   const [turma, setTurma] = useState('');
   const [periodo, setPeriodo] = useState<'manha' | 'tarde' | 'noite'>('manha');
+  const [endereco, setEndereco] = useState('');
 
   const selectedSchool = escolas.find(esc => esc.id === escolaIdAluno);
   const schoolSeries = selectedSchool?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
@@ -701,7 +742,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
   const [fileMatricula, setFileMatricula] = useState<File | null>(null);
 
   const handleSalvarFilho = async () => {
-    if (!nomeAluno.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento) return;
+    if (!nomeAluno.trim() || !endereco.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento) return;
     setLoading(true);
 
     try {
@@ -720,7 +761,8 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           turma: turma,
           periodo: periodo,
           status: 'aguardando',
-          responsavel_id: user.id
+          responsavel_id: user.id,
+          endereco: endereco
         };
 
         const { data: insertData, error: insertError } = await supabase
@@ -812,7 +854,8 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           rotaId: 'Aguardando Atribuição',
           fotoUrl: undefined,
           motorista_nome: 'Aguardando Atribuição',
-          veiculo_numero: 'Aguardando Atribuição'
+          veiculo_numero: 'Aguardando Atribuição',
+          endereco: endereco
         };
 
         onSuccess(novoFilho);
@@ -830,7 +873,8 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
           rotaId: 'Aguardando Atribuição',
           fotoUrl: undefined,
           motorista_nome: 'Aguardando Atribuição',
-          veiculo_numero: 'Aguardando Atribuição'
+          veiculo_numero: 'Aguardando Atribuição',
+          endereco: endereco
         };
         onSuccess(novoFilho);
       }
@@ -888,6 +932,19 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
                   value={dataNascimento}
                   onChange={(e) => setDataNascimento(e.target.value)}
                   className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Endereço Residencial do Aluno
+                </label>
+                <input
+                  type="text"
+                  value={endereco}
+                  onChange={(e) => setEndereco(e.target.value)}
+                  placeholder="Ex: Av. Paraná, 123 - Centro, Arapongas - PR"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
                 />
               </div>
 
@@ -958,12 +1015,12 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
               </div>
 
               <button
-                disabled={!nomeAluno.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento}
+                disabled={!nomeAluno.trim() || !endereco.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento}
                 onClick={() => setStep(2)}
                 className={`w-full py-3.5 mt-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
-                  nomeAluno.trim() && anoSerie.trim() && turma.trim() && dataNascimento
+                  nomeAluno.trim() && endereco.trim() && anoSerie.trim() && turma.trim() && dataNascimento
                     ? 'bg-slate-900 text-white hover:bg-slate-800'
-                    : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
+                    : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
                 }`}
               >
                 <span>Avançar para Documentos</span>

@@ -99,3 +99,4 @@ CREATE POLICY "Admins excluem alunos"
 | 27/05/2026 | Item 6 — Criação do script de migração e ativação da política RLS no banco de dados |
 | 02/06/2026 | **Expansão do RLS para Auditoria Admin:** Substituída a política única de SELECT por políticas granulares de SELECT, INSERT, UPDATE e DELETE. Adicionada permissão total para a equipe admin (SEMED) e motoristas, corrigindo o erro de gravação e visualização que forçava a interface a cair no Modo Simulação. |
 | 12/06/2026 | **Forçar Turma em Maiúsculo:** Trigger de sincronização de colunas `sync_alunos_columns()` modificado para converter automaticamente a coluna `turma` em maiúsculo em qualquer inserção ou atualização no banco. |
+| 18/06/2026 | **Adição do Campo Endereço:** Adicionada a coluna `endereco` (tipo `text`) à tabela `public.alunos` para registrar o endereço residencial de alunos no momento da solicitação de transporte/cadastro pelo responsável. |

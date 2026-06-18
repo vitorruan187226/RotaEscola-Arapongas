@@ -74,7 +74,17 @@ As páginas administratvas de rotas (`/dashboard/admin/rotas`) e alunos (`/dashb
 
 ---
 
+## 🚪 4. Correção no Redirecionamento da Middleware (`middleware.ts`)
+
+Para evitar que usuários já autenticados (reais ou mocks) que acessem `/login` (como ao clicar no botão "Acessar Sistema" na landing page ou ao atualizar a aplicação) fossem redirecionados indiscriminadamente ao painel dos pais (`/responsavel/dashboard`), a lógica da middleware foi corrigida:
+
+*   **Comportamento Antigo:** O redirecionamento baseava-se unicamente no cookie `sb-mock-login`. Caso o usuário possuísse uma sessão Supabase real (sem cookie mock), caía no `else` e era sempre jogado para `/responsavel/dashboard`, mesmo que fosse motorista ou administrador.
+*   **Comportamento Novo:** A middleware agora tenta extrair o perfil/papel do usuário do campo `user_metadata` (via `tipo_usuario` ou `role`). Caso não encontre no JWT, executa uma consulta rápida na tabela `public.perfis`. Se o usuário for identificado como `'admin'`, `'motorista'` ou `'secretaria'`, é redirecionado para a respectiva dashboard correta (e.g. `/dashboard/admin`, `/dashboard/motorista`, `/dashboard/secretaria`), mantendo o fallback para `/responsavel/dashboard` apenas para pais e responsáveis.
+
+---
+
 ## Histórico de Alterações
 | Data | Alteração |
 |---|---|
 | 02/06/2026 | **Persistência de Rotas:** Correção da API de login, DDL de tabelas, trigger de cadastro e páginas do frontend. |
+| 18/06/2026 | **Correção de Redirecionamento no Login:** Correção na middleware para resolver o bug de redirecionamento incorreto para a dashboard dos pais para usuários logados da SEMED/Motoristas. |

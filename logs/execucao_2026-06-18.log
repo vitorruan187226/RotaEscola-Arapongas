@@ -1,0 +1,5 @@
+2026-06-18 15:17:00 [INFO] Iniciada a análise e correção do redirecionamento incorreto no botão "Acessar Sistema".
+2026-06-18 15:18:00 [INFO] Documentos consultados: indice.txt, _docs/0200_Indice_Telas.md, _docs/0201_Home.md, _docs/0204_Login.md, _docs/0405_Persistencia_Rotas_Autenticacao.md.
+2026-06-18 15:19:00 [INFO] Modificado middleware.ts para verificar tipo_usuario/role tanto a partir dos metadados de autenticação do Supabase quanto da tabela public.perfis em banco de dados.
+2026-06-18 15:20:00 [INFO] Validado fluxo de redirecionamento para garantir que motoristas e administradores (semed) sejam levados para suas respectivas dashboards quando clicarem em 'Acessar Sistema' estando logados.
+2026-06-18 15:22:00 [INFO] Executado build de validação (npm run build) com sucesso total (0 erros, 0 avisos).

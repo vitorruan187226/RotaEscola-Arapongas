@@ -48,13 +48,40 @@ export async function middleware(request: NextRequest) {
   // Se já estiver logado e tentar ir para o login, redireciona para a home ou dashboard
   if ((user || isMockCookie) && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone();
-    if (isMockCookie === 'admin') {
+    
+    let role = isMockCookie;
+    if (user) {
+      // 1. Tenta obter dos metadados do JWT (mais rápido)
+      const metadataRole = user.user_metadata?.tipo_usuario || user.user_metadata?.role;
+      if (metadataRole) {
+        role = metadataRole.toLowerCase();
+      } else {
+        // 2. Se não estiver nos metadados, consulta a tabela perfis
+        try {
+          const { data: perfil } = await supabase
+            .from('perfis')
+            .select('tipo_usuario')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (perfil?.tipo_usuario) {
+            role = perfil.tipo_usuario.toLowerCase();
+          }
+        } catch (err) {
+          console.error('[Middleware] Erro ao buscar perfil:', err);
+        }
+      }
+    }
+
+    if (role === 'admin') {
       url.pathname = '/dashboard/admin';
-    } else if (isMockCookie === 'motorista') {
+    } else if (role === 'motorista') {
       url.pathname = '/dashboard/motorista';
+    } else if (role === 'secretaria') {
+      url.pathname = '/dashboard/secretaria';
     } else {
       url.pathname = '/responsavel/dashboard';
     }
+    
     return NextResponse.redirect(url);
   }
 

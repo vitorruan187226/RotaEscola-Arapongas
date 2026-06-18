@@ -116,6 +116,7 @@ export default function MotoristaDashboardPage() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isSentSuccessfully, setIsSentSuccessfully] = useState(false);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   // ── Estados do Modal de Ocorrência ─────────────────────────
   const [showOcorrenciaModal, setShowOcorrenciaModal] = useState(false);
@@ -678,11 +679,9 @@ export default function MotoristaDashboardPage() {
           }));
 
         // 3. Executa todas as inserções no banco em paralelo
-        await Promise.all([
-          logsToInsert.length > 0 ? supabase.from('logs_embarque').insert(logsToInsert) : Promise.resolve(),
-          notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve(),
-          
-          // 4. Atualizar a localização/status da rota para em trânsito
+        const [logsRes, notificationsRes, locRes] = await Promise.all([
+          logsToInsert.length > 0 ? supabase.from('logs_embarque').insert(logsToInsert) : Promise.resolve({ error: null }),
+          notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve({ error: null }),
           supabase.from('localizacao_veiculo').insert({
             rota_id: rotaAtiva.id,
             latitude: -23.4178,
@@ -691,39 +690,48 @@ export default function MotoristaDashboardPage() {
             atualizado_em: new Date().toISOString()
           })
         ]);
+
+        if (logsRes?.error) throw logsRes.error;
+        if (notificationsRes?.error) throw notificationsRes.error;
+        if (locRes?.error) throw locRes.error;
+
+        setToastType('success');
+        setToastMessage('Lista enviada com sucesso!');
+        setShowSuccessToast(true);
+        setIsSentSuccessfully(true);
+
+        // Auto reset e fadeout do Toast após 3 segundos
+        setTimeout(() => {
+          // Reset local da lista de alunos na rota ativa de volta para 'pendente'
+          setRotas(prevRotas => 
+            prevRotas.map(r => {
+              if (r.id === selectedRotaId) {
+                return {
+                  ...r,
+                  alunos: r.alunos.map(aluno => ({
+                    ...aluno,
+                    statusLocal: 'pendente',
+                    aBordo: false
+                  }))
+                };
+              }
+              return r;
+            })
+          );
+          
+          setIsSentSuccessfully(false);
+          setShowSuccessToast(false);
+        }, 3000);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao enviar lote para o banco de dados:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Erro ao sincronizar dados com o servidor.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
+    } finally {
+      setLoading(false);
     }
-
-    // Feedback visual do Toast consolidado
-    setToastMessage('Lista enviada com sucesso!');
-    setShowSuccessToast(true);
-    setIsSentSuccessfully(true);
-    setLoading(false);
-
-    // Auto reset e fadeout do Toast após 3 segundos
-    setTimeout(() => {
-      // Reset local da lista de alunos na rota ativa de volta para 'pendente'
-      setRotas(prevRotas => 
-        prevRotas.map(r => {
-          if (r.id === selectedRotaId) {
-            return {
-              ...r,
-              alunos: r.alunos.map(aluno => ({
-                ...aluno,
-                statusLocal: 'pendente',
-                aBordo: false
-              }))
-            };
-          }
-          return r;
-        })
-      );
-      
-      setIsSentSuccessfully(false);
-      setShowSuccessToast(false);
-    }, 3000);
   };
 
   // ── Inicia o scanner de ocorrência ──────────────────────────
@@ -830,22 +838,26 @@ export default function MotoristaDashboardPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('ocorrencias').insert({
+        const { error } = await supabase.from('ocorrencias').insert({
           aluno_id: alunoOcorrencia.id,
           motorista_id: user.id,
           descricao: descricaoOcorrencia.trim(),
           status: 'pendente'
         });
+        if (error) throw error;
       }
-    } catch (err) {
+      setEnviandoOcorrencia(false);
+      setOcorrenciaEnviada(true);
+      // Fecha o modal após 2.5s
+      setTimeout(() => handleFecharOcorrenciaModal(), 2500);
+    } catch (err: any) {
       console.error('Erro ao enviar ocorrência:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Falha ao registrar ocorrência.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
+      setEnviandoOcorrencia(false);
     }
-
-    setEnviandoOcorrencia(false);
-    setOcorrenciaEnviada(true);
-
-    // Fecha o modal após 2.5s
-    setTimeout(() => handleFecharOcorrenciaModal(), 2500);
   };
 
   const handleEnviarMecanico = async () => {
@@ -855,12 +867,14 @@ export default function MotoristaDashboardPage() {
       const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
       const msg = `O motorista relatou um problema de "${mecanicoOption}" na Rota ${rotaNome}. Detalhes: ${mecanicoDetalhes.trim() || 'Nenhum.'}`;
       
-      await supabase.from('notificacoes').insert({
+      const { error } = await supabase.from('notificacoes').insert({
         aluno_id: null,
         titulo: '🔧 Falha Mecânica Reportada',
         mensagem: msg,
         lida: false
       });
+      if (error) throw error;
+
       setMecanicoEnviado(true);
       setTimeout(() => {
         setShowMecanicoModal(false);
@@ -868,8 +882,12 @@ export default function MotoristaDashboardPage() {
         setMecanicoDetalhes('');
         setMecanicoEnviado(false);
       }, 2500);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao enviar relatório mecânico:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Falha ao enviar alerta mecânico à central.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
     } finally {
       setEnviandoMecanico(false);
     }
@@ -882,12 +900,14 @@ export default function MotoristaDashboardPage() {
       const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
       const msg = `O motorista relatou "${viasOption}" no trajeto da Rota ${rotaNome}. Detalhes: ${viasDetalhes.trim() || 'Nenhum.'}`;
 
-      await supabase.from('notificacoes').insert({
+      const { error } = await supabase.from('notificacoes').insert({
         aluno_id: null,
         titulo: '🚧 Alerta de Via / Tráfego',
         mensagem: msg,
         lida: false
       });
+      if (error) throw error;
+
       setViasEnviado(true);
       setTimeout(() => {
         setShowViasModal(false);
@@ -895,8 +915,12 @@ export default function MotoristaDashboardPage() {
         setViasDetalhes('');
         setViasEnviado(false);
       }, 2500);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao enviar relatório de via:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Falha ao enviar alerta de via à central.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
     } finally {
       setEnviandoVias(false);
     }
@@ -908,16 +932,22 @@ export default function MotoristaDashboardPage() {
       const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
       const msg = `🚨 EMERGÊNCIA SOS DISPARADA! O motorista da Rota ${rotaNome} (Veículo Placa: ${rotaAtiva?.placa || '...'}) enviou um sinal de pânico imediato.`;
 
-      await supabase.from('notificacoes').insert({
+      const { error } = await supabase.from('notificacoes').insert({
         aluno_id: null,
         titulo: '🚨 ALERTA DE EMERGÊNCIA (SOS) 🚨',
         mensagem: msg,
         lida: false
       });
+      if (error) throw error;
+
       setSosAtivo(true);
       setShowSosModal(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao disparar SOS:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Falha ao disparar alerta SOS emergencial.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
     } finally {
       setEnviandoSos(false);
     }
@@ -1036,12 +1066,18 @@ export default function MotoristaDashboardPage() {
         
         {/* Toast Consolidado */}
         {showSuccessToast && (
-          <div className="absolute top-16 left-5 right-5 z-[60] bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3 shadow-2xl animate-slideDown">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-450 shrink-0">
-              <CheckCircle2 size={18} />
+          <div className={`absolute top-16 left-5 right-5 z-[60] bg-slate-900 border ${
+            toastType === 'success' ? 'border-emerald-500/30' : 'border-rose-500/30'
+          } rounded-2xl p-4 flex items-center gap-3 shadow-2xl animate-slideDown`}>
+            <div className={`w-8 h-8 rounded-full ${
+              toastType === 'success' ? 'bg-emerald-500/10 text-emerald-450' : 'bg-rose-500/10 text-rose-450'
+            } flex items-center justify-center shrink-0`}>
+              {toastType === 'success' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
             </div>
             <div>
-              <p className="text-xs font-bold text-white leading-tight">Checklist Concluído</p>
+              <p className="text-xs font-bold text-white leading-tight">
+                {toastType === 'success' ? 'Sucesso' : 'Falha na Operação'}
+              </p>
               <p className="text-[10px] text-slate-400 mt-1">{toastMessage}</p>
             </div>
           </div>
@@ -2030,14 +2066,21 @@ export default function MotoristaDashboardPage() {
               onClick={async () => {
                 try {
                   const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
-                  await supabase.from('notificacoes').insert({
+                  const { error } = await supabase.from('notificacoes').insert({
                     aluno_id: null,
                     titulo: '🔧 Sinal SOS Finalizado',
                     mensagem: `O sinal de emergência SOS da Rota ${rotaNome} foi finalizado pelo motorista. Situação normalizada.`,
                     lida: false
                   });
-                } catch(e) {}
-                setSosAtivo(false);
+                  if (error) throw error;
+                  setSosAtivo(false);
+                } catch(e: any) {
+                  console.error('Erro ao normalizar SOS:', e);
+                  setToastType('error');
+                  setToastMessage(e.message || 'Erro ao enviar normalização de emergência.');
+                  setShowSuccessToast(true);
+                  setTimeout(() => setShowSuccessToast(false), 4000);
+                }
               }}
               className="py-4 px-8 rounded-2xl text-[10px] font-extrabold uppercase tracking-widest bg-white hover:bg-slate-150 text-slate-950 shadow-2xl hover:scale-105 active:scale-95 transition-all border-0 cursor-pointer font-black"
             >

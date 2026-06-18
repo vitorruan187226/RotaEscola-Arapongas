@@ -214,18 +214,20 @@ export default function OcorrenciasAdminPage() {
 
       if (!usandoMock && user) {
         // 1. Insere notificação para o responsável no banco real
-        await supabase.from('notificacoes').insert({
+        const { error: insertErr } = await supabase.from('notificacoes').insert({
           aluno_id: ocorrencia.aluno.id,
           titulo: '⚠️ Ocorrência Escolar Registrada',
           mensagem: `Seu filho(a) ${ocorrencia.aluno?.nome ?? 'seu filho'} foi registrado(a) em uma ocorrência escolar: "${ocorrencia.descricao}". Por favor, entre em contato com a secretaria.`,
           lida: false,
         });
+        if (insertErr) throw insertErr;
 
         // 2. Atualiza o status da ocorrência
-        await supabase
+        const { error: updateErr } = await supabase
           .from('ocorrencias')
           .update({ status: 'enviada_ao_pai' })
           .eq('id', ocorrencia.id);
+        if (updateErr) throw updateErr;
       }
 
       // Atualiza estado local
@@ -249,10 +251,11 @@ export default function OcorrenciasAdminPage() {
     setResolvendoId(id);
     try {
       if (!usandoMock) {
-        await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
           .eq('id', id);
+        if (error) throw error;
       }
       
       setNotificacoesFrota(prev =>

@@ -108,7 +108,4 @@ interface Aluno {
 | 16/06/2026 | Implementação do controle operacional real de status "Em Rota" (switch interativo) atualizando a coluna `ativa` na tabela `rotas`. |
 | 16/06/2026 | Correção das tags JSX na renderização da lista de passageiros, adição do bloqueio completo via `pointer-events-none` e desabilitação do envio do lote quando inativo ("Fora de Rota"). |
 | 18/06/2026 | **Endereço do Aluno no Checklist:** Adicionado o endereço do aluno (cadastrado pelo pai) abaixo do nome da escola na lista de passageiros do motorista para facilitar a identificação do ponto de embarque/desembarque. |
-
-
-
-
+| 18/06/2026 | **Correção de Modais Operacionais:** Identificado e corrigido erro de compilação Next.js ("nested styled-jsx tag") na dashboard do motorista. Os botões "Mecânico", "Vias" e "SOS" agora funcionam plenamente e estão integrados com a tabela `public.notificacoes`. |

@@ -129,6 +129,23 @@ export default function MotoristaDashboardPage() {
   const [realtimeAlert, setRealtimeAlert] = useState<{ title: string; message: string; type: 'info' | 'alert' } | null>(null);
   const ocorrenciaScannerRef = useRef<any>(null);
 
+  // Estados dos novos Modais Operacionais (Mecânico, Vias, SOS)
+  const [showMecanicoModal, setShowMecanicoModal] = useState(false);
+  const [mecanicoOption, setMecanicoOption] = useState('');
+  const [mecanicoDetalhes, setMecanicoDetalhes] = useState('');
+  const [enviandoMecanico, setEnviandoMecanico] = useState(false);
+  const [mecanicoEnviado, setMecanicoEnviado] = useState(false);
+
+  const [showViasModal, setShowViasModal] = useState(false);
+  const [viasOption, setViasOption] = useState('');
+  const [viasDetalhes, setViasDetalhes] = useState('');
+  const [enviandoVias, setEnviandoVias] = useState(false);
+  const [viasEnviado, setViasEnviado] = useState(false);
+
+  const [showSosModal, setShowSosModal] = useState(false);
+  const [enviandoSos, setEnviandoSos] = useState(false);
+  const [sosAtivo, setSosAtivo] = useState(false);
+
   // Rota ativa
   const rotaAtiva = rotas.find(r => r.id === selectedRotaId) || rotas[0];
   const totalAlunos = rotaAtiva ? rotaAtiva.alunos.length : 0;
@@ -652,13 +669,10 @@ export default function MotoristaDashboardPage() {
 
         // 2. Preparar notificações em lote para a tabela public.notificacoes (somente para os presentes)
         const notificationsToInsert = rotaAtiva.alunos
-          .filter(aluno => aluno.statusLocal === 'presente' && aluno.responsavelId)
+          .filter(aluno => aluno.statusLocal === 'presente')
           .map(aluno => ({
-            destinatario_id: aluno.responsavelId,
-            remetente_id: user.id,
-            tipo: 'embarque',
+            aluno_id: aluno.id,
             titulo: 'Embarque Escolar Confirmado',
-            canal: 'app',
             mensagem: `Seu filho(a) ${aluno.nome} acabou de embarcar na RotaEscola (${selectedTurno}).`,
             lida: false
           }));
@@ -834,6 +848,81 @@ export default function MotoristaDashboardPage() {
     setTimeout(() => handleFecharOcorrenciaModal(), 2500);
   };
 
+  const handleEnviarMecanico = async () => {
+    if (!mecanicoOption) return;
+    setEnviandoMecanico(true);
+    try {
+      const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
+      const msg = `O motorista relatou um problema de "${mecanicoOption}" na Rota ${rotaNome}. Detalhes: ${mecanicoDetalhes.trim() || 'Nenhum.'}`;
+      
+      await supabase.from('notificacoes').insert({
+        aluno_id: null,
+        titulo: '🔧 Falha Mecânica Reportada',
+        mensagem: msg,
+        lida: false
+      });
+      setMecanicoEnviado(true);
+      setTimeout(() => {
+        setShowMecanicoModal(false);
+        setMecanicoOption('');
+        setMecanicoDetalhes('');
+        setMecanicoEnviado(false);
+      }, 2500);
+    } catch (err) {
+      console.error('Erro ao enviar relatório mecânico:', err);
+    } finally {
+      setEnviandoMecanico(false);
+    }
+  };
+
+  const handleEnviarVias = async () => {
+    if (!viasOption) return;
+    setEnviandoVias(true);
+    try {
+      const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
+      const msg = `O motorista relatou "${viasOption}" no trajeto da Rota ${rotaNome}. Detalhes: ${viasDetalhes.trim() || 'Nenhum.'}`;
+
+      await supabase.from('notificacoes').insert({
+        aluno_id: null,
+        titulo: '🚧 Alerta de Via / Tráfego',
+        mensagem: msg,
+        lida: false
+      });
+      setViasEnviado(true);
+      setTimeout(() => {
+        setShowViasModal(false);
+        setViasOption('');
+        setViasDetalhes('');
+        setViasEnviado(false);
+      }, 2500);
+    } catch (err) {
+      console.error('Erro ao enviar relatório de via:', err);
+    } finally {
+      setEnviandoVias(false);
+    }
+  };
+
+  const handleDispararSos = async () => {
+    setEnviandoSos(true);
+    try {
+      const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
+      const msg = `🚨 EMERGÊNCIA SOS DISPARADA! O motorista da Rota ${rotaNome} (Veículo Placa: ${rotaAtiva?.placa || '...'}) enviou um sinal de pânico imediato.`;
+
+      await supabase.from('notificacoes').insert({
+        aluno_id: null,
+        titulo: '🚨 ALERTA DE EMERGÊNCIA (SOS) 🚨',
+        mensagem: msg,
+        lida: false
+      });
+      setSosAtivo(true);
+      setShowSosModal(false);
+    } catch (err) {
+      console.error('Erro ao disparar SOS:', err);
+    } finally {
+      setEnviandoSos(false);
+    }
+  };
+
   const handleToggleRotaAtiva = async (newVal: boolean) => {
     if (!rotaAtiva) return;
     try {
@@ -932,6 +1021,13 @@ export default function MotoristaDashboardPage() {
         #reader img, #reader span, #reader a,
         #ocorrencia-reader img, #ocorrencia-reader span, #ocorrencia-reader a {
           display: none !important;
+        }
+        @keyframes flashBg {
+          from { background-color: rgba(67, 10, 20, 0.95); }
+          to { background-color: rgba(136, 19, 36, 0.98); }
+        }
+        .flashing-bg {
+          animation: flashBg 1.5s infinite alternate;
         }
       `}</style>
 
@@ -1656,11 +1752,305 @@ export default function MotoristaDashboardPage() {
           </div>
         )}
 
+        {/* ══════════════════════════════════════════════════════
+            MODAL OPERACIONAL: RELATAR PROBLEMA MECÂNICO
+        ══════════════════════════════════════════════════════ */}
+        {showMecanicoModal && (
+          <div className="absolute inset-0 z-50 flex flex-col rounded-[36px] overflow-hidden animate-fadeIn" style={{ backgroundColor: '#020617' }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60 bg-slate-900/90">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400">
+                  <Wrench size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-white tracking-tight">Problema Mecânico</h3>
+                  <p className="text-[9px] text-slate-400 mt-0.5">Informe o estado do veículo para a central</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowMecanicoModal(false);
+                  setMecanicoOption('');
+                  setMecanicoDetalhes('');
+                }}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors border-0 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-5">
+              {!mecanicoEnviado ? (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                      Selecione o Tipo de Falha
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        'Pneu Furado',
+                        'Superaquecimento do Motor',
+                        'Problema Elétrico / Bateria',
+                        'Falha no Freio / Direção',
+                        'Pane Mecânica Geral'
+                      ].map(option => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setMecanicoOption(option)}
+                          className={`w-full p-3.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                            mecanicoOption === option
+                              ? 'bg-amber-500/15 border-amber-500 text-amber-400'
+                              : 'bg-slate-900 border-slate-805 text-slate-400 hover:text-white hover:border-slate-700'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                      Informações Adicionais (Opcional)
+                    </label>
+                    <textarea
+                      value={mecanicoDetalhes}
+                      onChange={(e) => setMecanicoDetalhes(e.target.value)}
+                      placeholder="Descreva detalhes como a sua localização exata ou gravidade da pane..."
+                      rows={4}
+                      className="w-full bg-slate-900 border border-slate-750 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:outline-none resize-none transition-colors leading-relaxed"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleEnviarMecanico}
+                    disabled={!mecanicoOption || enviandoMecanico}
+                    className={`w-full py-4 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-0 ${
+                      mecanicoOption && !enviandoMecanico
+                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer font-black'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {enviandoMecanico ? (
+                      <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={13} />
+                        <span>Enviar Relatório à Central</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                    <CheckCircle2 size={32} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-emerald-400 uppercase tracking-widest font-mono">ENVIADO COM SUCESSO!</h4>
+                    <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                      A central operacional SEMED recebeu seu alerta mecânico e iniciará o protocolo de assistência.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════
+            MODAL OPERACIONAL: RELATAR BLOQUEIO DE VIA
+        ══════════════════════════════════════════════════════ */}
+        {showViasModal && (
+          <div className="absolute inset-0 z-50 flex flex-col rounded-[36px] overflow-hidden animate-fadeIn" style={{ backgroundColor: '#020617' }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60 bg-slate-900/90">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-400">
+                  <Map size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-white tracking-tight">Alerta de Trânsito / Vias</h3>
+                  <p className="text-[9px] text-slate-400 mt-0.5">Avise a central sobre interrupções na rota</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowViasModal(false);
+                  setViasOption('');
+                  setViasDetalhes('');
+                }}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors border-0 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-5">
+              {!viasEnviado ? (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                      Selecione o Tipo de Obstáculo
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        'Acidente de Trânsito',
+                        'Via Interditada por Obras',
+                        'Alagamento / Enchente',
+                        'Congestionamento Intenso / Bloqueio',
+                        'Outro Obstáculo na Via'
+                      ].map(option => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setViasOption(option)}
+                          className={`w-full p-3.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                            viasOption === option
+                              ? 'bg-blue-500/15 border-blue-500 text-blue-400'
+                              : 'bg-slate-900 border-slate-805 text-slate-400 hover:text-white hover:border-slate-700'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                      Localização / Detalhes (Recomendado)
+                    </label>
+                    <textarea
+                      value={viasDetalhes}
+                      onChange={(e) => setViasDetalhes(e.target.value)}
+                      placeholder="Ex: Rua Harpia interditada próximo ao semáforo..."
+                      rows={4}
+                      className="w-full bg-slate-900 border border-slate-750 focus:border-blue-500 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-650 focus:outline-none resize-none transition-colors leading-relaxed"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleEnviarVias}
+                    disabled={!viasOption || enviandoVias}
+                    className={`w-full py-4 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-0 ${
+                      viasOption && !enviandoVias
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-[0_8px_20px_rgba(59,130,246,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer font-bold'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {enviandoVias ? (
+                      <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={13} />
+                        <span>Enviar Alerta</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                    <CheckCircle2 size={32} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-emerald-400 uppercase tracking-widest font-mono">ALERTA ENVIADO!</h4>
+                    <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                      A central operacional recebeu sua notificação de via. Rotas alternativas serão calculadas.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════
+            MODAL OPERACIONAL: DISPARO DE SINAL SOS
+        ══════════════════════════════════════════════════════ */}
+        {showSosModal && (
+          <div className="absolute inset-0 z-[60] bg-slate-950/95 flex items-center justify-center p-6 animate-fadeIn">
+            <div className="w-full bg-slate-900 border border-rose-500/30 rounded-3xl p-6 flex flex-col gap-6 shadow-2xl relative text-center">
+              
+              <div className="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mx-auto shadow-inner animate-pulse">
+                <AlertOctagon size={40} className="text-rose-500" />
+              </div>
+
+              <div>
+                <h4 className="text-sm font-extrabold text-rose-500 uppercase tracking-widest font-mono">Confirmar Alerta SOS?</h4>
+                <p className="text-[10.5px] text-slate-400 mt-3 leading-relaxed">
+                  Esta ação deve ser usada <strong>apenas em emergências graves</strong> (Acidente, Assalto, Pane de risco). A central receberá seu sinal imediatamente com prioridade máxima.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={handleDispararSos}
+                  disabled={enviandoSos}
+                  className="w-full py-4 rounded-xl text-xs font-black uppercase bg-rose-600 hover:bg-rose-500 text-white shadow-[0_8px_24px_rgba(225,29,72,0.3)] active:translate-y-0.5 transition-all border-0 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {enviandoSos ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span>CONFIRMAR E ENVIAR SOS</span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowSosModal(false)}
+                  disabled={enviandoSos}
+                  className="w-full py-3.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white transition-all border-0 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OVERLAY TELA INTEIRA: ALERTA SOS ATIVO */}
+        {sosAtivo && (
+          <div className="absolute inset-0 z-[100] bg-rose-950/95 flex flex-col justify-center items-center text-center p-6 select-none">
+            <div className="absolute inset-0 flashing-bg -z-10" />
+
+            <div className="w-24 h-24 rounded-full bg-rose-500 flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.8)] mb-8">
+              <AlertOctagon size={48} className="text-white animate-pulse" />
+            </div>
+
+            <h2 className="text-xl font-black text-white uppercase tracking-widest font-mono mb-4 animate-pulse">
+              🚨 SINAL SOS ATIVO 🚨
+            </h2>
+
+            <p className="text-xs text-rose-200 px-6 max-w-sm leading-relaxed mb-12">
+              Os canais de emergência e a central de Arapongas receberam o sinal de pânico. A sua localização via GPS está sendo monitorada com prioridade máxima.
+            </p>
+
+            <button
+              onClick={async () => {
+                try {
+                  const rotaNome = rotaAtiva ? `${rotaAtiva.codigo} - ${rotaAtiva.nome}` : 'Não Identificada';
+                  await supabase.from('notificacoes').insert({
+                    aluno_id: null,
+                    titulo: '🔧 Sinal SOS Finalizado',
+                    mensagem: `O sinal de emergência SOS da Rota ${rotaNome} foi finalizado pelo motorista. Situação normalizada.`,
+                    lida: false
+                  });
+                } catch(e) {}
+                setSosAtivo(false);
+              }}
+              className="py-4 px-8 rounded-2xl text-[10px] font-extrabold uppercase tracking-widest bg-white hover:bg-slate-150 text-slate-950 shadow-2xl hover:scale-105 active:scale-95 transition-all border-0 cursor-pointer font-black"
+            >
+              Finalizar Sinal / Normalizado
+            </button>
+          </div>
+        )}
+
         {/* MENU INFERIOR DE OCORRÊNCIAS */}
         <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60 p-4 grid grid-cols-4 gap-3 z-40 rounded-b-[36px]">
           <button
             onClick={handleAbrirOcorrenciaModal}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-orange-950/20 hover:bg-orange-950/40 transition-all cursor-pointer border border-orange-900/20 active-press"
+            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-orange-950/20 hover:bg-orange-950/40 transition-all cursor-pointer border border-orange-900/20 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-orange-500/15 flex items-center justify-center shadow-inner">
               <ShieldAlert size={16} className="text-orange-400" />
@@ -1669,7 +2059,7 @@ export default function MotoristaDashboardPage() {
           </button>
 
           <button
-            onClick={() => alert('Ocorrência de "Problema Mecânico" enviada à prefeitura!')}
+            onClick={() => setShowMecanicoModal(true)}
             className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 shadow-inner">
@@ -1679,7 +2069,7 @@ export default function MotoristaDashboardPage() {
           </button>
 
           <button
-            onClick={() => alert('Ocorrência de "Via Interditada" enviada à prefeitura!')}
+            onClick={() => setShowViasModal(true)}
             className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-slate-800/40 flex items-center justify-center text-slate-300 shadow-inner">
@@ -1689,11 +2079,11 @@ export default function MotoristaDashboardPage() {
           </button>
 
           <button
-            onClick={() => alert('Emergência reportada à prefeitura!')}
+            onClick={() => setShowSosModal(true)}
             className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-rose-950/20 hover:bg-rose-950/40 transition-all cursor-pointer border border-rose-900/20 active-press border-0"
           >
             <div className="w-10 h-10 rounded-full bg-rose-900/80 flex items-center justify-center text-rose-200 border border-rose-800/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">
-              <AlertOctagon size={16} className="text-rose-400" />
+              <AlertOctagon size={16} className="text-rose-450" />
             </div>
             <span className="text-[9px] font-bold text-rose-400">SOS</span>
           </button>

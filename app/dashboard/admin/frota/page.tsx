@@ -128,7 +128,7 @@ export default function FrotaPage() {
         .eq('tipo_usuario', 'Motorista')
         .order('nome', { ascending: true });
 
-      const listMots = motData || [];
+      const listMots = (motData || []).filter((m: any) => !m.id.startsWith('33333333-'));
       setMotoristasReal(listMots);
 
       // 1.2 Busca rotas cadastradas no banco

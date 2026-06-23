@@ -314,7 +314,7 @@ export default function RotasPage() {
         .order('nome', { ascending: true });
       if (!error && data) {
         setMotoristas(
-          (data as any[]).map(m => ({
+          (data as any[]).filter(m => !m.id.startsWith('33333333-')).map(m => ({
             id: m.id,
             nome: m.nome,
             placa_veiculo: m.motoristas_perfil?.[0]?.placa_veiculo ?? null,

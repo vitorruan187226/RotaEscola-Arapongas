@@ -2,3 +2,6 @@
 2026-06-23 15:21:00 [INFO] Documentos consultados: indice.txt, _docs/0200_Indice_Telas.md, _docs/0205_AdminDashboard.md, _docs/0210_GestaoEscolas.md.
 2026-06-23 15:22:00 [INFO] Modificado app/dashboard/admin/page.tsx: o href do botão/link 'Analisar' foi atualizado de '/dashboard/admin/documentos' para '/dashboard/admin/escolas'.
 2026-06-23 15:23:00 [INFO] Atualizada a documentação em _docs/0205_AdminDashboard.md.
+2026-06-23 15:36:00 [INFO] Modificado app/dashboard/admin/frota/page.tsx: adicionado filtro em listMots para ignorar motoristas com IDs iniciados em '33333333-', removendo perfis de simulação que causavam excesso de itens 'Aguardando Veículo' na frota.
+2026-06-23 15:37:00 [INFO] Modificado app/dashboard/admin/rotas/page.tsx: aplicado filtro idêntico ao carregar motoristas para manter a consistência de perfis e evitar duplicidade de cadastros de teste.
+2026-06-23 15:38:00 [INFO] Atualizada a documentação em _docs/0205_AdminDashboard.md.

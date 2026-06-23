@@ -149,5 +149,7 @@ O módulo de **Aprovação de Docs** (`documentos/page.tsx`) foi reestruturado d
 | 17/06/2026 | **Ajustes de Fotos e Redesign do Fluxo de Análise:** Integração do campo `foto_url` na fila e na listagem de Últimas Solicitações do admin; reestruturação de `/dashboard/admin/documentos` para exibir uma fila linear simplificada com abas por status, busca direta, filtro de escolas e suporte a foto real do estudante. |
 | 18/06/2026 | **Correção de Cache e Status Ciente:** Implementado `fetchCache = 'force-no-store'` e desativação global do cache fetch do Supabase no servidor (`cache: 'no-store'`) para garantir que os alertas operacionais sumam imediatamente da tela inicial do administrador ao serem resolvidos. |
 | 23/06/2026 | **Redirecionamento do botão Analisar:** Alterado o link "Analisar" na seção de "Últimas Solicitações" para apontar para a listagem de "Entidades Escolares" (`/dashboard/admin/escolas`) em vez da fila linear direta de documentos (`/dashboard/admin/documentos`). |
+| 23/06/2026 | **Remoção de Motoristas Mockups:** Implementado filtro para ocultar motoristas com IDs de desenvolvimento (prefixados com '33333333-') das listas de veículos e rotas, removendo a exibição indesejada de múltiplos motoristas de simulação como 'Aguardando Veículo' na paginação da frota. |
+
 
 

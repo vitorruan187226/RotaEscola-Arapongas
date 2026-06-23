@@ -37,6 +37,12 @@ Se as credenciais não baterem com os mocks:
 3. Em caso de sucesso, busca `perfis.tipo_usuario` para determinar o dashboard correto
 4. Fallback para `/responsavel/dashboard` se não encontrar perfil
 
+### 3. Login com o Google (OAuth 2.0)
+Disponível apenas no fluxo geral (ocultado quando `role=motorista`):
+1. Invoca `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: '/auth/callback?next=/login' } })`
+2. Após o consentimento do Google, `/auth/callback` permuta o código temporário por sessão ativa.
+3. Redireciona o navegador para `/login`, que é interceptado pelo `middleware.ts`. O middleware analisa a sessão do usuário no Supabase e encaminha-o para a respectiva dashboard (e.g. `/responsavel/dashboard`).
+
 ## IDs de Acessibilidade e Testes
 | ID | Elemento |
 |---|---|
@@ -45,6 +51,7 @@ Se as credenciais não baterem com os mocks:
 
 ## Dependências de Estilo
 - `<style>` inline com classes `.login-wrapper`, `.login-card`, `.login-header`, `.login-form`
+- Divisor visual `.divider-container` e botão `.btn-google` (estilo premium baseado em cores harmônicas e elevação)
 - Usa variáveis CSS globais: `--background-gray`, `--primary-navy`, `--text-dark`, `--text-light`, `--border-color`
 - Usa classe global: `.card-premium`
 
@@ -56,3 +63,4 @@ Se as credenciais não baterem com os mocks:
 | Sprint 2 | Integração com Supabase Auth real (signInWithPassword + perfis) |
 | 28/05/2026 | Documentação criada (0204) |
 | 03/06/2026 | Implementação de customização visual para motoristas via `?role=motorista` com instruções específicas de primeiro acesso. |
+| 23/06/2026 | Adicionado suporte para login com o Google (OAuth 2.0) e divisor correspondente na interface do usuário. |

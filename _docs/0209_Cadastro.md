@@ -63,9 +63,16 @@ Para garantir que a trigger execute com sucesso e não quebre a transação do b
 ### 5. Tratamento de Erros e Logs
 A API possui tratamento de erro try/catch detalhado. Se a criação de usuário ou inserção falhar por motivos do banco (como duplicidade de e-mail na tabela auth ou restrições na trigger), a mensagem exata do erro é registrada nos logs do servidor com o prefixo `[ERRO CADASTRO DEv]` e devolvida de forma limpa para exibição em Toasts/Alertas no front-end.
 
+### 6. Cadastro com o Google (OAuth 2.0)
+Caso o responsável opte por se cadastrar utilizando a sua conta do Google:
+1. O fluxo OAuth do Google é invocado, redirecionando o navegador para o consentimento do Google e retornando para `/auth/callback?next=/login`.
+2. Após criar a conta no Supabase Auth, a trigger PostgreSQL `handle_new_user()` cria o perfil correspondente na tabela pública `public.perfis` (com `tipo_usuario` definido como `'Responsável'`).
+3. Como dados de `cpf` e `telefone` não são providos pelo Google OAuth, esses campos permanecem nulos no banco. A interface do painel do responsável (`app/responsavel/dashboard/page.tsx`) é resiliente a valores nulos nestas colunas, exibindo o cabeçalho adequadamente e não exigindo preenchimento obrigatório para a vinculação/cadastro de estudantes.
+
 ## Histórico de Alterações
 | Data | Alteração |
 |---|---|
 | 28/05/2026 | Criação da tela de cadastro, migração de colunas `cpf`/`telefone`, RPCs de validação e documentação técnica inicial. |
 | 28/05/2026 | Ajuste Fino: Migração para cadastro via Admin Auth no servidor (`/api/auth/cadastro`) e enriquecimento de metadados para compatibilidade com trigger. |
 | 08/06/2026 | Testes: Desativada temporariamente a validação de algoritmo de CPF real no Client-side (`page.tsx`) a pedido do usuário para viabilizar testes com dados falsos. |
+| 23/06/2026 | Adicionado suporte para cadastro simplificado com o Google (OAuth 2.0) e divisor correspondente na interface do usuário. |

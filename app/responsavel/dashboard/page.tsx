@@ -1860,10 +1860,10 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
 
         // Footer message
         ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 8px sans-serif';
+        ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('APRESENTE AO MOTORISTA', 200, 540);
-        ctx.font = 'mono 8px sans-serif';
+        ctx.font = '8px monospace';
         ctx.fillText(hash, 200, 555);
 
         // Trigger download

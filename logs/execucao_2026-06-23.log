@@ -5,3 +5,6 @@
 2026-06-23 15:36:00 [INFO] Modificado app/dashboard/admin/frota/page.tsx: adicionado filtro em listMots para ignorar motoristas com IDs iniciados em '33333333-', removendo perfis de simulação que causavam excesso de itens 'Aguardando Veículo' na frota.
 2026-06-23 15:37:00 [INFO] Modificado app/dashboard/admin/rotas/page.tsx: aplicado filtro idêntico ao carregar motoristas para manter a consistência de perfis e evitar duplicidade de cadastros de teste.
 2026-06-23 15:38:00 [INFO] Atualizada a documentação em _docs/0205_AdminDashboard.md.
+2026-06-23 15:57:00 [INFO] Modificado app/responsavel/carteirinha/[id]/page.tsx: ajustada a renderização do rodapé no canvas de exportação da carteirinha, aumentando a fonte de 'APRESENTE AO MOTORISTA' para 10px e corrigindo o descritor de fonte do hash para '8px monospace'.
+2026-06-23 15:58:00 [INFO] Modificado app/responsavel/dashboard/page.tsx: aplicadas as mesmas melhorias de renderização do rodapé da carteirinha no Canvas para a exportação via modal do responsável.
+2026-06-23 15:59:00 [INFO] Atualizada a documentação em _docs/0206_ResponsavelDashboard.md.

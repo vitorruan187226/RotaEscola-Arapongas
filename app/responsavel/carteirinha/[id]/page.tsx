@@ -206,10 +206,10 @@ export default function CarteirinhaDigitalPage() {
 
         // Footer message
         ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 8px sans-serif';
+        ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('APRESENTE AO MOTORISTA', 200, 540);
-        ctx.font = 'mono 8px sans-serif';
+        ctx.font = '8px monospace';
         ctx.fillText(aluno.qrCodeHash, 200, 555);
 
         // Trigger download

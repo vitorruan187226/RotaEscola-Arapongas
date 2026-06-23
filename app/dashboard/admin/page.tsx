@@ -462,7 +462,7 @@ export default async function AdminDashboardPage() {
                 </p>
               </div>
               <Link 
-                href="/dashboard/admin/documentos" 
+                href="/dashboard/admin/escolas" 
                 className="text-[10px] font-bold text-amber-500 hover:text-amber-600 transition-colors"
               >
                 Analisar

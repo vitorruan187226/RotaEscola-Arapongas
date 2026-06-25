@@ -495,63 +495,6 @@ export default function EscolaDetalhesPage() {
     }
   };
 
-  const handleToggleExpiracaoTeste = async (aluno: AlunoAuditoria) => {
-    setLoadingAction(aluno.id);
-    const isMockAluno = aluno.id.startsWith('aluno-mock') || usandoMock;
-
-    try {
-      const isCurrentlyExpired = aluno.status === 'Aprovado' && aluno.dataVencimento && new Date(aluno.dataVencimento) < new Date();
-      const newDateStr = isCurrentlyExpired 
-        ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() 
-        : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const resetNotification = isCurrentlyExpired ? false : aluno.notificadoExpiracao;
-
-      if (!isMockAluno) {
-        const { data: cards } = await supabase
-          .from('carteirinhas')
-          .select('id')
-          .eq('aluno_id', aluno.id)
-          .maybeSingle();
-
-        if (cards?.id) {
-          const { error } = await supabase
-            .from('carteirinhas')
-            .update({ 
-              data_vencimento: newDateStr,
-              notificado_expiracao: resetNotification
-            })
-            .eq('id', cards.id);
-          if (error) throw error;
-        } else {
-          const hashSecure = `rotaescola_arapongas_${aluno.id}_secure_${Date.now().toString().slice(-4)}`;
-          const { error } = await supabase
-            .from('carteirinhas')
-            .insert({
-              aluno_id: aluno.id,
-              qr_code_hash: hashSecure,
-              data_vencimento: newDateStr,
-              notificado_expiracao: resetNotification,
-              status_carteirinha: 'Ativa'
-            });
-          if (error) throw error;
-        }
-      }
-
-      setAlunos(prev => prev.map(a => a.id === aluno.id ? { 
-        ...a, 
-        dataVencimento: newDateStr, 
-        notificadoExpiracao: resetNotification 
-      } : a));
-
-      const msg = isCurrentlyExpired ? 'Carteirinha reativada para testes!' : 'Carteirinha expirada para testes!';
-      showToast(msg, 'success');
-    } catch (err: any) {
-      console.error('Erro ao simular validade:', err);
-      showToast('Erro ao simular alteração de validade.', 'error');
-    } finally {
-      setLoadingAction(null);
-    }
-  };
 
   const handleNotificarResponsavel = async (alunoId: string) => {
     setLoadingAction(alunoId);
@@ -1129,14 +1072,7 @@ export default function EscolaDetalhesPage() {
                                                   </span>
                                                 );
                                               })()}
-                                              <button
-                                                disabled={loadingAction !== null}
-                                                onClick={() => handleToggleExpiracaoTeste(a)}
-                                                className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-200 shadow-sm disabled:opacity-50"
-                                                title="Simular expiração imediata para testes"
-                                              >
-                                                <span>Expirar (Teste)</span>
-                                              </button>
+
                                             </div>
                                           )}
                                           
@@ -1164,14 +1100,7 @@ export default function EscolaDetalhesPage() {
                                                   )}
                                                 </button>
                                               )}
-                                              <button
-                                                disabled={loadingAction !== null}
-                                                onClick={() => handleToggleExpiracaoTeste(a)}
-                                                className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm disabled:opacity-50"
-                                                title="Reativar carteirinha e estender validade por 1 ano"
-                                              >
-                                                <span>Reativar (Teste)</span>
-                                              </button>
+
                                             </div>
                                           )}
                   

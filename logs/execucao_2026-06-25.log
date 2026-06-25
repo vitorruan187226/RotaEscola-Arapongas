@@ -51,3 +51,9 @@
   - Convertido o input de date para datetime-local.
   - Adicionados botoes de atalho rapido "+1 Minuto" e "+5 Minutos" para permitir a transicao e expiracao da carteirinha em segundos.
   - Atualizadas as documentacoes e logs de execucao correspondentes.
+2026-06-25 14:30:00 INFO Concluido o fluxo de validacao e removidas todas as ferramentas provisorias de teste do codigo de producao:
+  - Removido o SimulatorWidget e sua renderizacao na pagina principal do painel administrativo da SEMED (app/dashboard/admin/page.tsx).
+  - Removido o handler handleToggleExpiracaoTeste e os botoes "Expirar (Teste) / Reativar (Teste)" dos Detalhes da Escola (app/dashboard/admin/escolas/detalhes/page.tsx).
+  - Removido o CalendarioFicticioWidget e sua renderizacao no Dashboard do Responsavel (app/responsavel/dashboard/page.tsx).
+  - Simplificado o helper getSimulatedDate() para retornar estritamente a data real do sistema (new Date()), desativando qualquer simulação de tempo do lado do cliente.
+  - Atualizadas as documentacoes e logs de execucao correspondentes; executada a validacao de build bem-sucedida.

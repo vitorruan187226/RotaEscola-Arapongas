@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import AutoRefresh from '../../../components/AutoRefresh';
-import SimulatorWidget from './SimulatorWidget';
+
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -522,8 +522,7 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Widget Simulador de Validade de Carteirinhas para Testes */}
-          <SimulatorWidget />
+
         </div>
 
         {/* Histórico Recente de Embarque (Auditoria) */}

@@ -153,6 +153,4 @@ O módulo de **Aprovação de Docs** (`documentos/page.tsx`) foi reestruturado d
 | 25/06/2026 | **Simulador de Validade de Carteirinhas:** Integração do componente `<SimulatorWidget />` no painel principal, permitindo à secretaria definir e testar a expiração e o bloqueio de carteirinhas de estudantes (validade de 1 ano) diretamente pelo banco de dados remoto. |
 | 25/06/2026 | **Aba Expirados & Notificação:** Adicionada a aba **"Expirados"** com contagem dinâmica nos Detalhes da Escola, botões provisórios **"Expirar (Teste) / Reativar (Teste)"** para testes de transição e a ação de **"Notificar Responsável"** que grava `notificado_expiracao = true` no Supabase. |
 | 25/06/2026 | **Correção de Coluna no Simulador:** Correção de bug no `SimulatorWidget` onde o sistema tentava gravar na coluna `status` da tabela `carteirinhas`. Atualizado para `status_carteirinha` de modo a respeitar o esquema real do banco de dados remoto no Supabase. |
-
-
-
+| 25/06/2026 | **Remoção de Ferramentas de Teste:** Remoção do componente `<SimulatorWidget />` do painel e dos botões provisórios "Expirar (Teste) / Reativar (Teste)" nos Detalhes da Escola após a conclusão bem-sucedida da bateria de testes operacionais. |

@@ -41,3 +41,13 @@
 2026-06-25 13:35:00 INFO Identificado erro de schema cache no Supabase: a tabela carteirinhas possui a coluna fisica status_carteirinha, mas o front-end tentava gravar na coluna status (inexistente).
 2026-06-25 13:40:00 INFO Corrigido app/dashboard/admin/SimulatorWidget.tsx substituindo status: 'Ativa' por status_carteirinha: 'Ativa' para conformidade estrita com o banco de dados de producao.
 2026-06-25 13:45:00 INFO Correcao concluida e build validado com sucesso.
+2026-06-25 13:50:00 INFO Recebida solicitacao para adicionar a opcao de horario no SimulatorWidget para permitir definicao de expiracao de 1 minuto.
+2026-06-25 13:55:00 INFO Implementada a conversao de inputs no SimulatorWidget para datetime-local (data e hora completos):
+  - Criados helpers toLocalISOString() e toLocalISOStringFromUTC() para tratamento de timezones e formatacao YYYY-MM-DDTHH:mm local.
+  - Atualizada a logica de persistencia no Supabase para enviar a data/hora exata em formato ISO UTC.
+  - Adicionado atalho premium "⚡ Expira em 1 Minuto" que calcula automaticamente a data/hora local de hoje + 1 minuto e popula o campo.
+2026-06-25 14:00:00 INFO Alteracoes de horario e atalho de expiracao dinamica concluidas e build validado com sucesso.
+2026-06-25 14:15:00 INFO Implementado suporte a segundos/minutos no simulador temporal do responsavel (CalendarioFicticioWidget):
+  - Convertido o input de date para datetime-local.
+  - Adicionados botoes de atalho rapido "+1 Minuto" e "+5 Minutos" para permitir a transicao e expiracao da carteirinha em segundos.
+  - Atualizadas as documentacoes e logs de execucao correspondentes.

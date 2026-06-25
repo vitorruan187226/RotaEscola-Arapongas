@@ -11,6 +11,17 @@ interface AlunoCard {
   dataVencimento?: string | null;
 }
 
+const toLocalISOString = (date: Date) => {
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+};
+
+const toLocalISOStringFromUTC = (utcStr: string) => {
+  const date = new Date(utcStr);
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+};
+
 export default function SimulatorWidget() {
   const supabase = createClient();
   const [alunos, setAlunos] = useState<AlunoCard[]>([]);
@@ -60,12 +71,12 @@ export default function SimulatorWidget() {
         if (mapped.length > 0) {
           setSelectedAlunoId(mapped[0].id);
           if (mapped[0].dataVencimento) {
-            setNewDate(mapped[0].dataVencimento.split('T')[0]);
+            setNewDate(toLocalISOStringFromUTC(mapped[0].dataVencimento));
           } else {
             // Padrão: hoje + 1 ano
             const d = new Date();
             d.setFullYear(d.getFullYear() + 1);
-            setNewDate(d.toISOString().split('T')[0]);
+            setNewDate(toLocalISOString(d));
           }
         }
       }
@@ -86,11 +97,11 @@ export default function SimulatorWidget() {
     setSelectedAlunoId(alunoId);
     const aluno = alunos.find(a => a.id === alunoId);
     if (aluno?.dataVencimento) {
-      setNewDate(aluno.dataVencimento.split('T')[0]);
+      setNewDate(toLocalISOStringFromUTC(aluno.dataVencimento));
     } else {
       const d = new Date();
       d.setFullYear(d.getFullYear() + 1);
-      setNewDate(d.toISOString().split('T')[0]);
+      setNewDate(toLocalISOString(d));
     }
   };
 
@@ -100,7 +111,7 @@ export default function SimulatorWidget() {
 
     try {
       const selected = alunos.find(a => a.id === selectedAlunoId);
-      const isoDate = new Date(newDate + 'T23:59:59').toISOString();
+      const isoDate = new Date(newDate).toISOString();
 
       if (selected?.cardId) {
         // Atualiza carteirinha existente
@@ -190,15 +201,28 @@ export default function SimulatorWidget() {
 
           {/* Datepicker */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nova Data de Vencimento</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Nova Data/Hora de Vencimento</label>
+              <button
+                type="button"
+                onClick={() => {
+                  const now = new Date();
+                  now.setMinutes(now.getMinutes() + 1);
+                  setNewDate(toLocalISOString(now));
+                }}
+                className="text-[9px] font-black text-amber-600 hover:text-amber-500 hover:underline bg-transparent border-0 cursor-pointer p-0 select-none uppercase tracking-wider"
+              >
+                ⚡ Expira em 1 Minuto
+              </button>
+            </div>
             <input
-              type="date"
+              type="datetime-local"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-amber-500 transition-colors cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-amber-500 transition-colors cursor-pointer font-medium"
             />
-            <span className="text-[9px] text-slate-400 font-medium">
-              💡 Dica: escolha uma data no passado (ex: ontem) para ver a carteirinha expirar e bloquear na tela do responsável!
+            <span className="text-[9px] text-slate-400 font-medium leading-relaxed">
+              💡 Dica: defina para o passado para expirar imediatamente, ou clique em <strong>⚡ Expira em 1 Minuto</strong> para testar a expiração reativa em tempo real!
             </span>
           </div>
 

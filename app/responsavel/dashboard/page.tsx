@@ -3407,24 +3407,38 @@ function CalendarioFicticioWidget() {
   const [simulatedDate, setSimulatedDate] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
 
+  const toLocalISOString = (date: Date) => {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
   useEffect(() => {
     setIsClient(true);
     const sim = localStorage.getItem('simulated_date');
     if (sim) {
-      setSimulatedDate(new Date(sim).toISOString().split('T')[0]);
+      setSimulatedDate(toLocalISOString(new Date(sim)));
     } else {
-      setSimulatedDate(new Date().toISOString().split('T')[0]);
+      setSimulatedDate(toLocalISOString(new Date()));
     }
   }, []);
 
   if (!isClient) return null;
 
-  const handleDateChange = (dateStr: string) => {
-    if (!dateStr) {
+  const handleDateChange = (dateTimeStr: string) => {
+    if (!dateTimeStr) {
       localStorage.removeItem('simulated_date');
     } else {
-      localStorage.setItem('simulated_date', new Date(dateStr + 'T12:00:00').toISOString());
+      localStorage.setItem('simulated_date', new Date(dateTimeStr).toISOString());
     }
+    window.location.reload();
+  };
+
+  const handleAddMinutes = (minutes: number) => {
+    const current = localStorage.getItem('simulated_date') 
+      ? new Date(localStorage.getItem('simulated_date')!) 
+      : new Date();
+    current.setMinutes(current.getMinutes() + minutes);
+    localStorage.setItem('simulated_date', current.toISOString());
     window.location.reload();
   };
 
@@ -3462,6 +3476,18 @@ function CalendarioFicticioWidget() {
         <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Avançar Tempo</span>
         <div className="grid grid-cols-2 gap-1.5">
           <button
+            onClick={() => handleAddMinutes(1)}
+            className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-850 rounded-xl text-[9px] font-bold text-white transition-all border-0 cursor-pointer"
+          >
+            +1 Minuto
+          </button>
+          <button
+            onClick={() => handleAddMinutes(5)}
+            className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-850 rounded-xl text-[9px] font-bold text-white transition-all border-0 cursor-pointer"
+          >
+            +5 Minutos
+          </button>
+          <button
             onClick={() => handleAddDays(30)}
             className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-850 rounded-xl text-[9px] font-bold text-white transition-all border-0 cursor-pointer"
           >
@@ -3477,9 +3503,9 @@ function CalendarioFicticioWidget() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Escolher Data</label>
+        <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Escolher Data/Hora</label>
         <input
-          type="date"
+          type="datetime-local"
           value={simulatedDate}
           onChange={(e) => handleDateChange(e.target.value)}
           className="w-full bg-slate-850 border border-slate-800 rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-white outline-none focus:border-amber-500 transition-colors cursor-pointer"

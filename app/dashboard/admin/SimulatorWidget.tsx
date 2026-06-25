@@ -119,7 +119,7 @@ export default function SimulatorWidget() {
             aluno_id: selectedAlunoId,
             qr_code_hash: hashSecure,
             data_vencimento: isoDate,
-            status: 'Ativa'
+            status_carteirinha: 'Ativa'
           });
 
         if (error) throw error;

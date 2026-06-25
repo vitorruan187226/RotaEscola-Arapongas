@@ -37,3 +37,7 @@
   - Persistencia do estado no localStorage ('simulated_date') e recarregamento automatico da pagina.
   - Botao 'Resetar' para voltar a usar a data real do sistema.
 2026-06-25 13:25:00 INFO Alteracoes de simulacao temporal concluidas com sucesso.
+2026-06-25 13:30:00 INFO Recebida imagem de erro na execucao do SimulatorWidget no painel admin da SEMED.
+2026-06-25 13:35:00 INFO Identificado erro de schema cache no Supabase: a tabela carteirinhas possui a coluna fisica status_carteirinha, mas o front-end tentava gravar na coluna status (inexistente).
+2026-06-25 13:40:00 INFO Corrigido app/dashboard/admin/SimulatorWidget.tsx substituindo status: 'Ativa' por status_carteirinha: 'Ativa' para conformidade estrita com o banco de dados de producao.
+2026-06-25 13:45:00 INFO Correcao concluida e build validado com sucesso.

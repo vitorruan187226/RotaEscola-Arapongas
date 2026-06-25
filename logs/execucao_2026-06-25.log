@@ -29,3 +29,11 @@
   - Reseta o status de expiracao na tabela public.carteirinhas (notificado_expiracao = false e data_vencimento = null) para remover o estudante do estado de bloqueio e aviso.
   - Salva e vincula novos documentos no Supabase Storage (bucket documentos-transporte) e na tabela documentos_aluno.
 2026-06-25 13:05:00 INFO Atualizada a documentacao tecnica _docs/0206_ResponsavelDashboard.md com os novos detalhes de arquitetura do fluxo de re-cadastro.
+2026-06-25 13:10:00 INFO Recebida solicitacao para adicionar um calendario ficticio (simulador temporal) para avancar no tempo e testar a expiracao automatica.
+2026-06-25 13:15:00 INFO Implementado helper getSimulatedDate() e atualizada a logica de isExpired e CarteirinhaModal em app/responsavel/dashboard/page.tsx para respeitar a data simulada.
+2026-06-25 13:20:00 INFO Criado o componente flutuante CalendarioFicticioWidget no canto inferior direito do painel do responsavel:
+  - Botoes rapidos para avancar +30 Dias ou +1 Ano de forma instantanea.
+  - Datepicker customizado para selecionar qualquer dia específico.
+  - Persistencia do estado no localStorage ('simulated_date') e recarregamento automatico da pagina.
+  - Botao 'Resetar' para voltar a usar a data real do sistema.
+2026-06-25 13:25:00 INFO Alteracoes de simulacao temporal concluidas com sucesso.

@@ -36,8 +36,16 @@ interface Filho {
   notificadoExpiracao?: boolean;
 }
 
+const getSimulatedDate = () => {
+  if (typeof window !== 'undefined') {
+    const sim = localStorage.getItem('simulated_date');
+    if (sim) return new Date(sim);
+  }
+  return new Date();
+};
+
 const getLocalDateString = () => {
-  const date = new Date();
+  const date = getSimulatedDate();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -519,7 +527,7 @@ export default function ResponsavelDashboard() {
           </div>
         ) : (
           filhos.map((filho) => {
-            const isExpired = filho.statusCarteirinha === 'Aprovado' && filho.dataVencimento && new Date(filho.dataVencimento) < new Date();
+            const isExpired = filho.statusCarteirinha === 'Aprovado' && filho.dataVencimento && new Date(filho.dataVencimento) < getSimulatedDate();
             const cardBgClass = isExpired
               ? "bg-rose-50/40 border-rose-300 shadow-rose-50/50 hover:shadow-rose-100/60"
               : "bg-white border-slate-200/80 hover:shadow-md";
@@ -799,6 +807,9 @@ export default function ResponsavelDashboard() {
           }}
         />
       )}
+
+      {/* ── SIMULADOR TEMPORAL (REMOVER APÓS TESTES) ─────────────────────────── */}
+      <CalendarioFicticioWidget />
 
     </div>
   );
@@ -2586,7 +2597,7 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
               'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
             ];
             setValidade(`${meses[date.getMonth()]} / ${date.getFullYear()}`);
-            setIsExpired(new Date() > date);
+            setIsExpired(getSimulatedDate() > date);
           }
         }
       } catch {
@@ -3386,6 +3397,103 @@ function OcorrenciasFilho({ alunoId, usandoMock }: { alunoId: string; usandoMock
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─── SUB-COMPONENTE: SIMULADOR DE CALENDÁRIO FICTÍCIO (REMOVER APÓS TESTES) ───
+function CalendarioFicticioWidget() {
+  const [simulatedDate, setSimulatedDate] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const sim = localStorage.getItem('simulated_date');
+    if (sim) {
+      setSimulatedDate(new Date(sim).toISOString().split('T')[0]);
+    } else {
+      setSimulatedDate(new Date().toISOString().split('T')[0]);
+    }
+  }, []);
+
+  if (!isClient) return null;
+
+  const handleDateChange = (dateStr: string) => {
+    if (!dateStr) {
+      localStorage.removeItem('simulated_date');
+    } else {
+      localStorage.setItem('simulated_date', new Date(dateStr + 'T12:00:00').toISOString());
+    }
+    window.location.reload();
+  };
+
+  const handleAddDays = (days: number) => {
+    const current = localStorage.getItem('simulated_date') 
+      ? new Date(localStorage.getItem('simulated_date')!) 
+      : new Date();
+    current.setDate(current.getDate() + days);
+    localStorage.setItem('simulated_date', current.toISOString());
+    window.location.reload();
+  };
+
+  const handleReset = () => {
+    localStorage.removeItem('simulated_date');
+    window.location.reload();
+  };
+
+  const hasSimulation = typeof window !== 'undefined' && !!localStorage.getItem('simulated_date');
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[90] bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white p-4 rounded-3xl shadow-2xl max-w-[260px] flex flex-col gap-2.5 animate-fadeIn font-sans">
+      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">🗓️</span>
+          <span className="text-[10px] font-black uppercase tracking-wider text-amber-500">Simulador Temporal</span>
+        </div>
+        {hasSimulation && (
+          <span className="text-[8px] bg-amber-500/25 text-amber-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">
+            Simulação
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Avançar Tempo</span>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => handleAddDays(30)}
+            className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-850 rounded-xl text-[9px] font-bold text-white transition-all border-0 cursor-pointer"
+          >
+            +30 Dias
+          </button>
+          <button
+            onClick={() => handleAddDays(365)}
+            className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-850 rounded-xl text-[9px] font-bold text-white transition-all border-0 cursor-pointer"
+          >
+            +1 Ano
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Escolher Data</label>
+        <input
+          type="date"
+          value={simulatedDate}
+          onChange={(e) => handleDateChange(e.target.value)}
+          className="w-full bg-slate-850 border border-slate-800 rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-white outline-none focus:border-amber-500 transition-colors cursor-pointer"
+        />
+      </div>
+
+      <div className="flex gap-1.5 pt-1.5 border-t border-slate-800">
+        <button
+          onClick={handleReset}
+          disabled={!hasSimulation}
+          className="flex-1 py-1.5 bg-rose-650 hover:bg-rose-600 disabled:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-[9px] font-black uppercase tracking-wider text-white transition-all border-0 cursor-pointer"
+        >
+          Resetar
+        </button>
       </div>
     </div>
   );

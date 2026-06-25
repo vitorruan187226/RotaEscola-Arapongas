@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import AutoRefresh from '../../../components/AutoRefresh';
+import SimulatorWidget from './SimulatorWidget';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -448,76 +449,81 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Coluna da Direita (Mais estreita) - Solicitações */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <UserCheck size={15} className="text-amber-500" />
-                  Últimas Solicitações
-                </h3>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                  Pedidos recentes de liberação de carteirinhas.
-                </p>
+        {/* Coluna da Direita (Mais estreita) - Solicitações + Simulador de Testes */}
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <UserCheck size={15} className="text-amber-500" />
+                    Últimas Solicitações
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                    Pedidos recentes de liberação de carteirinhas.
+                  </p>
+                </div>
+                <Link 
+                  href="/dashboard/admin/escolas" 
+                  className="text-[10px] font-bold text-amber-500 hover:text-amber-600 transition-colors"
+                >
+                  Analisar
+                </Link>
               </div>
+
+              <div className="flex flex-col gap-3.5">
+                {ultimasSolicitacoes.map((sol) => (
+                  <div key={sol.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50 transition-colors">
+                    
+                    {/* Avatar Circular */}
+                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm flex items-center justify-center relative bg-slate-100">
+                      {sol.fotoUrl ? (
+                        <img 
+                          src={sol.fotoUrl} 
+                          alt={sol.aluno} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className={`w-full h-full ${sol.avatarColor} text-white flex items-center justify-center font-bold text-xs`}>
+                          {sol.iniciais}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Detalhes do Aluno */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">{sol.aluno}</h4>
+                      <span className="text-[10px] text-slate-400 block truncate mt-0.5">{sol.escola}</span>
+                    </div>
+
+                    {/* Badge Elegante de Status */}
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      sol.status === 'Aprovado' 
+                        ? 'bg-emerald-100 border-emerald-250 text-emerald-700'
+                        : sol.status === 'Aguardando Análise'
+                        ? 'bg-amber-100 border-amber-250 text-amber-700'
+                        : 'bg-rose-100 border-rose-250 text-rose-700'
+                    }`}>
+                      {sol.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
               <Link 
-                href="/dashboard/admin/escolas" 
-                className="text-[10px] font-bold text-amber-500 hover:text-amber-600 transition-colors"
+                href="/dashboard/admin/alunos" 
+                className="text-xs font-extrabold text-slate-900 hover:text-slate-700 inline-flex items-center gap-1"
               >
-                Analisar
+                <span>Gerenciar Alunos</span>
+                <ArrowUpRight size={14} className="text-amber-500" />
               </Link>
             </div>
-
-            <div className="flex flex-col gap-3.5">
-              {ultimasSolicitacoes.map((sol) => (
-                <div key={sol.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50 transition-colors">
-                  
-                  {/* Avatar Circular */}
-                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm flex items-center justify-center relative bg-slate-100">
-                    {sol.fotoUrl ? (
-                      <img 
-                        src={sol.fotoUrl} 
-                        alt={sol.aluno} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className={`w-full h-full ${sol.avatarColor} text-white flex items-center justify-center font-bold text-xs`}>
-                        {sol.iniciais}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Detalhes do Aluno */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">{sol.aluno}</h4>
-                    <span className="text-[10px] text-slate-400 block truncate mt-0.5">{sol.escola}</span>
-                  </div>
-
-                  {/* Badge Elegante de Status */}
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
-                    sol.status === 'Aprovado' 
-                      ? 'bg-emerald-100 border-emerald-250 text-emerald-700'
-                      : sol.status === 'Aguardando Análise'
-                      ? 'bg-amber-100 border-amber-250 text-amber-700'
-                      : 'bg-rose-100 border-rose-250 text-rose-700'
-                  }`}>
-                    {sol.status}
-                  </span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-            <Link 
-              href="/dashboard/admin/alunos" 
-              className="text-xs font-extrabold text-slate-900 hover:text-slate-700 inline-flex items-center gap-1"
-            >
-              <span>Gerenciar Alunos</span>
-              <ArrowUpRight size={14} className="text-amber-500" />
-            </Link>
-          </div>
+          {/* Widget Simulador de Validade de Carteirinhas para Testes */}
+          <SimulatorWidget />
         </div>
 
         {/* Histórico Recente de Embarque (Auditoria) */}

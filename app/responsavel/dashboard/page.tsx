@@ -1693,6 +1693,8 @@ interface CarteirinhaModalProps {
 function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
   const supabase = createClient();
   const [hash, setHash] = useState<string>(`rotaescola_arapongas_${aluno.id}_2026`);
+  const [validade, setValidade] = useState<string>('Dezembro / 2026');
+  const [isExpired, setIsExpired] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -1758,9 +1760,15 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
     ctx.fillText(aluno.nome.toUpperCase(), 200, 215);
 
     // Subtitle "TRANSPORTE AUTORIZADO"
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 10px sans-serif';
-    ctx.fillText('TRANSPORTE AUTORIZADO', 200, 235);
+    if (isExpired) {
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('CARTEIRINHA EXPIRADA - RENOVE O RECADASTRO', 200, 235);
+    } else {
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('TRANSPORTE AUTORIZADO', 200, 235);
+    }
 
     // Details box background
     ctx.fillStyle = '#1e293b';
@@ -1780,7 +1788,7 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
     ctx.fillStyle = '#cbd5e1';
     ctx.font = 'bold 11px sans-serif';
     ctx.fillText(`AR-26-${aluno.id.slice(0, 5).toUpperCase()}`, 45, 302);
-    ctx.fillText('Dezembro/2026', 220, 302);
+    ctx.fillText(validade, 220, 302);
     
     const instText = aluno.escola.length > 25 ? aluno.escola.slice(0, 22) + '...' : aluno.escola;
     const itinText = aluno.rotaId && aluno.rotaId.length > 25 ? aluno.rotaId.slice(0, 22) + '...' : (aluno.rotaId || 'Não definido');
@@ -1857,6 +1865,20 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
 
         // Draw QR Code
         ctx.drawImage(imgQR, 140, 390, 120, 120);
+
+        if (isExpired) {
+          // Semi-transparent red overlay over the QR code
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+          ctx.fillRect(140, 390, 120, 120);
+          
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('EXPIRADA', 200, 445);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.font = 'bold 8px sans-serif';
+          ctx.fillText('RENOVE RECADASTRO', 200, 465);
+        }
 
         // Footer message
         ctx.fillStyle = '#64748b';
@@ -1943,12 +1965,23 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
       try {
         const { data } = await supabase
           .from('carteirinhas')
-          .select('qr_code_hash')
+          .select('qr_code_hash, data_vencimento')
           .eq('aluno_id', aluno.id)
           .maybeSingle();
 
-        if (data?.qr_code_hash) {
-          setHash(data.qr_code_hash);
+        if (data) {
+          if (data.qr_code_hash) {
+            setHash(data.qr_code_hash);
+          }
+          if (data.data_vencimento) {
+            const date = new Date(data.data_vencimento);
+            const meses = [
+              'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            setValidade(`${meses[date.getMonth()]} / ${date.getFullYear()}`);
+            setIsExpired(new Date() > date);
+          }
         }
       } catch {
         // Fallback seguro
@@ -1997,8 +2030,12 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
             {/* Dados */}
             <div className="mt-3.5 z-10">
               <h4 className="text-sm font-black text-white uppercase tracking-wide leading-tight px-1">{aluno.nome}</h4>
-              <span className="text-[8px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block">
-                Transporte Autorizado
+              <span className={`text-[8px] font-bold border px-2.5 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block ${
+                isExpired 
+                  ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse'
+                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+              }`}>
+                {isExpired ? 'Carteirinha Expirada' : 'Transporte Autorizado'}
               </span>
             </div>
 
@@ -2012,7 +2049,7 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
               </div>
               <div>
                 <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Validade</span>
-                <span className="text-slate-200 font-bold text-[9px]">Dezembro/2026</span>
+                <span className="text-slate-200 font-bold text-[9px]">{validade}</span>
               </div>
               <div className="col-span-2">
                 <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Instituição</span>
@@ -2027,17 +2064,27 @@ function CarteirinhaModal({ aluno, onClose }: CarteirinhaModalProps) {
 
           {/* QR Code */}
           <div className="px-5 py-4 bg-slate-950 border-t border-slate-800 flex flex-col items-center justify-center gap-2">
-            <div id="carteirinha-qr-code" className="bg-white p-3 rounded-2xl border-2 border-amber-500 flex flex-col items-center justify-center gap-1.5 shadow-md">
+            <div id="carteirinha-qr-code" className="bg-white p-3 rounded-2xl border-2 border-amber-500 flex flex-col items-center justify-center gap-1.5 shadow-md relative overflow-hidden">
               {loading ? (
                 <div className="w-[100px] h-[100px] flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-slate-800 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                <QRCodeSVG value={hash} size={100} bgColor="#ffffff" fgColor="#0f172a" level="M" />
+                <>
+                  <QRCodeSVG value={hash} size={100} bgColor="#ffffff" fgColor="#0f172a" level="M" />
+                  {isExpired && (
+                    <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] flex flex-col items-center justify-center text-center p-1">
+                      <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none">EXPIRADA</span>
+                      <span className="text-[6.5px] text-slate-300 font-bold mt-1 leading-tight">Renove o<br/>Recadastro</span>
+                    </div>
+                  )}
+                </>
               )}
               <span className="text-[7px] font-mono text-slate-400 truncate max-w-[120px]">{hash}</span>
             </div>
-            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Apresente ao Motorista</span>
+            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">
+              {isExpired ? 'Acesso Bloqueado' : 'Apresente ao Motorista'}
+            </span>
           </div>
         </div>
 

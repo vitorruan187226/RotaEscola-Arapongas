@@ -38,6 +38,7 @@ export default function CarteirinhaDigitalPage() {
   const supabase = createClient();
 
   const [aluno, setAluno] = useState<AlunoCarteirinha | null>(null);
+  const [isExpired, setIsExpired] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -104,9 +105,15 @@ export default function CarteirinhaDigitalPage() {
     ctx.fillText(aluno.nome.toUpperCase(), 200, 215);
 
     // Subtitle "TRANSPORTE AUTORIZADO"
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 10px sans-serif';
-    ctx.fillText('TRANSPORTE AUTORIZADO', 200, 235);
+    if (isExpired) {
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('CARTEIRINHA EXPIRADA - RENOVE O RECADASTRO', 200, 235);
+    } else {
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('TRANSPORTE AUTORIZADO', 200, 235);
+    }
 
     // Details box background
     ctx.fillStyle = '#1e293b';
@@ -204,6 +211,20 @@ export default function CarteirinhaDigitalPage() {
         // Draw QR Code
         ctx.drawImage(imgQR, 140, 390, 120, 120);
 
+        if (isExpired) {
+          // Semi-transparent red overlay over the QR code
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+          ctx.fillRect(140, 390, 120, 120);
+          
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('EXPIRADA', 200, 445);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.font = 'bold 8px sans-serif';
+          ctx.fillText('RENOVE RECADASTRO', 200, 465);
+        }
+
         // Footer message
         ctx.fillStyle = '#64748b';
         ctx.font = 'bold 10px sans-serif';
@@ -299,9 +320,26 @@ export default function CarteirinhaDigitalPage() {
           // Tenta buscar o qr_code_hash da carteirinha associada
           const { data: cartData } = await supabase
             .from('carteirinhas')
-            .select('qr_code_hash')
+            .select('qr_code_hash, data_vencimento')
             .eq('aluno_id', id)
             .maybeSingle();
+
+          let expirationDateStr = null;
+          let validadeText = 'Dezembro / 2026';
+          let expired = false;
+
+          if (cartData?.data_vencimento) {
+            expirationDateStr = cartData.data_vencimento;
+            const date = new Date(cartData.data_vencimento);
+            const meses = [
+              'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            validadeText = `${meses[date.getMonth()]} / ${date.getFullYear()}`;
+            expired = new Date() > date;
+          }
+
+          setIsExpired(expired);
 
           setAluno({
             id:         data.id,
@@ -312,7 +350,7 @@ export default function CarteirinhaDigitalPage() {
             matricula:  `AR-2026-${data.id.slice(0, 5).toUpperCase()}`,
             qrCodeHash: cartData?.qr_code_hash ?? `rotaescola_arapongas_${data.id}_2026`,
             fotoUrl:    data.foto_url ?? undefined,
-            validade:   'Dezembro / 2026',
+            validade:   validadeText,
           });
         } else {
           // Fallback mock tipado
@@ -392,8 +430,12 @@ export default function CarteirinhaDigitalPage() {
             <h4 className="text-base font-black text-white uppercase tracking-wide px-2 leading-tight">
               {aluno.nome}
             </h4>
-            <span className="text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider mt-1.5 inline-block">
-              Transporte Autorizado
+            <span className={`text-[9px] font-bold border px-2 py-0.5 rounded-full uppercase tracking-wider mt-1.5 inline-block ${
+              isExpired 
+                ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse'
+                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+            }`}>
+              {isExpired ? 'Carteirinha Expirada' : 'Transporte Autorizado'}
             </span>
           </div>
 
@@ -423,7 +465,7 @@ export default function CarteirinhaDigitalPage() {
 
         {/* ── Seção do QR Code REAL (qrcode.react) ──────────────────────────── */}
         <div className="px-5 py-5 bg-slate-950 border-t border-slate-800 flex flex-col items-center justify-center gap-3">
-          <div id="carteirinha-qr-code" className="bg-white p-3.5 rounded-2xl border-2 border-amber-500 flex flex-col items-center justify-center gap-2 shadow-md">
+          <div id="carteirinha-qr-code" className="bg-white p-3.5 rounded-2xl border-2 border-amber-500 flex flex-col items-center justify-center gap-2 shadow-md relative overflow-hidden">
             {/* QR Code dinâmico gerado com a hash do aluno */}
             <QRCodeSVG
               value={aluno.qrCodeHash}
@@ -432,12 +474,18 @@ export default function CarteirinhaDigitalPage() {
               fgColor="#0f172a"
               level="M"
             />
+            {isExpired && (
+              <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] flex flex-col items-center justify-center text-center p-2">
+                <span className="text-sm font-black text-rose-500 uppercase tracking-widest leading-none">EXPIRADA</span>
+                <span className="text-[8px] text-slate-300 font-bold mt-1 leading-tight">Efetue o<br/>Recadastro Anual</span>
+              </div>
+            )}
             <span className="text-[8px] font-mono text-slate-400 max-w-[140px] truncate">
               {aluno.qrCodeHash.slice(0, 24)}…
             </span>
           </div>
           <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider text-center">
-            Passe pelo Validador de Embarque
+            {isExpired ? 'Acesso Bloqueado' : 'Passe pelo Validador de Embarque'}
           </span>
         </div>
       </div>

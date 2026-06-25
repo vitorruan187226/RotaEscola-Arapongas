@@ -17,4 +17,15 @@
 2026-06-25 12:05:00 INFO Configurada a substituição dinâmica do histórico de embarques por um aviso de carteirinha expirada ("A carteirinha do seu filho expirou, faça o cadastro novamente") caso a secretaria tenha disparado a notificação.
 2026-06-25 12:10:00 INFO Atualizado o mock de dados local FILHOS_MOCK para conter o estudante "carlos" no estado de carteirinha expirada e notificada, permitindo testes e demonstrações instantâneas.
 2026-06-25 12:15:00 INFO Sincronizado e atualizado o histórico de alterações nas documentações _docs/0205_AdminDashboard.md e _docs/0206_ResponsavelDashboard.md.
-
+2026-06-25 12:45:00 INFO Recebida solicitacao para substituir todos os botoes de acao familiar do estudante por um unico botao "Realizar Re-cadastro" quando a carteirinha dele estiver expirada.
+2026-06-25 12:50:00 INFO Implementada a substituicao visual condicional no card de aluno do dashboard do responsavel (app/responsavel/dashboard/page.tsx).
+2026-06-25 12:55:00 INFO Criado o componente de modal RecadastroModal (fluxo hibrido):
+  - Etapa 1: Confirmar e editar dados cadastrais pre-preenchidos do estudante (Nome, Nascimento, Escola, Serie, Turma, Turno, Endereco).
+  - Etapa 2: Atualizar ou alterar os 4 tipos de documentos obrigatorios (comprovante de residencia, documento do aluno, documento do responsavel e comprovante de matricula).
+  - Preservacao automatica de documentos ja enviados anteriormente para evitar re-uploads redundantes desnecessarios, permitindo que o pai envie apenas os novos/atualizados.
+2026-06-25 13:00:00 INFO Implementada a acao de salvamento do re-cadastro:
+  - Atualiza a tabela public.alunos com os dados e reseta status para 'aguardando' (fila da SEMED), status_carteirinha para 'Pendente', rota_id para null (re-alocacao) e limpa observacao_secretaria.
+  - Implementada a resiliencia de endereco (retry automatico caso a coluna endereco nao exista no banco de dados).
+  - Reseta o status de expiracao na tabela public.carteirinhas (notificado_expiracao = false e data_vencimento = null) para remover o estudante do estado de bloqueio e aviso.
+  - Salva e vincula novos documentos no Supabase Storage (bucket documentos-transporte) e na tabela documentos_aluno.
+2026-06-25 13:05:00 INFO Atualizada a documentacao tecnica _docs/0206_ResponsavelDashboard.md com os novos detalhes de arquitetura do fluxo de re-cadastro.

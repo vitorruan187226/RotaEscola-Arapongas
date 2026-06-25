@@ -137,6 +137,7 @@ export default function ResponsavelDashboard() {
   const [selectedFilhoRastreio, setSelectedFilhoRastreio] = useState<Filho | null>(null);
   const [activeModalCadastro, setActiveModalCadastro] = useState(false);
   const [selectedFilhoEdicao, setSelectedFilhoEdicao] = useState<Filho | null>(null);
+  const [selectedFilhoRecadastro, setSelectedFilhoRecadastro] = useState<Filho | null>(null);
 
   // Estado de Toast Premium
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -649,46 +650,58 @@ export default function ResponsavelDashboard() {
               {/* Ocorrências Disciplinares do Aluno */}
               <OcorrenciasFilho alunoId={filho.id} usandoMock={usandoMock} />
 
-              {/* Ações Rápidas */}
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                {/* Documentos */}
-                <button
-                  onClick={() => setSelectedFilhoDoc(filho)}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border border-slate-200/40"
-                >
-                  <UploadCloud size={14} />
-                  <span>Documentos</span>
-                </button>
-
-                {/* Rastreio */}
-                <button
-                  onClick={() => setSelectedFilhoRastreio(filho)}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors"
-                >
-                  <MapPin size={14} />
-                  <span>Ver Rastreio</span>
-                </button>
-
-                {/* Carteirinha Digital — ativo apenas se Aprovado */}
-                {filho.statusCarteirinha === 'Aprovado' ? (
+              {/* Ações Rápidas ou Botão Único de Re-cadastro (Carteirinha Expirada) */}
+              {isExpired ? (
+                <div className="pt-1 border-t border-slate-100">
                   <button
-                    onClick={() => setSelectedFilhoCart(filho)}
-                    className="col-span-2 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                    onClick={() => setSelectedFilhoRecadastro(filho)}
+                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm uppercase tracking-wider w-full"
                   >
-                    <FileText size={14} className="text-amber-500" />
-                    <span>Visualizar Carteirinha Digital</span>
+                    <RotateCcw size={14} />
+                    <span>Realizar Re-cadastro</span>
                   </button>
-                ) : (
-                  <div className="col-span-2 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-dashed border-slate-200 cursor-not-allowed select-none">
-                    <FileText size={14} className="opacity-50" />
-                    <span>
-                      Carteirinha {filho.statusCarteirinha === 'Em análise'
-                        ? 'em análise pela SEMED…'
-                        : '— aguardando envio de documentos'}
-                    </span>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                  {/* Documentos */}
+                  <button
+                    onClick={() => setSelectedFilhoDoc(filho)}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border border-slate-200/40"
+                  >
+                    <UploadCloud size={14} />
+                    <span>Documentos</span>
+                  </button>
+
+                  {/* Rastreio */}
+                  <button
+                    onClick={() => setSelectedFilhoRastreio(filho)}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors"
+                  >
+                    <MapPin size={14} />
+                    <span>Ver Rastreio</span>
+                  </button>
+
+                  {/* Carteirinha Digital — ativo apenas se Aprovado */}
+                  {filho.statusCarteirinha === 'Aprovado' ? (
+                    <button
+                      onClick={() => setSelectedFilhoCart(filho)}
+                      className="col-span-2 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                    >
+                      <FileText size={14} className="text-amber-500" />
+                      <span>Visualizar Carteirinha Digital</span>
+                    </button>
+                  ) : (
+                    <div className="col-span-2 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-dashed border-slate-200 cursor-not-allowed select-none">
+                      <FileText size={14} className="opacity-50" />
+                      <span>
+                        Carteirinha {filho.statusCarteirinha === 'Em análise'
+                          ? 'em análise pela SEMED…'
+                          : '— aguardando envio de documentos'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
               </div>
             );
           })
@@ -763,6 +776,23 @@ export default function ResponsavelDashboard() {
             setFilhos(prev => prev.map(f => f.id === filhoAtualizado.id ? filhoAtualizado : f));
             setSelectedFilhoEdicao(null);
             showToast('Alterações salvas! O cadastro passará por uma nova análise da SEMED.', 'success');
+          }}
+          onError={(errText) => {
+            showToast(errText, 'error');
+          }}
+        />
+      )}
+
+      {/* ── MODAL 6: RE-CADASTRO DE FILHO ─────────────────────────────────────── */}
+      {selectedFilhoRecadastro && (
+        <RecadastroModal
+          aluno={selectedFilhoRecadastro}
+          escolas={escolas}
+          onClose={() => setSelectedFilhoRecadastro(null)}
+          onSuccess={(filhoAtualizado) => {
+            setFilhos(prev => prev.map(f => f.id === filhoAtualizado.id ? filhoAtualizado : f));
+            setSelectedFilhoRecadastro(null);
+            showToast('Re-cadastro enviado! O estudante passará por uma nova análise da SEMED.', 'success');
           }}
           onError={(errText) => {
             showToast(errText, 'error');
@@ -1461,6 +1491,530 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
               )}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SUB-COMPONENTE: MODAL DE RE-CADASTRO DE FILHO (HÍBRIDO CADASTRO + DOCUMENTOS) ───
+interface RecadastroModalProps {
+  aluno: Filho;
+  escolas: any[];
+  onClose: () => void;
+  onSuccess: (filhoAtualizado: Filho) => void;
+  onError: (text: string) => void;
+}
+
+function RecadastroModal({ aluno, escolas, onClose, onSuccess, onError }: RecadastroModalProps) {
+  const supabase = createClient();
+
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
+  // Campos - Etapa 1 (Pré-preenchidos com os dados do aluno)
+  const [nomeAluno, setNomeAluno] = useState(aluno.nome || '');
+  const [dataNascimento, setDataNascimento] = useState(aluno.data_nascimento || '');
+  const [escolaIdAluno, setEscolaIdAluno] = useState(aluno.escola_id || escolas[0]?.id || '');
+  const [escolaAluno, setEscolaAluno] = useState(aluno.escola || escolas[0]?.nome || '');
+  const [anoSerie, setAnoSerie] = useState(aluno.ano_serie || '');
+  const [turma, setTurma] = useState(aluno.turma || '');
+  const [periodo, setPeriodo] = useState<'manha' | 'tarde' | 'noite'>(aluno.periodo || 'manha');
+  const [endereco, setEndereco] = useState(aluno.endereco || '');
+
+  const selectedSchool = escolas.find(esc => esc.id === escolaIdAluno);
+  const schoolSeries = selectedSchool?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
+
+  // Campos - Etapa 2 (Arquivos novos selecionados)
+  const [fileComprovante, setFileComprovante] = useState<File | null>(null);
+  const [fileDocAluno, setFileDocAluno] = useState<File | null>(null);
+  const [fileDocResponsavel, setFileDocResponsavel] = useState<File | null>(null);
+  const [fileMatricula, setFileMatricula] = useState<File | null>(null);
+
+  // Status de documentos já existentes no banco
+  const [existingDocs, setExistingDocs] = useState<Record<DocType, { enviado: boolean; url: string | null }>>({
+    Comprovante_Residencia: { enviado: false, url: null },
+    Documento_Aluno: { enviado: false, url: null },
+    Documento_Responsavel: { enviado: false, url: null },
+    Declaracao_Matricula: { enviado: false, url: null }
+  });
+
+  useEffect(() => {
+    const activeSchool = escolas.find(esc => esc.id === escolaIdAluno);
+    const activeSeries = activeSchool?.series || [];
+    if (activeSeries.length > 0 && (!anoSerie || !activeSeries.includes(anoSerie))) {
+      setAnoSerie(activeSeries[0]);
+    }
+  }, [escolaIdAluno, escolas]);
+
+  // Carrega documentos já existentes para que o pai não seja obrigado a reenviar todos se não quiser
+  useEffect(() => {
+    async function loadExistingDocs() {
+      try {
+        const { data, error } = await supabase
+          .from('documentos_aluno')
+          .select('tipo_documento, url_arquivo, url_documento')
+          .eq('aluno_id', aluno.id);
+
+        if (!error && data) {
+          const updated = { ...existingDocs };
+          data.forEach((doc: any) => {
+            const t = doc.tipo_documento as DocType;
+            if (updated[t]) {
+              updated[t] = {
+                enviado: true,
+                url: doc.url_arquivo || doc.url_documento || null
+              };
+            }
+          });
+          setExistingDocs(updated);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar documentos existentes para recadastro:', err);
+      } finally {
+        setLoadingDocs(false);
+      }
+    }
+    loadExistingDocs();
+  }, [aluno.id, supabase]);
+
+  const handleSalvarRecadastro = async () => {
+    if (!nomeAluno.trim() || !endereco.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento) return;
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // 1. Atualiza dados do aluno e reseta o status para análise com resiliência de endereço
+        const updateCompleto: any = {
+          nome: nomeAluno.trim(),
+          data_nascimento: dataNascimento,
+          escola: schoolAlunoSelectName(escolaIdAluno),
+          escola_id: escolaIdAluno,
+          ano_serie: anoSerie,
+          turma: turma.trim().toUpperCase(),
+          serie: `${anoSerie} - ${turma.trim().toUpperCase()}`,
+          periodo: periodo,
+          turno: periodo === 'manha' ? 'Manhã' : periodo === 'tarde' ? 'Tarde' : 'Noite',
+          status: 'aguardando',
+          status_carteirinha: 'Pendente',
+          rota_id: null, // Reseta a rota para re-alocação após aprovação
+          observacao_secretaria: null, // Limpa observações antigas
+          endereco: endereco.trim()
+        };
+
+        let { error: updateError } = await supabase
+          .from('alunos')
+          .update(updateCompleto)
+          .eq('id', aluno.id);
+
+        if (updateError && (updateError.message?.includes('endereco') || updateError.code === 'PGRST100' || updateError.message?.includes('column'))) {
+          console.warn('Erro ao atualizar aluno com endereco (coluna ausente). Tentando sem endereco.');
+          delete updateCompleto.endereco;
+          const retry = await supabase
+            .from('alunos')
+            .update(updateCompleto)
+            .eq('id', aluno.id);
+          updateError = retry.error;
+        }
+
+        if (updateError) throw updateError;
+
+        // 2. Reseta o status da carteirinha para "não expirada" e "não notificada"
+        const { error: carteirinhaError } = await supabase
+          .from('carteirinhas')
+          .update({
+            notificado_expiracao: false,
+            data_vencimento: null // Deixa nulo ou define data futura. Ao aprovar, a secretaria definirá uma nova data.
+          })
+          .eq('aluno_id', aluno.id);
+
+        if (carteirinhaError) {
+          console.warn('Aviso: erro ao atualizar a tabela carteirinhas:', carteirinhaError.message);
+        }
+
+        // 3. Processa uploads de documentos novos (se selecionados)
+        const novosArquivos = [
+          { file: fileComprovante, tipo: 'Comprovante_Residencia' as DocType },
+          { file: fileDocAluno, tipo: 'Documento_Aluno' as DocType },
+          { file: fileDocResponsavel, tipo: 'Documento_Responsavel' as DocType },
+          { file: fileMatricula, tipo: 'Declaracao_Matricula' as DocType }
+        ];
+
+        for (const item of novosArquivos) {
+          if (item.file) {
+            try {
+              const ext = item.file.name.split('.').pop() || 'jpg';
+              const fileName = `${aluno.id}_${item.tipo}_${Date.now()}.${ext}`;
+
+              // Remove o registro de documento antigo
+              await supabase
+                .from('documentos_aluno')
+                .delete()
+                .eq('aluno_id', aluno.id)
+                .eq('tipo_documento', item.tipo);
+
+              // Upload do novo arquivo
+              const { error: storageError } = await supabase.storage
+                .from('documentos-transporte')
+                .upload(`documentos/${fileName}`, item.file, { upsert: true });
+
+              if (storageError) throw storageError;
+
+              const publicUrl = supabase.storage
+                .from('documentos-transporte')
+                .getPublicUrl(`documentos/${fileName}`).data.publicUrl;
+
+              // Insere a referência do novo documento
+              const { error: docInsertError } = await supabase.from('documentos_aluno').insert({
+                aluno_id: aluno.id,
+                tipo_documento: item.tipo,
+                url_arquivo: publicUrl,
+                url_documento: publicUrl
+              });
+
+              if (docInsertError) throw docInsertError;
+            } catch (err: any) {
+              console.error(`Erro ao atualizar documento ${item.tipo}:`, err.message);
+            }
+          }
+        }
+      }
+
+      // Constrói objeto de sucesso
+      const filhoAtualizado: Filho = {
+        ...aluno,
+        nome: nomeAluno.trim(),
+        data_nascimento: dataNascimento,
+        escola: schoolAlunoSelectName(escolaIdAluno),
+        escola_id: escolaIdAluno,
+        ano_serie: anoSerie,
+        turma: turma.trim().toUpperCase(),
+        serie: `${anoSerie} - ${turma.trim().toUpperCase()}`,
+        periodo: periodo,
+        status: 'aguardando',
+        statusCarteirinha: 'Pendente',
+        endereco: endereco.trim(),
+        motorista_nome: 'Aguardando Atribuição',
+        veiculo_numero: 'Aguardando Atribuição',
+        rotaId: 'Aguardando Atribuição',
+        dataVencimento: null,
+        notificadoExpiracao: false
+      };
+
+      onSuccess(filhoAtualizado);
+    } catch (err: any) {
+      console.error('Erro no fluxo de re-cadastro:', err);
+      onError(err.message || 'Erro ao realizar re-cadastro del aluno.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const schoolAlunoSelectName = (id: string) => {
+    return escolas.find(esc => esc.id === id)?.nome || escolaAluno;
+  };
+
+  const getDocLabel = (tipo: DocType) => {
+    if (tipo === 'Comprovante_Residencia')  return 'Comprovante de Residência';
+    if (tipo === 'Documento_Aluno') return 'Documento do Aluno (RG/Certidão)';
+    if (tipo === 'Documento_Responsavel') return 'Documento do Responsável (RG/CPF)';
+    if (tipo === 'Declaracao_Matricula') return 'Declaração de Matrícula';
+    return 'Documento';
+  };
+
+  // Um documento é considerado válido para envio se:
+  // - Ou já existia anteriormente no banco
+  // - Ou o pai selecionou um novo arquivo agora
+  const isDocumentValid = (tipo: DocType) => {
+    return existingDocs[tipo].enviado || !!(tipo === 'Comprovante_Residencia' ? fileComprovante :
+                                           tipo === 'Documento_Aluno' ? fileDocAluno :
+                                           tipo === 'Documento_Responsavel' ? fileDocResponsavel : fileMatricula);
+  };
+
+  const isAllDocsValid = isDocumentValid('Comprovante_Residencia') &&
+                         isDocumentValid('Documento_Aluno') &&
+                         isDocumentValid('Documento_Responsavel') &&
+                         isDocumentValid('Declaracao_Matricula');
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-fadeIn max-h-[90vh]">
+        
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50 sticky top-0 z-10">
+          <div>
+            <h3 className="font-black text-slate-900 text-sm">Realizar Re-cadastro</h3>
+            <span className="text-[9px] text-amber-600 font-bold block mt-0.5 uppercase tracking-wide">
+              {step === 1 ? 'Etapa 1: Confirmar Dados' : 'Etapa 2: Atualizar Documentos'}
+            </span>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Content (Scrollable) */}
+        <div className="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+          
+          {step === 1 ? (
+            /* ETAPA 1: Confirmar Dados */
+            <div className="flex flex-col gap-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[10.5px] text-amber-850 font-medium leading-relaxed">
+                ℹ️ <strong>Informações pré-preenchidas:</strong> Verifique se os dados escolares e endereço continuam corretos e altere o que for necessário antes de prosseguir.
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
+                  value={nomeAluno}
+                  onChange={(e) => setNomeAluno(e.target.value)}
+                  placeholder="Ex: João da Silva"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Data de Nascimento
+                </label>
+                <input
+                  type="date"
+                  value={dataNascimento}
+                  onChange={(e) => setDataNascimento(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Endereço Residencial do Aluno
+                </label>
+                <input
+                  type="text"
+                  value={endereco}
+                  onChange={(e) => setEndereco(e.target.value)}
+                  placeholder="Ex: Av. Paraná, 123 - Centro, Arapongas - PR"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Instituição de Ensino
+                </label>
+                <select
+                  value={escolaIdAluno}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setEscolaIdAluno(selId);
+                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
+                    setEscolaAluno(selNome);
+                  }}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                >
+                  <option value="" disabled>-- Selecione uma Escola --</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    Ano / Série
+                  </label>
+                  <select
+                    value={anoSerie}
+                    onChange={(e) => setAnoSerie(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                  >
+                    <option value="" disabled>-- Série --</option>
+                    {schoolSeries.map((s: string) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    Turma
+                  </label>
+                  <input
+                    type="text"
+                    value={turma}
+                    onChange={(e) => setTurma(e.target.value.toUpperCase())}
+                    placeholder="Ex: B"
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Turno
+                </label>
+                <select
+                  value={periodo}
+                  onChange={(e) => setPeriodo(e.target.value as any)}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                >
+                  <option value="manha">Manhã</option>
+                  <option value="tarde">Tarde</option>
+                  <option value="noite">Noite</option>
+                </select>
+              </div>
+
+              <button
+                disabled={!nomeAluno.trim() || !endereco.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento}
+                onClick={() => setStep(2)}
+                className={`w-full py-3.5 mt-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
+                  nomeAluno.trim() && endereco.trim() && anoSerie.trim() && turma.trim() && dataNascimento
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-slate-100 text-slate-450 border cursor-not-allowed'
+                }`}
+              >
+                <span>Avançar para Documentos</span>
+              </button>
+            </div>
+          ) : (
+            /* ETAPA 2: Upload de Documentos */
+            <div className="flex flex-col gap-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[10px] text-emerald-850 font-medium">
+                📁 Os documentos enviados anteriormente estão preservados. Você pode selecionar e enviar novos arquivos para atualizar aqueles que expiraram ou precisam de correção.
+              </div>
+
+              {loadingDocs ? (
+                <div className="py-8 flex flex-col items-center justify-center gap-2">
+                  <div className="w-6 h-6 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] text-slate-400 font-bold">Verificando documentos salvos...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* Comprovante */}
+                  <div className="border border-slate-200 rounded-xl p-3 hover:border-amber-500 transition-colors flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                        Comprovante de Residência
+                      </label>
+                      {existingDocs.Comprovante_Residencia.enviado && !fileComprovante && (
+                        <span className="text-[8px] bg-emerald-150 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold uppercase">Cadastrado</span>
+                      )}
+                      {fileComprovante && (
+                        <span className="text-[8px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Substituído</span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileComprovante(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Doc Aluno */}
+                  <div className="border border-slate-200 rounded-xl p-3 hover:border-amber-500 transition-colors flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                        Documento do Aluno (RG/Certidão)
+                      </label>
+                      {existingDocs.Documento_Aluno.enviado && !fileDocAluno && (
+                        <span className="text-[8px] bg-emerald-150 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold uppercase">Cadastrado</span>
+                      )}
+                      {fileDocAluno && (
+                        <span className="text-[8px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Substituído</span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileDocAluno(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Doc Responsavel */}
+                  <div className="border border-slate-200 rounded-xl p-3 hover:border-amber-500 transition-colors flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                        Documento do Responsável (RG/CPF)
+                      </label>
+                      {existingDocs.Documento_Responsavel.enviado && !fileDocResponsavel && (
+                        <span className="text-[8px] bg-emerald-150 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold uppercase">Cadastrado</span>
+                      )}
+                      {fileDocResponsavel && (
+                        <span className="text-[8px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Substituído</span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileDocResponsavel(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Comprovante de Matricula */}
+                  <div className="border border-slate-200 rounded-xl p-3 hover:border-amber-500 transition-colors flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                        Declaração de Matrícula
+                      </label>
+                      {existingDocs.Declaracao_Matricula.enviado && !fileMatricula && (
+                        <span className="text-[8px] bg-emerald-150 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold uppercase">Cadastrado</span>
+                      )}
+                      {fileMatricula && (
+                        <span className="text-[8px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Substituído</span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setFileMatricula(e.target.files?.[0] || null)}
+                      className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-2 sticky bottom-0 bg-white py-2">
+                <button
+                  disabled={loading}
+                  onClick={() => setStep(1)}
+                  className="py-3 px-4 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Voltar
+                </button>
+
+                <button
+                  disabled={loading || loadingDocs || !isAllDocsValid}
+                  onClick={handleSalvarRecadastro}
+                  className={`flex-1 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
+                    (isAllDocsValid && !loading && !loadingDocs)
+                      ? 'bg-slate-900 text-white hover:bg-slate-800'
+                      : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
+                  }`}
+                >
+                  {loading ? (
+                    <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span>Enviar Re-cadastro</span>
+                  )}
+                </button>
+              </div>
+              {!isAllDocsValid && !loadingDocs && (
+                <p className="text-[8.5px] text-center text-rose-500 font-bold leading-tight">
+                  Aviso: Garanta que todos os 4 tipos de documentos estejam cadastrados ou anexados para concluir.
+                </p>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>

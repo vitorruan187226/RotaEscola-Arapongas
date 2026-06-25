@@ -8,7 +8,7 @@ import {
   MapPin,
   QrCode,
   FileText,
-  WifiOff,
+  CalendarX,
   ArrowRight,
   Users,
   BarChart3,
@@ -36,7 +36,7 @@ const NAV_LINKS = [
 const STATS = [
   { value: 'Seguro', label: 'Validação por QR Code', icon: QrCode },
   { value: 'Ao Vivo', label: 'Rastreamento de rotas', icon: MapPin },
-  { value: 'Offline', label: 'Zona rural & sítios', icon: WifiOff },
+  { value: 'Ausências', label: 'Aviso prévio de faltas', icon: CalendarX },
   { value: '100%', label: 'Processo digital', icon: FileText },
 ];
 
@@ -77,7 +77,7 @@ const PILARES = [
       { icon: Users, texto: 'Lista de passageiros digital e atualizada' },
       { icon: QrCode, texto: 'Controle de embarque por QR Code' },
       { icon: Smartphone, texto: 'Comunicação direta com a SEMED' },
-      { icon: WifiOff, texto: 'Funciona offline em áreas rurais e assentamentos' },
+      { icon: ShieldCheck, texto: 'Sincronização instantânea de presenças' },
     ],
   },
 ];
@@ -98,10 +98,10 @@ const RECURSOS = [
     tagColor: 'tag-green',
   },
   {
-    icon: WifiOff,
-    titulo: 'Modo Offline',
-    descricao: 'Funciona mesmo sem internet. Essencial para assentamentos, sítios e zona rural de Arapongas.',
-    tag: 'Inovação',
+    icon: CalendarX,
+    titulo: 'Controle de Ausências',
+    descricao: 'Notifique a ausência do aluno diretamente pelo aplicativo. O motorista é avisado em tempo real e otimiza a rota de Arapongas.',
+    tag: 'Praticidade',
     tagColor: 'tag-blue',
   },
   {
@@ -312,8 +312,8 @@ export default function LandingPage() {
                 <span>100% Seguro</span>
               </div>
               <div className="lp-float-badge lp-float-badge--br">
-                <WifiOff size={14} />
-                <span>Funciona Offline</span>
+                <CalendarX size={14} />
+                <span>Aviso de Ausência</span>
               </div>
             </div>
           </div>

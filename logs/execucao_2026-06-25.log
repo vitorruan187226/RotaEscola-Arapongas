@@ -1,0 +1,10 @@
+2026-06-25 11:00:05 INFO Recebida solicitacao para remover referencias de funcionamento offline da landing page (app/page.tsx).
+2026-06-25 11:00:20 INFO Executado protocolo de reconhecimento. Leitura dos arquivos de documentacao concluida: _docs/0200_Indice_Telas.md, _docs/0201_Home.md e indice.txt.
+2026-06-25 11:01:10 INFO Modificando app/page.tsx:
+  - Substituido icone WifiOff por CalendarX.
+  - Substituida a estatistica 'Offline' em STATS por 'Ausências / Aviso prévio de faltas'.
+  - Substituido item offline em PILARES -> motoristas por 'Sincronização instantânea de presenças'.
+  - Substituido card de recurso 'Modo Offline' por 'Controle de Ausências' detalhando a funcionalidade dos pais de notificar faltas.
+  - Substituida a floating badge 'Funciona Offline' por 'Aviso de Ausência'.
+2026-06-25 11:01:25 INFO Atualizando a documentacao correspondente em _docs/0201_Home.md para refletir as mudancas no layout e nos conteudos.
+2026-06-25 11:01:40 INFO Alteracoes de copy e estrutura de UI concluidas com sucesso.

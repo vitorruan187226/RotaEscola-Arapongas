@@ -531,7 +531,7 @@ export default function EscolaDetalhesPage() {
               qr_code_hash: hashSecure,
               data_vencimento: newDateStr,
               notificado_expiracao: resetNotification,
-              status: 'Ativa'
+              status_carteirinha: 'Ativa'
             });
           if (error) throw error;
         }

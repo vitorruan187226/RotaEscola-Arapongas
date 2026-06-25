@@ -151,6 +151,7 @@ O módulo de **Aprovação de Docs** (`documentos/page.tsx`) foi reestruturado d
 | 23/06/2026 | **Redirecionamento do botão Analisar:** Alterado o link "Analisar" na seção de "Últimas Solicitações" para apontar para a listagem de "Entidades Escolares" (`/dashboard/admin/escolas`) em vez da fila linear direta de documentos (`/dashboard/admin/documentos`). |
 | 23/06/2026 | **Remoção de Motoristas Mockups:** Implementado filtro para ocultar motoristas com IDs de desenvolvimento (prefixados com '33333333-') das listas de veículos e rotas, removendo a exibição indesejada de múltiplos motoristas de simulação como 'Aguardando Veículo' na paginação da frota. |
 | 25/06/2026 | **Simulador de Validade de Carteirinhas:** Integração do componente `<SimulatorWidget />` no painel principal, permitindo à secretaria definir e testar a expiração e o bloqueio de carteirinhas de estudantes (validade de 1 ano) diretamente pelo banco de dados remoto. |
+| 25/06/2026 | **Aba Expirados & Notificação:** Adicionada a aba **"Expirados"** com contagem dinâmica nos Detalhes da Escola, botões provisórios **"Expirar (Teste) / Reativar (Teste)"** para testes de transição e a ação de **"Notificar Responsável"** que grava `notificado_expiracao = true` no Supabase. |
 
 
 

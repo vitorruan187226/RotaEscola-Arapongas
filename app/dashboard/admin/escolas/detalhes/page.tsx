@@ -41,6 +41,8 @@ interface AlunoAuditoria {
   rotaId?: string;
   fotoUrl?: string;
   endereco?: string;
+  dataVencimento?: string | null;
+  notificadoExpiracao?: boolean;
 }
 
 interface DocumentoAnexo {
@@ -80,6 +82,11 @@ function parseSerie(serieStr: string) {
 
 const ALUNOS_MOCK_AUDITORIA: AlunoAuditoria[] = ALUNOS_MOCK_GLOBAL.map(a => {
   const parsed = parseSerie(a.serie);
+  const isCarlos = a.nome.toLowerCase() === 'carlos';
+  const dataVencimento = isCarlos 
+    ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() 
+    : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
   return {
     id: a.id,
     nome: a.nome,
@@ -91,7 +98,9 @@ const ALUNOS_MOCK_AUDITORIA: AlunoAuditoria[] = ALUNOS_MOCK_GLOBAL.map(a => {
     turno: a.id.charCodeAt(a.id.length - 1) % 2 === 0 ? 'Manhã' : 'Tarde',
     status: a.statusCarteirinha === 'Pendente' ? 'Rejeitado' as const : a.statusCarteirinha,
     rotaId: a.rotaId,
-    enviadoEm: new Date().toLocaleDateString('pt-BR')
+    enviadoEm: new Date().toLocaleDateString('pt-BR'),
+    dataVencimento,
+    notificadoExpiracao: false
   };
 });
 
@@ -108,7 +117,7 @@ export default function EscolaDetalhesPage() {
   const [usandoMock, setUsandoMock] = useState(false);
 
   // Filtros por Abas
-  const [activeTab, setActiveTab] = useState<'pendentes' | 'aprovados' | 'rejeitados'>('pendentes');
+  const [activeTab, setActiveTab] = useState<'pendentes' | 'aprovados' | 'rejeitados' | 'expirados'>('pendentes');
 
   // Controle de colapso das séries agrupadas
   const [collapsedSeries, setCollapsedSeries] = useState<Record<string, boolean>>({});
@@ -247,7 +256,13 @@ export default function EscolaDetalhesPage() {
     try {
       const primaryRes = await supabase
         .from('alunos')
-        .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url, endereco')
+        .select(`
+          id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url, endereco,
+          carteirinhas (
+            data_vencimento,
+            notificado_expiracao
+          )
+        `)
         .eq('escola', escolaNome);
 
       let data: any[] | null = null;
@@ -257,7 +272,13 @@ export default function EscolaDetalhesPage() {
         console.warn('Coluna endereco não encontrada na tabela alunos. Tentando sem endereco.');
         const secondaryRes = await supabase
           .from('alunos')
-          .select('id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url')
+          .select(`
+            id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url,
+            carteirinhas (
+              data_vencimento,
+              notificado_expiracao
+            )
+          `)
           .eq('escola', escolaNome);
         data = secondaryRes.data;
         error = secondaryRes.error;
@@ -300,7 +321,9 @@ export default function EscolaDetalhesPage() {
             enviadoEm: a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
             rotaId: a.rota_id ?? undefined,
             fotoUrl: a.foto_url ?? undefined,
-            endereco: a.endereco ?? undefined
+            endereco: a.endereco ?? undefined,
+            dataVencimento: a.carteirinhas?.[0]?.data_vencimento ?? null,
+            notificadoExpiracao: a.carteirinhas?.[0]?.notificado_expiracao ?? false
           };
         });
         setAlunos(mapped);
@@ -466,7 +489,89 @@ export default function EscolaDetalhesPage() {
       
       if (selectedAluno?.id === id) setSelectedAluno(null);
     } catch (err) {
-      console.error('Falha de persistência ao rejeitar estudante:', err);
+      console.error('Falha de persistência ao reavaliar estudante:', err);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleToggleExpiracaoTeste = async (aluno: AlunoAuditoria) => {
+    setLoadingAction(aluno.id);
+    const isMockAluno = aluno.id.startsWith('aluno-mock') || usandoMock;
+
+    try {
+      const isCurrentlyExpired = aluno.status === 'Aprovado' && aluno.dataVencimento && new Date(aluno.dataVencimento) < new Date();
+      const newDateStr = isCurrentlyExpired 
+        ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() 
+        : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const resetNotification = isCurrentlyExpired ? false : aluno.notificadoExpiracao;
+
+      if (!isMockAluno) {
+        const { data: cards } = await supabase
+          .from('carteirinhas')
+          .select('id')
+          .eq('aluno_id', aluno.id)
+          .maybeSingle();
+
+        if (cards?.id) {
+          const { error } = await supabase
+            .from('carteirinhas')
+            .update({ 
+              data_vencimento: newDateStr,
+              notificado_expiracao: resetNotification
+            })
+            .eq('id', cards.id);
+          if (error) throw error;
+        } else {
+          const hashSecure = `rotaescola_arapongas_${aluno.id}_secure_${Date.now().toString().slice(-4)}`;
+          const { error } = await supabase
+            .from('carteirinhas')
+            .insert({
+              aluno_id: aluno.id,
+              qr_code_hash: hashSecure,
+              data_vencimento: newDateStr,
+              notificado_expiracao: resetNotification,
+              status: 'Ativa'
+            });
+          if (error) throw error;
+        }
+      }
+
+      setAlunos(prev => prev.map(a => a.id === aluno.id ? { 
+        ...a, 
+        dataVencimento: newDateStr, 
+        notificadoExpiracao: resetNotification 
+      } : a));
+
+      const msg = isCurrentlyExpired ? 'Carteirinha reativada para testes!' : 'Carteirinha expirada para testes!';
+      showToast(msg, 'success');
+    } catch (err: any) {
+      console.error('Erro ao simular validade:', err);
+      showToast('Erro ao simular alteração de validade.', 'error');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleNotificarResponsavel = async (alunoId: string) => {
+    setLoadingAction(alunoId);
+    const isMockAluno = alunoId.startsWith('aluno-mock') || usandoMock;
+
+    try {
+      if (!isMockAluno) {
+        const { error } = await supabase
+          .from('carteirinhas')
+          .update({ notificado_expiracao: true })
+          .eq('aluno_id', alunoId);
+
+        if (error) throw error;
+      }
+
+      setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notificadoExpiracao: true } : a));
+      showToast('Responsável notificado com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao notificar responsável:', err);
+      showToast('Erro ao enviar notificação.', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -622,12 +727,18 @@ export default function EscolaDetalhesPage() {
     return 'Documento Geral';
   };
 
+  const isExpired = (aluno: AlunoAuditoria) => {
+    return aluno.status === 'Aprovado' && aluno.dataVencimento && new Date(aluno.dataVencimento) < new Date();
+  };
+
   // Filtragem local baseada na aba ativa
   const filteredAlunos = alunos.filter((aluno) => {
     if (activeTab === 'pendentes') {
       return aluno.status === 'Em análise';
     } else if (activeTab === 'aprovados') {
-      return aluno.status === 'Aprovado';
+      return aluno.status === 'Aprovado' && !isExpired(aluno);
+    } else if (activeTab === 'expirados') {
+      return isExpired(aluno);
     } else {
       // Rejeitados / Pendentes de documentação
       return aluno.status === 'Rejeitado' || aluno.status === 'Pendente';
@@ -635,8 +746,9 @@ export default function EscolaDetalhesPage() {
   });
 
   const countPendentes = alunos.filter(a => a.status === 'Em análise').length;
-  const countAprovados = alunos.filter(a => a.status === 'Aprovado').length;
+  const countAprovados = alunos.filter(a => a.status === 'Aprovado' && !isExpired(a)).length;
   const countRejeitados = alunos.filter(a => a.status === 'Rejeitado' || a.status === 'Pendente').length;
+  const countExpirados = alunos.filter(a => isExpired(a)).length;
 
   // Agrupamento dos alunos
   const groupedAlunos = useMemo(() => {
@@ -786,6 +898,22 @@ export default function EscolaDetalhesPage() {
             {countRejeitados}
           </span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('expirados')}
+          className={`flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-black transition-all ${
+            activeTab === 'expirados'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          }`}
+        >
+          <span>Expirados</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            activeTab === 'expirados' ? 'bg-rose-100 text-rose-700' : 'bg-slate-200 text-slate-600'
+          }`}>
+            {countExpirados}
+          </span>
+        </button>
       </div>
 
       {/* Tabela da Aba Selecionada */}
@@ -793,7 +921,7 @@ export default function EscolaDetalhesPage() {
         <div className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-wider pb-2 border-b">
           <Users size={14} className="text-amber-500" />
           <span>Fila de Auditoria Cadastral — {
-            activeTab === 'pendentes' ? 'Pendências' : activeTab === 'aprovados' ? 'Aprovados' : 'Rejeitados'
+            activeTab === 'pendentes' ? 'Pendências' : activeTab === 'aprovados' ? 'Aprovados' : activeTab === 'expirados' ? 'Expirados' : 'Rejeitados'
           }</span>
         </div>
 
@@ -814,6 +942,8 @@ export default function EscolaDetalhesPage() {
                   ? 'Não há novos cadastros sob análise técnica nesta unidade escolar.' 
                   : activeTab === 'aprovados' 
                   ? 'Nenhum estudante aprovado cadastrado nesta escola.'
+                  : activeTab === 'expirados'
+                  ? 'Nenhum estudante com carteirinha expirada nesta escola.'
                   : 'Nenhum estudante rejeitado ou pendente de envio de anexo.'
                 }
               </p>
@@ -921,18 +1051,25 @@ export default function EscolaDetalhesPage() {
                                         </div>
                                       </td>
                                       <td className="py-3 px-3">
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                          a.status === 'Aprovado'
-                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                            : a.status === 'Em análise'
-                                            ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                            : 'bg-rose-50 border-rose-200 text-rose-700'
-                                        }`}>
-                                          <span className={`w-1.5 h-1.5 rounded-full ${
-                                            a.status === 'Aprovado' ? 'bg-emerald-500' : a.status === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-rose-500'
-                                          }`} />
-                                          {a.status === 'Pendente' ? 'Recusado' : a.status}
-                                        </span>
+                                        {isExpired(a) ? (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-rose-50 border-rose-200 text-rose-700 shadow-sm animate-pulse">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                            <span>Expirado</span>
+                                          </span>
+                                        ) : (
+                                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                            a.status === 'Aprovado'
+                                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                              : a.status === 'Em análise'
+                                              ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                              : 'bg-rose-50 border-rose-200 text-rose-700'
+                                          }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                              a.status === 'Aprovado' ? 'bg-emerald-500' : a.status === 'Em análise' ? 'bg-blue-500 animate-pulse' : 'bg-rose-500'
+                                            }`} />
+                                            {a.status === 'Pendente' ? 'Recusado' : a.status}
+                                          </span>
+                                        )}
                                       </td>
                                       <td className="py-3 px-3">
                                         <div className="flex items-center justify-center gap-2">
@@ -980,7 +1117,7 @@ export default function EscolaDetalhesPage() {
                                           )}
                   
                                           {/* 3. Ações para Aprovados */}
-                                          {a.status === 'Aprovado' && (
+                                          {a.status === 'Aprovado' && !isExpired(a) && (
                                             <div className="flex items-center gap-2">
                                               {(() => {
                                                 const rota = rotas.find(r => r.id === a.rotaId || r.codigo === a.rotaId);
@@ -992,6 +1129,49 @@ export default function EscolaDetalhesPage() {
                                                   </span>
                                                 );
                                               })()}
+                                              <button
+                                                disabled={loadingAction !== null}
+                                                onClick={() => handleToggleExpiracaoTeste(a)}
+                                                className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-200 shadow-sm disabled:opacity-50"
+                                                title="Simular expiração imediata para testes"
+                                              >
+                                                <span>Expirar (Teste)</span>
+                                              </button>
+                                            </div>
+                                          )}
+                                          
+                                          {/* Ações para Expirados */}
+                                          {isExpired(a) && (
+                                            <div className="flex items-center gap-2">
+                                              {a.notificadoExpiracao ? (
+                                                <span className="flex items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 select-none">
+                                                  <CheckCircle size={11} />
+                                                  <span>Notificado</span>
+                                                </span>
+                                              ) : (
+                                                <button
+                                                  disabled={loadingAction !== null}
+                                                  onClick={() => handleNotificarResponsavel(a.id)}
+                                                  className="flex items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors shadow-sm disabled:opacity-50"
+                                                >
+                                                  {loadingAction === a.id ? (
+                                                    <div className="w-3 h-3 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                                                  ) : (
+                                                    <>
+                                                      <AlertCircle size={11} />
+                                                      <span>Notificar Responsável</span>
+                                                    </>
+                                                  )}
+                                                </button>
+                                              )}
+                                              <button
+                                                disabled={loadingAction !== null}
+                                                onClick={() => handleToggleExpiracaoTeste(a)}
+                                                className="flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-extrabold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm disabled:opacity-50"
+                                                title="Reativar carteirinha e estender validade por 1 ano"
+                                              >
+                                                <span>Reativar (Teste)</span>
+                                              </button>
                                             </div>
                                           )}
                   
@@ -1003,7 +1183,7 @@ export default function EscolaDetalhesPage() {
                                               className="flex items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-extrabold bg-amber-600 text-white hover:bg-amber-500 transition-colors shadow-sm disabled:opacity-50"
                                             >
                                               {loadingAction === a.id ? (
-                                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                               ) : (
                                                 <>
                                                   <Sparkles size={11} className="text-amber-350 shrink-0" />

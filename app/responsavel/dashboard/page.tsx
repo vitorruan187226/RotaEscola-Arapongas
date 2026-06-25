@@ -32,6 +32,8 @@ interface Filho {
   rotaAtiva?: boolean;
   endereco?: string;
   data_nascimento?: string;
+  dataVencimento?: string | null;
+  notificadoExpiracao?: boolean;
 }
 
 const getLocalDateString = () => {
@@ -55,10 +57,26 @@ const FILHOS_MOCK: Filho[] = [
     fotoUrl: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&auto=format&fit=crop&q=80',
     motorista_nome: 'Silvio Roberto',
     motorista_telefone: '43999999990',
-    veiculo_numero: 'BEX-1234 (Van Escolar)'
+    veiculo_numero: 'BEX-1234 (Van Escolar)',
+    dataVencimento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    notificadoExpiracao: false
   },
   {
     id: 'aluno-02',
+    nome: 'carlos',
+    escola: 'C.E.C.M Marques de Caravelas',
+    serie: '6º Ano C',
+    statusCarteirinha: 'Aprovado',
+    rotaId: 'RT-88 — Região centro',
+    fotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    motorista_nome: 'teste 2',
+    motorista_telefone: '43999999991',
+    veiculo_numero: '555ÇÇÇ (tetse)',
+    dataVencimento: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    notificadoExpiracao: true
+  },
+  {
+    id: 'aluno-03',
     nome: 'Beatriz Martins Nogueira',
     escola: 'Colégio Estadual Julia Wanderley',
     serie: '7º Ano A',
@@ -169,6 +187,10 @@ export default function ResponsavelDashboard() {
                     modelo_veiculo
                   )
                 )
+              ),
+              carteirinhas (
+                data_vencimento,
+                notificado_expiracao
               )
             `)
             .eq('responsavel_id', user.id);
@@ -195,6 +217,10 @@ export default function ResponsavelDashboard() {
                       modelo_veiculo
                     )
                   )
+                ),
+                carteirinhas (
+                  data_vencimento,
+                  notificado_expiracao
                 )
               `)
               .eq('responsavel_id', user.id);
@@ -236,7 +262,9 @@ export default function ResponsavelDashboard() {
                 periodo:           a.periodo ?? 'manha',
                 observacao_secretaria: a.observacao_secretaria ?? null,
                 rotaAtiva:         rota?.ativa ?? false,
-                endereco:          a.endereco ?? undefined
+                endereco:          a.endereco ?? undefined,
+                dataVencimento:    a.carteirinhas?.[0]?.data_vencimento ?? null,
+                notificadoExpiracao: a.carteirinhas?.[0]?.notificado_expiracao ?? false
               };
             });
             setFilhos(mapeados);
@@ -489,11 +517,17 @@ export default function ResponsavelDashboard() {
             </button>
           </div>
         ) : (
-          filhos.map((filho) => (
-            <div
-              key={filho.id}
-              className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-            >
+          filhos.map((filho) => {
+            const isExpired = filho.statusCarteirinha === 'Aprovado' && filho.dataVencimento && new Date(filho.dataVencimento) < new Date();
+            const cardBgClass = isExpired
+              ? "bg-rose-50/40 border-rose-300 shadow-rose-50/50 hover:shadow-rose-100/60"
+              : "bg-white border-slate-200/80 hover:shadow-md";
+
+            return (
+              <div
+                key={filho.id}
+                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col gap-4 shadow-sm transition-all duration-200`}
+              >
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
                 <div 
@@ -541,10 +575,17 @@ export default function ResponsavelDashboard() {
 
                 <div className="flex-1 flex flex-col justify-center min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border w-fit ${getStatusBadgeClass(filho.statusCarteirinha)}`}>
-                      {getStatusIcon(filho.statusCarteirinha)}
-                      <span>{filho.statusCarteirinha === 'Aprovado' ? 'Aprovado' : 'Em Análise pela Secretaria'}</span>
-                    </span>
+                    {isExpired ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full border bg-rose-100 border-rose-300 text-rose-700 shadow-sm animate-pulse">
+                        <AlertCircle size={13} />
+                        <span>Carteirinha Expirada</span>
+                      </span>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border w-fit ${getStatusBadgeClass(filho.statusCarteirinha)}`}>
+                        {getStatusIcon(filho.statusCarteirinha)}
+                        <span>{filho.statusCarteirinha === 'Aprovado' ? 'Aprovado' : 'Em Análise pela Secretaria'}</span>
+                      </span>
+                    )}
                     <button
                       onClick={() => setSelectedFilhoEdicao(filho)}
                       className="p-1.5 hover:bg-slate-150 rounded-lg text-slate-500 hover:text-slate-900 transition-colors border border-slate-100 shrink-0"
@@ -592,8 +633,18 @@ export default function ResponsavelDashboard() {
                 </div>
               </div>
 
-              {/* Histórico de Embarque */}
-              <HistoricoEmbarque alunoId={filho.id} usandoMock={usandoMock} />
+              {/* Histórico de Embarque ou Alerta de Expirado */}
+              {isExpired && filho.notificadoExpiracao ? (
+                <div className="p-4 rounded-2xl bg-rose-100 border-2 border-rose-300 text-rose-900 text-xs font-extrabold flex items-start gap-2.5 shadow-sm animate-fadeIn">
+                  <ShieldAlert size={18} className="text-rose-600 shrink-0 mt-0.5 animate-bounce" />
+                  <div>
+                    <span className="font-black uppercase text-[9px] tracking-wider text-rose-700 block mb-1">Aviso da Secretaria</span>
+                    <p className="leading-relaxed">A carteirinha do seu filho expirou, faça o cadastro novamente.</p>
+                  </div>
+                </div>
+              ) : (
+                <HistoricoEmbarque alunoId={filho.id} usandoMock={usandoMock} />
+              )}
 
               {/* Ocorrências Disciplinares do Aluno */}
               <OcorrenciasFilho alunoId={filho.id} usandoMock={usandoMock} />
@@ -638,8 +689,9 @@ export default function ResponsavelDashboard() {
                   </div>
                 )}
               </div>
-            </div>
-          ))
+              </div>
+            );
+          })
         )}
       </div>
 

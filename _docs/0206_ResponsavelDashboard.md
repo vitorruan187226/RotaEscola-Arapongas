@@ -91,6 +91,7 @@ Constante `FILHOS_MOCK` tipada como `Filho[]` para uso demonstrativo. É carrega
 | 18/06/2026 | **Edição de Cadastro de Filho:** Adicionado modal de edição `EditarFilhoModal` acessível via botão de Lápis no card do estudante. Salvar a edição reverte o status da carteirinha para `'Pendente'` (banco `'aguardando'`) e reseta rota e motorista, exigindo nova aprovação pela secretaria (SEMED). |
 | 23/06/2026 | **Correção de Fonte no Canvas:** Corrigido o bug visual de espaçamento da letra "S" no texto "APRESENTE AO MOTORISTA" na exportação da carteirinha digital. Aumentado o tamanho da fonte para 10px e corrigida a definição inválida do font-descriptor de `mono 8px sans-serif` para `8px monospace`. |
 | 25/06/2026 | **Validade e Expirabilidade da Carteirinha:** Implementação do vencimento automático de carteirinhas digitais (validade padrão de 1 ano via coluna `data_vencimento` na tabela `carteirinhas`). Se a data atual ultrapassar o vencimento, o badge de status do crachá muda para "Carteirinha Expirada" (em vermelho pulsante), o QR Code é bloqueado com um overlay visual de "EXPIRADA" e o arquivo canvas de download recebe uma marca d'água de vencimento. |
+| 25/06/2026 | **Alerta Crítico & Aviso de Expirada:** Implementada a estilização vermelha nos cards de alunos expirados no dashboard e, caso a secretaria tenha notificado o responsável (`notificadoExpiracao = true`), o histórico de embarques é ocultado e substituído pelo aviso: *"A carteirinha do seu filho expirou, faça o cadastro novamente"*. |
 
 
 

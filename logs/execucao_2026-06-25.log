@@ -8,3 +8,13 @@
   - Substituida a floating badge 'Funciona Offline' por 'Aviso de Ausência'.
 2026-06-25 11:01:25 INFO Atualizando a documentacao correspondente em _docs/0201_Home.md para refletir as mudancas no layout e nos conteudos.
 2026-06-25 11:01:40 INFO Alteracoes de copy e estrutura de UI concluidas com sucesso.
+2026-06-25 11:38:00 INFO Criado arquivo de migração SQL supabase/migrations/20260625130000_add_notificado_expiracao.sql para adicionar a coluna notificado_expiracao na tabela carteirinhas.
+2026-06-25 11:40:00 INFO Implementada a aba "Expirados" nos Detalhes da Escola do painel administrativo (app/dashboard/admin/escolas/detalhes/page.tsx) com cálculo de badges.
+2026-06-25 11:45:00 INFO Adicionados botões provisórios de teste "Expirar (Teste)" e "Reativar (Teste)" na tabela de alunos nos Detalhes da Escola para forçar alteração de data_vencimento no Supabase.
+2026-06-25 11:50:00 INFO Implementada a ação "Notificar Responsável" no painel gerencial, persistindo notificado_expiracao = true na tabela carteirinhas.
+2026-06-25 11:55:00 INFO Atualizada a consulta Supabase no Dashboard do Responsável (app/responsavel/dashboard/page.tsx) para realizar JOIN com carteirinhas e obter data_vencimento e notificado_expiracao.
+2026-06-25 12:00:00 INFO Implementada a estilização vermelha nos cards de alunos expirados no dashboard familiar.
+2026-06-25 12:05:00 INFO Configurada a substituição dinâmica do histórico de embarques por um aviso de carteirinha expirada ("A carteirinha do seu filho expirou, faça o cadastro novamente") caso a secretaria tenha disparado a notificação.
+2026-06-25 12:10:00 INFO Atualizado o mock de dados local FILHOS_MOCK para conter o estudante "carlos" no estado de carteirinha expirada e notificada, permitindo testes e demonstrações instantâneas.
+2026-06-25 12:15:00 INFO Sincronizado e atualizado o histórico de alterações nas documentações _docs/0205_AdminDashboard.md e _docs/0206_ResponsavelDashboard.md.
+

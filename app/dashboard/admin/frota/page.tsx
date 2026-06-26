@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bus, Plus, Filter, Download, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bus, Plus, Filter, Download, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
 
 interface VeiculoAdmin {
@@ -10,6 +10,7 @@ interface VeiculoAdmin {
   modelo: string;
   capacidade: number | string;
   motorista: string;
+  motorista_foto?: string | null;
   tipo: 'Próprio' | 'Terceirizado' | 'Pendente';
   status: 'Ativo' | 'Manutenção' | 'Aguardando' | 'Em Rota' | 'Fora de Rota';
   rota_id?: string | null;
@@ -124,7 +125,7 @@ export default function FrotaPage() {
       // 1. Busca motoristas reais cadastrados no banco
       const { data: motData, error: motError } = await supabase
         .from('perfis')
-        .select('id, nome')
+        .select('id, nome, foto_url')
         .eq('tipo_usuario', 'Motorista')
         .order('nome', { ascending: true });
 
@@ -170,6 +171,7 @@ export default function FrotaPage() {
             modelo: v.modelo,
             capacidade: v.capacidade,
             motorista: motEncontrado ? motEncontrado.nome : (v.motorista_id ?? 'Motorista não atribuído'),
+            motorista_foto: motEncontrado ? motEncontrado.foto_url : null,
             tipo: (v.tipo as any) ?? 'Próprio',
             status: displayStatus as any,
             rota_id: rotaAssociada ? rotaAssociada.id : null,
@@ -186,6 +188,7 @@ export default function FrotaPage() {
             modelo: 'Aguardando Veículo',
             capacidade: '—',
             motorista: m.nome,
+            motorista_foto: m.foto_url || null,
             tipo: 'Pendente',
             status: 'Aguardando',
             rota_id: null,
@@ -540,7 +543,18 @@ export default function FrotaPage() {
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{v.placa}</td>
                     <td className="py-3.5 px-4 text-slate-600">{v.modelo}</td>
                     <td className="py-3.5 px-4 text-slate-500 font-mono">{v.capacidade} {v.capacidade !== '—' && 'lugares'}</td>
-                    <td className="py-3.5 px-4 text-slate-600 font-semibold">{v.motorista}</td>
+                    <td className="py-3.5 px-4 text-slate-600 font-semibold">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full border border-slate-255/80 overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 text-slate-450 shadow-sm">
+                          {v.motorista_foto ? (
+                            <img src={v.motorista_foto} alt={v.motorista} className="w-full h-full object-cover" />
+                          ) : (
+                            <User size={12} className="text-slate-400" />
+                          )}
+                        </div>
+                        <span className="truncate max-w-[120px]" title={v.motorista}>{v.motorista}</span>
+                      </div>
+                    </td>
                     <td className="py-3.5 px-4 text-slate-600 font-semibold text-amber-600">{v.rota_nome ?? 'Nenhuma rota'}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold border uppercase tracking-wider ${

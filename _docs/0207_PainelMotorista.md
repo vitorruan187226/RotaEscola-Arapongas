@@ -71,12 +71,18 @@ Overlay completo sobre o painel (z-50), com dois estágios sequenciais:
 - Card com foto + nome + escola do aluno identificado (borda laranja).
 - `<textarea>` para o motorista descrever o ocorrido (mínimo 5 caracteres para habilitar envio).
 - Contador de caracteres em tempo real.
-- Botão **"Enviar Ocorrência"** com gradiente laranja → âmbar; desabilitado enquanto descrição for curta.
 - Ao confirmar: INSERT em `public.ocorrencias` → status `'pendente'`.
 
 **Confirmação:**
 - Tela de sucesso com ícone verde e texto: "Ocorrência Registrada! A secretaria foi notificada e tomará as devidas providências."
 - Modal fecha automaticamente após 2,5 segundos.
+
+### 8. Gerenciamento de Perfil (Modal Completo)
+- **Acesso Rápido**: Um botão redondo em formato de avatar no cabeçalho superior (à esquerda do seletor ONLINE) exibe a foto do motorista conectada em tempo real (ou um ícone padrão do usuário caso não possua).
+- **Modal de Perfil (Premium)**: Ao ser clicado, abre um overlay de página inteira (estilo modal nativo móvel com desfoque) permitindo:
+  - **Foto de Perfil**: Um elemento circular em destaque com efeito hover permitindo ao motorista selecionar uma imagem de seu dispositivo. Faz upload real para o Supabase Storage no bucket `documentos-transporte` sob a pasta `fotos-motoristas/` e grava a URL na coluna `foto_url` da tabela `perfis`.
+  - **Campos Editáveis**: Formulário para edição de **Nome Completo** (coluna `nome`) e **Telefone/WhatsApp** (coluna `telefone`), integrados com gravação reativa no Supabase.
+  - **Dados de Frota e Habilitação (Apenas Leitura)**: Exibe informações técnicas para leitura e confirmação operacional (Placa do Veículo, Modelo do Veículo, Capacidade da Van, número de registro da CNH e Categoria de CNH), resgatados por um JOIN com a tabela `public.motoristas_perfil`.
 
 ## Mocks Utilizados
 ```ts
@@ -109,3 +115,4 @@ interface Aluno {
 | 16/06/2026 | Correção das tags JSX na renderização da lista de passageiros, adição do bloqueio completo via `pointer-events-none` e desabilitação do envio do lote quando inativo ("Fora de Rota"). |
 | 18/06/2026 | **Endereço do Aluno no Checklist:** Adicionado o endereço do aluno (cadastrado pelo pai) abaixo do nome da escola na lista de passageiros do motorista para facilitar a identificação do ponto de embarque/desembarque. |
 | 18/06/2026 | **Correção de Modais Operacionais:** Identificado e corrigido erro de compilação Next.js ("nested styled-jsx tag") na dashboard do motorista. Os botões "Mecânico", "Vias" e "SOS" agora funcionam plenamente e estão integrados com a tabela `public.notificacoes`. |
+| 26/06/2026 | **Gerenciamento de Perfil e Upload de Foto:** Criação do botão de avatar no cabeçalho e do modal de perfil que permite ao motorista alterar o seu Nome Completo, Telefone/WhatsApp e fazer upload de foto de perfil integrada ao Supabase Storage. |

@@ -30,7 +30,9 @@ import {
   ChevronRight,
   X,
   Lock,
-  MapPin
+  MapPin,
+  Camera,
+  Phone
 } from 'lucide-react';
 
 interface Aluno {
@@ -88,6 +90,17 @@ const ROTAS_MOCK: RotaConfig[] = [
   }
 ];
 
+interface MotoristaPerfil {
+  id: string;
+  nome: string;
+  telefone?: string;
+  foto_url?: string;
+  placa_veiculo?: string;
+  modelo_veiculo?: string;
+  cnh?: string;
+  cnh_categoria?: string;
+}
+
 type ScanState = 'idle' | 'success' | 'error';
 
 const getLocalDateString = () => {
@@ -111,6 +124,14 @@ export default function MotoristaDashboardPage() {
   const [scanErrorMsg, setScanErrorMsg] = useState<string>('');
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  // Estados do Perfil do Motorista
+  const [perfilMotorista, setPerfilMotorista] = useState<MotoristaPerfil | null>(null);
+  const [showPerfilModal, setShowPerfilModal] = useState(false);
+  const [enviandoPerfil, setEnviandoPerfil] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editNome, setEditNome] = useState('');
+  const [editTelefone, setEditTelefone] = useState('');
 
   // Estados do Feedback/Toast consolidado
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -184,16 +205,29 @@ export default function MotoristaDashboardPage() {
         motoristaIdRef.current = user.id;
         const { data: perfil } = await supabase
           .from('perfis')
-          .select('id, nome')
+          .select('id, nome, telefone, foto_url')
           .eq('id', user.id)
           .maybeSingle();
           
         if (perfil) {
           const { data: driverPerfil } = await supabase
             .from('motoristas_perfil')
-            .select('id, placa_veiculo, modelo_veiculo')
+            .select('id, placa_veiculo, modelo_veiculo, cnh, cnh_categoria')
             .eq('perfil_id', perfil.id)
             .maybeSingle();
+
+          setPerfilMotorista({
+            id: perfil.id,
+            nome: perfil.nome || '',
+            telefone: perfil.telefone || '',
+            foto_url: perfil.foto_url || '',
+            placa_veiculo: driverPerfil?.placa_veiculo || '',
+            modelo_veiculo: driverPerfil?.modelo_veiculo || '',
+            cnh: driverPerfil?.cnh || '',
+            cnh_categoria: driverPerfil?.cnh_categoria || ''
+          });
+          setEditNome(perfil.nome || '');
+          setEditTelefone(perfil.telefone || '');
 
           // Na tabela public.rotas, a coluna motorista_id referencia public.perfis.id
           const { data: dbRotas } = await supabase
@@ -306,6 +340,20 @@ export default function MotoristaDashboardPage() {
     } catch (err) {
       console.error('Erro ao obter dados do banco:', err);
     }
+    
+    // Fallback Mock Perfil
+    setPerfilMotorista({
+      id: '33333333-3333-3333-3333-333333333333',
+      nome: 'Silvio Roberto (Tio Silvio)',
+      telefone: '43999999990',
+      foto_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      placa_veiculo: 'BBB-5678',
+      modelo_veiculo: 'Ônibus Mercedes-Benz',
+      cnh: '12345678900',
+      cnh_categoria: 'Categoria D'
+    });
+    setEditNome('Silvio Roberto (Tio Silvio)');
+    setEditTelefone('43999999990');
     
     // Fallback Mock
     const fallbackRotas = ROTAS_MOCK.map(r => {
@@ -1019,6 +1067,141 @@ export default function MotoristaDashboardPage() {
     setDataAtualFormatada(new Date().toLocaleDateString('pt-BR'));
   }, []);
 
+  // Lógica de Upload da Foto de Perfil do Motorista
+  const handleUploadPhoto = async (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setToastType('error');
+      setToastMessage('Por favor, selecione uma imagem válida.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setToastType('error');
+      setToastMessage('A imagem deve ter no máximo 5MB.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const mId = motoristaIdRef.current || perfilMotorista?.id;
+      if (!mId) throw new Error('Identificação do motorista ausente.');
+
+      const ext = file.name.split('.').pop() || 'png';
+      const fileName = `fotos-motoristas/${mId}_${Date.now()}.${ext}`;
+
+      if (mId.startsWith('33333333')) {
+        // Simulação em modo mock/demonstração
+        setTimeout(() => {
+          const fakeUrl = `https://picsum.photos/300/300?random=${mId}`;
+          setPerfilMotorista(prev => prev ? { ...prev, foto_url: fakeUrl } : null);
+          setUploadingPhoto(false);
+          setToastType('success');
+          setToastMessage('Foto do perfil atualizada (modo demonstração)!');
+          setShowSuccessToast(true);
+          setTimeout(() => setShowSuccessToast(false), 3000);
+        }, 1200);
+        return;
+      }
+
+      // Upload para o bucket documentos-transporte
+      const { error: storageError } = await supabase.storage
+        .from('documentos-transporte')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (storageError) throw storageError;
+
+      // URL Pública
+      const publicUrl = supabase.storage
+        .from('documentos-transporte')
+        .getPublicUrl(fileName).data.publicUrl;
+
+      // Salva no banco de dados na tabela perfis
+      const { error: dbError } = await supabase
+        .from('perfis')
+        .update({ foto_url: publicUrl })
+        .eq('id', mId);
+
+      if (dbError) throw dbError;
+
+      setPerfilMotorista(prev => prev ? { ...prev, foto_url: publicUrl } : null);
+      setToastType('success');
+      setToastMessage('Foto de perfil atualizada com sucesso!');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    } catch (err: any) {
+      console.error('Erro no upload da foto do motorista:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Erro ao salvar a foto de perfil.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Lógica de Gravação de Perfil do Motorista
+  const handleSalvarPerfil = async () => {
+    if (!editNome.trim()) {
+      setToastType('error');
+      setToastMessage('O nome completo é obrigatório.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      return;
+    }
+
+    setEnviandoPerfil(true);
+    try {
+      const mId = motoristaIdRef.current || perfilMotorista?.id;
+      if (!mId) throw new Error('Identificação do motorista ausente.');
+
+      if (mId.startsWith('33333333')) {
+        // Simulação em modo mock
+        setTimeout(() => {
+          setPerfilMotorista(prev => prev ? { ...prev, nome: editNome.trim(), telefone: editTelefone.trim() } : null);
+          setEnviandoPerfil(false);
+          setToastType('success');
+          setToastMessage('Perfil atualizado (modo demonstração)!');
+          setShowSuccessToast(true);
+          setTimeout(() => setShowSuccessToast(false), 3000);
+          setShowPerfilModal(false);
+        }, 1000);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('perfis')
+        .update({
+          nome: editNome.trim(),
+          telefone: editTelefone.trim()
+        })
+        .eq('id', mId);
+
+      if (error) throw error;
+
+      setPerfilMotorista(prev => prev ? { ...prev, nome: editNome.trim(), telefone: editTelefone.trim() } : null);
+      setToastType('success');
+      setToastMessage('Perfil atualizado com sucesso!');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      setShowPerfilModal(false);
+    } catch (err: any) {
+      console.error('Erro ao salvar dados do perfil:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Falha ao atualizar dados do perfil.');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 4000);
+    } finally {
+      setEnviandoPerfil(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center font-sans antialiased text-slate-100 p-0 sm:p-6 md:p-8">
       <style jsx global>{`
@@ -1124,6 +1307,22 @@ export default function MotoristaDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setEditNome(perfilMotorista?.nome || '');
+                setEditTelefone(perfilMotorista?.telefone || '');
+                setShowPerfilModal(true);
+              }}
+              className="w-8 h-8 rounded-full border border-slate-700/60 overflow-hidden shrink-0 flex items-center justify-center text-slate-450 bg-slate-800/60 hover:border-amber-500 transition-all active-press"
+              title="Visualizar Perfil"
+            >
+              {perfilMotorista?.foto_url ? (
+                <img src={perfilMotorista.foto_url} alt={perfilMotorista.nome} className="w-full h-full object-cover" />
+              ) : (
+                <User size={14} />
+              )}
+            </button>
+
             <button 
               onClick={() => setIsOnline(!isOnline)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold tracking-wider transition-all duration-300 ${
@@ -2086,6 +2285,172 @@ export default function MotoristaDashboardPage() {
             >
               Finalizar Sinal / Normalizado
             </button>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════
+            MODAL DE PERFIL DO MOTORISTA
+        ══════════════════════════════════════════════════════ */}
+        {showPerfilModal && (
+          <div className="absolute inset-0 z-50 flex flex-col rounded-[36px] overflow-hidden animate-fadeIn" style={{ backgroundColor: '#020617' }}>
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60 bg-slate-900/90">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400">
+                  <User size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-white tracking-tight">Meu Perfil</h3>
+                  <p className="text-[9px] text-slate-400 mt-0.5">Gerencie seus dados pessoais e profissionais</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPerfilModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors border-0 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-6 scrollbar-thin">
+              
+              {/* Upload de Foto de Perfil */}
+              <div className="flex flex-col items-center gap-2.5">
+                <div 
+                  onClick={() => document.getElementById('upload-avatar-motorista')?.click()}
+                  className="w-24 h-24 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden cursor-pointer relative group hover:border-amber-500 hover:scale-[1.03] transition-all shrink-0"
+                  title="Clique para alterar sua foto de perfil"
+                >
+                  {perfilMotorista?.foto_url ? (
+                    <img src={perfilMotorista.foto_url} alt={perfilMotorista.nome} className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={36} className="text-slate-700" />
+                  )}
+                  
+                  {/* Overlay de Hover */}
+                  <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-amber-400 gap-1 text-[8px] font-black uppercase tracking-wider">
+                    <Camera size={16} />
+                    <span>Alterar</span>
+                  </div>
+
+                  {/* Indicador de Upload */}
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 bg-slate-950/70 flex items-center justify-center z-10">
+                      <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  id="upload-avatar-motorista"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUploadPhoto(file);
+                  }}
+                />
+                <span className="text-[8.5px] text-slate-500 font-medium">Toque no círculo para alterar sua foto</span>
+              </div>
+
+              {/* Dados Pessoais Editáveis */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                    Nome Completo
+                  </label>
+                  <input
+                    type="text"
+                    value={editNome}
+                    onChange={(e) => setEditNome(e.target.value)}
+                    placeholder="Digite seu nome completo..."
+                    className="w-full bg-slate-900 border border-slate-850 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-750 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                    Telefone / WhatsApp (Contato)
+                  </label>
+                  <input
+                    type="text"
+                    value={editTelefone}
+                    onChange={(e) => setEditTelefone(e.target.value)}
+                    placeholder="Ex: 43999999999"
+                    className="w-full bg-slate-900 border border-slate-850 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-750 focus:outline-none transition-colors font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Dados Operacionais e de Habilitação (Apenas Leitura) */}
+              <div className="bg-slate-900/60 border border-slate-850 rounded-2xl p-4 space-y-3.5 shadow-inner">
+                <h4 className="text-[9.5px] font-black text-amber-500 uppercase tracking-widest border-b border-slate-800/60 pb-2">
+                  Informações Operacionais
+                </h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">Veículo Associado</span>
+                    <span className="text-xs font-bold text-white mt-1 block">
+                      {perfilMotorista?.modelo_veiculo || 'Não Atribuído'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">Placa da Van</span>
+                    <span className="text-xs font-mono font-bold text-amber-400 mt-1 block">
+                      {perfilMotorista?.placa_veiculo || '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">CNH (Documento)</span>
+                    <span className="text-xs font-mono font-bold text-white mt-1 block">
+                      {perfilMotorista?.cnh || 'Não Cadastrado'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">Categoria da CNH</span>
+                    <span className="text-xs font-bold text-white mt-1 block">
+                      {perfilMotorista?.cnh_categoria ? (
+                        <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[9.5px] font-mono text-emerald-450">
+                          {perfilMotorista.cnh_categoria}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-slate-800/40 text-center">
+                  <p className="text-[8.5px] text-slate-500 leading-normal">
+                    Os dados operacionais de frota e CNH são gerenciados exclusivamente pela administração SEMED.
+                  </p>
+                </div>
+              </div>
+
+              {/* Botão de Salvar Alterações */}
+              <button
+                onClick={handleSalvarPerfil}
+                disabled={enviandoPerfil || !editNome.trim()}
+                className={`w-full py-4 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-0 ${
+                  editNome.trim() && !enviandoPerfil
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer font-black'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                {enviandoPerfil ? (
+                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Check size={13} />
+                    <span>Salvar Alterações</span>
+                  </>
+                )}
+              </button>
+
+            </div>
           </div>
         )}
 

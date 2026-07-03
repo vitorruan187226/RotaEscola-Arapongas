@@ -1122,7 +1122,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
                 </label>
                 <select
                   value={periodo}
-                  onChange={(e) => setPeriodo(e.target.value as 'Hoje' | 'Últimos 7 dias' | 'Este Mês')}
+                  onChange={(e) => setPeriodo(e.target.value as 'manha' | 'tarde' | 'noite')}
                   className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
                 >
                   <option value="manha">Manhã</option>
@@ -1472,7 +1472,7 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
               </label>
               <select
                 value={periodo}
-                onChange={(e) => setPeriodo(e.target.value as 'Hoje' | 'Últimos 7 dias' | 'Este Mês')}
+                onChange={(e) => setPeriodo(e.target.value as 'manha' | 'tarde' | 'noite')}
                 className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 <option value="manha">Manhã</option>
@@ -1867,7 +1867,7 @@ function RecadastroModal({ aluno, escolas, onClose, onSuccess, onError }: Recada
                 </label>
                 <select
                   value={periodo}
-                  onChange={(e) => setPeriodo(e.target.value as 'Hoje' | 'Últimos 7 dias' | 'Este Mês')}
+                  onChange={(e) => setPeriodo(e.target.value as 'manha' | 'tarde' | 'noite')}
                   className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
                 >
                   <option value="manha">Manhã</option>
@@ -3396,6 +3396,7 @@ function OcorrenciasFilho({ alunoId, usandoMock }: { alunoId: string; usandoMock
     </div>
   );
 }
+
 
 
 

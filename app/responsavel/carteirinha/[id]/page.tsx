@@ -363,8 +363,7 @@ export default function CarteirinhaDigitalPage() {
       }
     }
     loadAluno();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, supabase]);
 
   if (loading) {
     return (

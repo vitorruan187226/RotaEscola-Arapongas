@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { createClient } from '../../../../utils/supabase/client';
@@ -197,7 +197,6 @@ export default function OcorrenciasAdminPage() {
   useEffect(() => {
     carregarOcorrencias();
     carregarNotificacoesFrota();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Enviar Ocorrência de Aluno ao Pai ─────────────────────────────────────
@@ -980,3 +979,4 @@ export default function OcorrenciasAdminPage() {
     </div>
   );
 }
+

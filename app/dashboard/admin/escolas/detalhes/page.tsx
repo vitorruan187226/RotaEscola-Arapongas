@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -1132,7 +1132,7 @@ export default function EscolaDetalhesPage() {
                                               setEscolaIdSelect(a.escolaId || schoolObj?.id || '');
                                               setAnoSerieSelect(a.ano_serie || '');
                                               setTurmaInput(a.turma || '');
-                                              setPeriodoSelect((a.periodo as any) || 'manha');
+                                              setPeriodoSelect((a.periodo as 'manha' | 'tarde' | 'noite') || 'manha');
                                               setRotaIdSelect(a.rotaId || '');
                                               setStatusSelect(a.status);
                                               setEnderecoInput(a.endereco || '');
@@ -1457,7 +1457,7 @@ export default function EscolaDetalhesPage() {
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Turno Letivo</label>
                 <select
                   value={periodoSelect}
-                  onChange={(e) => setPeriodoSelect(e.target.value as any)}
+                  onChange={(e) => setPeriodoSelect(e.target.value as 'manha' | 'tarde' | 'noite')}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
                   <option value="manha">Manhã</option>
@@ -1484,7 +1484,7 @@ export default function EscolaDetalhesPage() {
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Status do Aluno</label>
                 <select
                   value={statusSelect === 'Rejeitado' ? 'Pendente' : statusSelect}
-                  onChange={(e) => setStatusSelect(e.target.value as any)}
+                  onChange={(e) => setStatusSelect(e.target.value as 'Pendente' | 'Aprovado' | 'Em análise' | 'Rejeitado')}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
                   <option value="Pendente">Pendente / Rejeitado</option>
@@ -1570,3 +1570,5 @@ export default function EscolaDetalhesPage() {
     </div>
   );
 }
+
+

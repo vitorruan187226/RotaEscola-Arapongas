@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '../../../../utils/supabase/client';
@@ -314,7 +314,7 @@ export default function RotasPage() {
         .order('nome', { ascending: true });
       if (!error && data) {
         setMotoristas(
-          (data as any[]).filter(m => !m.id.startsWith('33333333-')).map(m => ({
+          (data as { id: string; nome: string; motoristas_perfil: { placa_veiculo: string | null }[] }[]).filter(m => !m.id.startsWith('33333333-')).map(m => ({
             id: m.id,
             nome: m.nome,
             placa_veiculo: m.motoristas_perfil?.[0]?.placa_veiculo ?? null,
@@ -736,3 +736,4 @@ export default function RotasPage() {
     </>
   );
 }
+

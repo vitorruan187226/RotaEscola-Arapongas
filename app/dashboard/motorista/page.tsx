@@ -460,7 +460,6 @@ export default function MotoristaDashboardPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTurno]);
 
   // Cicla o status entre Pendente -> Presente -> Ausente -> Pendente ao clicar
@@ -577,7 +576,7 @@ export default function MotoristaDashboardPage() {
       
       // Feedback sonoro: beep agudo (Web Audio API)
       try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         oscillator.type = 'sine';
@@ -612,7 +611,7 @@ export default function MotoristaDashboardPage() {
       
       // Feedback sonoro: dois beeps graves
       try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.frequency.setValueAtTime(220, audioCtx.currentTime);
@@ -2504,5 +2503,7 @@ export default function MotoristaDashboardPage() {
     </div>
   );
 }
+
+
 
 

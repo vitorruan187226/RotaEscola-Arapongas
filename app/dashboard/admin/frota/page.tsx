@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Bus, Plus, Filter, Download, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, User } from 'lucide-react';
@@ -172,8 +172,8 @@ export default function FrotaPage() {
             capacidade: v.capacidade,
             motorista: motEncontrado ? motEncontrado.nome : (v.motorista_id ?? 'Motorista não atribuído'),
             motorista_foto: motEncontrado ? motEncontrado.foto_url : null,
-            tipo: (v.tipo as any) ?? 'Próprio',
-            status: displayStatus as any,
+            tipo: (v.tipo as 'Próprio' | 'Terceirizado' | 'Pendente') ?? 'Próprio',
+            status: displayStatus as 'Ativo' | 'Manutenção' | 'Aguardando' | 'Em Rota' | 'Fora de Rota',
             rota_id: rotaAssociada ? rotaAssociada.id : null,
             rota_nome: rotaAssociada ? `${rotaAssociada.codigo} - ${rotaAssociada.nome}` : 'Nenhuma rota atribuída'
           };
@@ -863,7 +863,7 @@ export default function FrotaPage() {
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Tipo de Frota</label>
                 <select
                   value={tipo}
-                  onChange={(e) => setTipo(e.target.value as any)}
+                  onChange={(e) => setTipo(e.target.value as 'Próprio' | 'Terceirizado')}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
                   <option value="Próprio">Próprio (Prefeitura)</option>
@@ -875,7 +875,7 @@ export default function FrotaPage() {
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Status Operacional</label>
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
+                  onChange={(e) => setStatus(e.target.value as 'Ativo' | 'Manutenção')}
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
                   <option value="Ativo">Ativo (Em trânsito)</option>
@@ -966,3 +966,4 @@ export default function FrotaPage() {
     </div>
   );
 }
+

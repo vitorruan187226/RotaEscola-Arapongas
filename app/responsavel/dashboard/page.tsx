@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -237,7 +237,7 @@ export default function ResponsavelDashboard() {
           }
 
           if (!alunosErr && alunosDB) {
-            const mapeados: Filho[] = (alunosDB as any[]).map((a: any) => {
+            const mapeados: Filho[] = alunosDB.map((a: any) => {
               const rota = a.rotas;
               const motoristaPerfil = rota?.perfis;
               const motoristaNome = motoristaPerfil?.nome || 'Aguardando Atribuição';
@@ -336,7 +336,7 @@ export default function ResponsavelDashboard() {
           table: 'rotas',
         },
         (payload) => {
-          const updatedRoute = payload.new as any;
+          const updatedRoute = payload.new as { id: string, ativa: boolean };
           if (updatedRoute) {
             setFilhos(prev => 
               prev.map(filho => {
@@ -1122,7 +1122,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
                 </label>
                 <select
                   value={periodo}
-                  onChange={(e) => setPeriodo(e.target.value as any)}
+                  onChange={(e) => setPeriodo(e.target.value as 'Hoje' | 'Últimos 7 dias' | 'Este Mês')}
                   className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
                 >
                   <option value="manha">Manhã</option>
@@ -1472,7 +1472,7 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
               </label>
               <select
                 value={periodo}
-                onChange={(e) => setPeriodo(e.target.value as any)}
+                onChange={(e) => setPeriodo(e.target.value as 'Hoje' | 'Últimos 7 dias' | 'Este Mês')}
                 className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 <option value="manha">Manhã</option>
@@ -1867,7 +1867,7 @@ function RecadastroModal({ aluno, escolas, onClose, onSuccess, onError }: Recada
                 </label>
                 <select
                   value={periodo}
-                  onChange={(e) => setPeriodo(e.target.value as any)}
+                  onChange={(e) => setPeriodo(e.target.value as 'Hoje' | 'Últimos 7 dias' | 'Este Mês')}
                   className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
                 >
                   <option value="manha">Manhã</option>
@@ -3396,5 +3396,6 @@ function OcorrenciasFilho({ alunoId, usandoMock }: { alunoId: string; usandoMock
     </div>
   );
 }
+
 
 

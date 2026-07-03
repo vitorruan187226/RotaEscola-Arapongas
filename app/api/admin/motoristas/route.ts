@@ -1,10 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createClient as createServerSupabase } from '../../../../utils/supabase/server';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// API Route: Cadastro de Motoristas (PROTEGIDA — apenas Admins)
+// Canteiro: F3 (03_API_CLEANUP.md) — Onda 1
+//
+// Correção aplicada:
+//   L-08: Adicionado guard de sessão + validação de role Admin
+//   Antes: qualquer pessoa na internet podia criar conta de motorista
+// ══════════════════════════════════════════════════════════════════════════════
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    // ─── GUARD: Validar sessão e role do chamador ─────────────────────────
+    const cookieStore = await cookies();
+    const supabaseUser = createServerSupabase(cookieStore);
+    const { data: { user }, error: authCheckError } = await supabaseUser.auth.getUser();
+
+    if (authCheckError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Não autenticado. Faça login como administrador.' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar se o chamador é Admin
+    const callerRole = (
+      user.user_metadata?.role ??
+      user.user_metadata?.tipo_usuario ??
+      ''
+    ).toString().toLowerCase();
+
+    if (!['admin', 'semed_admin'].includes(callerRole)) {
+      return NextResponse.json(
+        { success: false, error: 'Acesso negado. Apenas administradores podem cadastrar motoristas.' },
+        { status: 403 }
+      );
+    }
+    // ─── FIM DO GUARD ─────────────────────────────────────────────────────
+
     const { nome, cpf, telefone, placa, modelo, capacidade, cnh, cnhCategoria } = await req.json();
 
     const cleanCpf = cpf ? cpf.toString().replace(/\D/g, '') : '';
@@ -100,10 +138,11 @@ export async function POST(req: NextRequest) {
       message: `Motorista ${nome} registrado com sucesso! Credenciais geradas: Login (CPF): ${cleanCpf} / Senha padrão: O próprio CPF.`
     });
 
-  } catch (err: any) {
-    console.error('[API Motoristas Admin] Excecao interna:', err);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro interno no servidor.';
+    console.error('[API Motoristas Admin] Excecao interna:', msg);
     return NextResponse.json(
-      { success: false, error: err.message || 'Erro interno no servidor.' },
+      { success: false, error: msg },
       { status: 500 }
     );
   }

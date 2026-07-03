@@ -3,6 +3,14 @@ import { cookies } from 'next/headers';
 import { createClient } from '../../../../utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
+// ══════════════════════════════════════════════════════════════════════════════
+// API Route: Ativar/Desativar Rota (PROTEGIDA — apenas Motoristas)
+// Canteiro: F3 (03_API_CLEANUP.md) — Onda 1
+//
+// Correção aplicada:
+//   L-08: Adicionada validação de role Motorista (antes: qualquer autenticado)
+// ══════════════════════════════════════════════════════════════════════════════
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
@@ -25,6 +33,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Sessão inválida. Faça login novamente.' },
         { status: 401 }
+      );
+    }
+
+    // 1b. GUARD DE ROLE: apenas motoristas podem alterar status de rota
+    const callerRole = (
+      user.user_metadata?.role ??
+      user.user_metadata?.tipo_usuario ??
+      ''
+    ).toString().toLowerCase();
+
+    if (callerRole !== 'motorista') {
+      return NextResponse.json(
+        { success: false, error: 'Acesso negado. Apenas motoristas podem alterar status de rota.' },
+        { status: 403 }
       );
     }
 

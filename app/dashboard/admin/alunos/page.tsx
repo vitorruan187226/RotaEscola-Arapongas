@@ -59,7 +59,16 @@ export default function AlunosPage() {
         console.warn('RPC get_dashboard_metrics falhou. Executando fallback em JS local...', error.message);
         await fetchMetricsFallback();
       } else if (data) {
-        setMetrics(data as MetricsData);
+        const metricsData = data as MetricsData;
+        // Se a RPC retornar dados mas a lista de mais faltosos for muito pequena (<= 1 item)
+        // enquanto existem outros registros no banco de dados, ou para garantir resiliência contra
+        // RPC desatualizada no Supabase, executamos o fallback local para precisão completa.
+        if (!metricsData.mais_faltosos || metricsData.mais_faltosos.length <= 1) {
+          console.warn('RPC get_dashboard_metrics retornou dados incompletos de faltas. Executando fallback local...');
+          await fetchMetricsFallback();
+        } else {
+          setMetrics(metricsData);
+        }
       } else {
         await fetchMetricsFallback();
       }
@@ -528,7 +537,7 @@ export default function AlunosPage() {
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de embarque disponíveis.</p>
             ) : (
               metrics.mais_assiduos.map((item, idx) => (
-                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
+                <div key={`${item.nome}-${idx}`} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-emerald-700 bg-emerald-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
                       #{idx + 1}
@@ -561,7 +570,7 @@ export default function AlunosPage() {
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de faltas disponíveis.</p>
             ) : (
               metrics.mais_faltosos.map((item, idx) => (
-                <div key={item.nome} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
+                <div key={`${item.nome}-${idx}`} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-rose-700 bg-rose-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
                       #{idx + 1}

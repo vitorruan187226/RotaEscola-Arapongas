@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { createClient } from '../../../../utils/supabase/client';
+import { useGPSListener } from '../../../../lib/hooks/useGPSListener';
 import {
   MapPin, Navigation, Bus, Clock, CalendarX,
   CheckCircle, RotateCcw, WifiOff
@@ -41,20 +42,19 @@ export default function RastreioAusenciaPage() {
   const [tempoEstimado,    setTempoEstimado]    = useState(12);
   const [msg, setMsg] = useState<{ type: 'info' | 'success'; text: string } | null>(null);
 
-  // ─── Busca localização real do banco ─────────────────────────────────────
+  // ─── Escuta Realtime + Carga Inicial ──────────────────────────────────────
+  const { position: realtimePosition, isConnected } = useGPSListener(rotaId);
+
   useEffect(() => {
-    async function fetchLocalizacao() {
+    async function fetchInitialLocalizacao() {
       try {
-        // Busca se a rota está ativa no Supabase
         if (rotaId && rotaId.length > 10) {
           const { data: routeData } = await supabase
             .from('rotas')
             .select('ativa')
             .eq('id', rotaId)
             .maybeSingle();
-          if (routeData) {
-            setIsRouteActive(routeData.ativa);
-          }
+          if (routeData) setIsRouteActive(routeData.ativa);
         }
 
         const { data, error } = await supabase
@@ -66,57 +66,45 @@ export default function RastreioAusenciaPage() {
           .maybeSingle();
 
         if (!error && data) {
-          // Verifica se foi atualizado há menos de 2 horas (turno ativo)
           const atualizado = new Date(data.atualizado_em);
-          const agora      = new Date();
-          const diffHoras  = (agora.getTime() - atualizado.getTime()) / (1000 * 60 * 60);
+          const agora = new Date();
+          const diffHoras = (agora.getTime() - atualizado.getTime()) / (1000 * 60 * 60);
           const foraDeTurno = diffHoras > 2;
 
           setLocalizacao({
-            latitude:       data.latitude,
-            longitude:      data.longitude,
+            latitude: data.latitude,
+            longitude: data.longitude,
             velocidade_kmh: data.velocidade_kmh,
-            atualizado_em:  atualizado.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            atualizado_em: atualizado.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             foraDeTurno,
           });
-        } else {
-          // Sem registro no banco — veículo fora do turno
-          setLocalizacao({
-            latitude: -23.4178,
-            longitude: -51.4269,
-            velocidade_kmh: 0,
-            atualizado_em: '--:--',
-            foraDeTurno: true,
-          });
         }
-      } catch {
-        setLocalizacao({
-          latitude: -23.4178,
-          longitude: -51.4269,
-          velocidade_kmh: 0,
-          atualizado_em: '--:--',
-          foraDeTurno: true,
-        });
       } finally {
         setLoadingLocalizacao(false);
       }
     }
-    fetchLocalizacao();
+    fetchInitialLocalizacao();
+  }, [rotaId, supabase]);
 
-    // Atualiza localização a cada 30s se o veículo estiver em turno
-    const interval = setInterval(fetchLocalizacao, 30_000);
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rotaId]);
-
-  // Simula ônibus se aproximando no mapa SVG a cada 15s
+  // Atualiza a visualização sempre que o Realtime recebe uma nova coordenada
   useEffect(() => {
-    if (localizacao?.foraDeTurno || !isRouteActive) return;
-    const interval = setInterval(() => {
-      setTempoEstimado(prev => (prev > 1 ? prev - 1 : 12));
-    }, 15_000);
-    return () => clearInterval(interval);
-  }, [localizacao?.foraDeTurno, isRouteActive]);
+    if (realtimePosition) {
+      setLocalizacao({
+        latitude: realtimePosition.lat,
+        longitude: realtimePosition.lng,
+        velocidade_kmh: realtimePosition.speed ? Math.round(realtimePosition.speed * 3.6) : 0, // speed comes in m/s usually
+        atualizado_em: new Date(realtimePosition.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        foraDeTurno: false, // If we receive realtime, it's definitely not out of shift!
+      });
+    }
+  }, [realtimePosition]);
+
+  // Remove o timer fake de 15s, a posição real será mostrada diretamente
+  useEffect(() => {
+    // Calculamos o 'tempoEstimado' apenas como visual baseado no GPS, mas aqui
+    // vamos deixar fixo em 5 min apenas como mock ou usar um cálculo real de rota no futuro.
+    setTempoEstimado(5);
+  }, [localizacao]);
 
   // ─── Registrar Ausência ───────────────────────────────────────────────────
   const handleReportarAusencia = async () => {

@@ -1,0 +1,9 @@
+2026-06-30 16:35:00 [INFO] Iniciado o protocolo de reconhecimento para a correção do bug da tabela de mais faltas.
+2026-06-30 16:36:00 [INFO] Arquivos consultados: indice.txt, _docs/0200_Indice_Telas.md, _docs/0205_AdminDashboard.md.
+2026-06-30 16:38:00 [INFO] Analisados os dados do banco de dados remoto via script de auditoria: detectadas 101 ausências em logs_embarque e 2 faltas em presencas_diarias.
+2026-06-30 16:40:00 [INFO] Identificado que a RPC get_dashboard_metrics() no banco de dados está desatualizada (versão antiga), retornando apenas as 2 faltas de presencas_diarias e omitindo as ausências de logs_embarque.
+2026-06-30 16:45:00 [INFO] Criada migração SQL supabase/migrations/20260630200000_fix_get_dashboard_metrics_rpc.sql para atualizar a RPC get_dashboard_metrics no Supabase.
+2026-06-30 16:50:00 [INFO] Modificado app/dashboard/admin/alunos/page.tsx: ajustado fetchMetrics() para habilitar o fallback local híbrido caso a RPC retorne dados de faltas incompletos (mais_faltosos.length <= 1), garantindo a exibição de ausências locais instantaneamente.
+2026-06-30 16:55:00 [INFO] Executado npm run build para validação geral do projeto (build compilado com sucesso total, sem erros ou avisos).
+2026-06-30 17:00:00 [INFO] Atualizada a documentação de histórico em _docs/0205_AdminDashboard.md.
+

@@ -6,31 +6,29 @@ const supabase = createClient(url, anonKey);
 
 async function run() {
   try {
-    console.log('--- BUSCANDO ULTIMOS 5 ALUNOS ---');
+    console.log('--- BUSCANDO TODOS OS ALUNOS ---');
     const { data: alunos, error: errAlunos } = await supabase
       .from('alunos')
-      .select('id, nome, escola, turno, rota_id')
-      .limit(5);
+      .select('id, nome, escola');
     if (errAlunos) console.error('Erro alunos:', errAlunos);
-    else console.log(alunos);
+    console.log(`Total de alunos: ${alunos?.length}`);
 
-    console.log('--- BUSCANDO ULTIMOS 5 LOGS DE EMBARQUE ---');
+    console.log('--- BUSCANDO TODOS OS LOGS DE EMBARQUE ---');
     const { data: logs, error: errLogs } = await supabase
       .from('logs_embarque')
-      .select('*')
-      .order('criado_em', { ascending: false })
-      .limit(5);
+      .select('*');
     if (errLogs) console.error('Erro logs:', errLogs);
-    else console.log(logs);
+    console.log(`Total de logs de embarque: ${logs?.length}`);
+    console.log('Logs de ausentes:', logs?.filter(l => l.status === 'AUSENTE'));
+    console.log('Logs de presentes:', logs?.filter(l => l.status === 'PRESENTE').slice(0, 5));
 
-    console.log('--- BUSCANDO ULTIMOS 5 REGISTROS DE PRESENCA DIARIA ---');
+    console.log('--- BUSCANDO TODOS OS REGISTROS DE PRESENCA DIARIA ---');
     const { data: presencas, error: errPresencas } = await supabase
       .from('presencas_diarias')
-      .select('*')
-      .order('data_presenca', { ascending: false })
-      .limit(5);
+      .select('*');
     if (errPresencas) console.error('Erro presencas:', errPresencas);
-    else console.log(presencas);
+    console.log(`Total de presencas: ${presencas?.length}`);
+    console.log('Faltas (compareceu=false):', presencas?.filter(p => !p.compareceu));
 
     console.log('--- BUSCANDO METRICAS RPC ---');
     const { data: metrics, error: errMetrics } = await supabase
@@ -44,3 +42,4 @@ async function run() {
 }
 
 run();
+

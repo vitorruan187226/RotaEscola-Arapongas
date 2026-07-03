@@ -9,6 +9,30 @@ indice.txt
 - [_docs/0104_Status_Sistema_Arapongas.md](_docs/0104_Status_Sistema_Arapongas.md)
 - [_docs/0105_Analise_Seguranca.md](_docs/0105_Analise_Seguranca.md)
 
+## [AUDITORIA PRD] Levantamentos e Plano de Auditoria
+- [AUDITORIA PRD/implementation_plan.md](AUDITORIA%20PRD/implementation_plan.md)
+- [AUDITORIA PRD/0106_Auditoria_Schema_Delta.md](AUDITORIA%20PRD/0106_Auditoria_Schema_Delta.md)
+- [AUDITORIA PRD/0107_Auditoria_Seguranca_RLS.md](AUDITORIA%20PRD/0107_Auditoria_Seguranca_RLS.md)
+- [AUDITORIA PRD/0108_Auditoria_Tipagem_Contratos.md](AUDITORIA%20PRD/0108_Auditoria_Tipagem_Contratos.md)
+- [AUDITORIA PRD/0109_Auditoria_Realtime_GPS.md](AUDITORIA%20PRD/0109_Auditoria_Realtime_GPS.md)
+- [AUDITORIA PRD/0110_Auditoria_Offline_PWA.md](AUDITORIA%20PRD/0110_Auditoria_Offline_PWA.md)
+- [AUDITORIA PRD/0111_Auditoria_Design_Tokens.md](AUDITORIA%20PRD/0111_Auditoria_Design_Tokens.md)
+- [AUDITORIA PRD/0112_Auditoria_Auth_Middleware.md](AUDITORIA%20PRD/0112_Auditoria_Auth_Middleware.md)
+- [AUDITORIA PRD/0113_Auditoria_API_Routes.md](AUDITORIA%20PRD/0113_Auditoria_API_Routes.md)
+- [AUDITORIA PRD/0114_Auditoria_LGPD.md](AUDITORIA%20PRD/0114_Auditoria_LGPD.md)
+- [AUDITORIA PRD/0115_Auditoria_Mensageria_Pipeline.md](AUDITORIA%20PRD/0115_Auditoria_Mensageria_Pipeline.md)
+
+## [CANTEIRO DE OBRAS] Plano Master de Remediação PRD
+- [canteiro-de-obras/PERFIL.md](canteiro-de-obras/PERFIL.md)
+- [canteiro-de-obras/00_MASTER.md](canteiro-de-obras/00_MASTER.md)
+- [canteiro-de-obras/CONTRATOS.md](canteiro-de-obras/CONTRATOS.md)
+- [canteiro-de-obras/01_DB_RLS.md](canteiro-de-obras/01_DB_RLS.md) 🔴
+- [canteiro-de-obras/02_MIDDLEWARE.md](canteiro-de-obras/02_MIDDLEWARE.md) 🔴
+- [canteiro-de-obras/03_API_CLEANUP.md](canteiro-de-obras/03_API_CLEANUP.md) 🔴
+- [canteiro-de-obras/04_TIPAGEM.md](canteiro-de-obras/04_TIPAGEM.md) 🟡
+- [canteiro-de-obras/05_GPS_REALTIME.md](canteiro-de-obras/05_GPS_REALTIME.md) 🟡
+- [canteiro-de-obras/06_PWA_OFFLINE.md](canteiro-de-obras/06_PWA_OFFLINE.md) 🟡
+- [canteiro-de-obras/07_UI_REFACTOR.md](canteiro-de-obras/07_UI_REFACTOR.md) 🟡
 
 ## [02XX] Telas e UI (Frontend)
 - [_docs/0200_Indice_Telas.md](_docs/0200_Indice_Telas.md)

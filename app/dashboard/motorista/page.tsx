@@ -1,6 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useGPSBroadcast } from '@/lib/hooks/useGPSBroadcast';
+import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus';
+import { useOfflineChecklist } from '@/lib/hooks/useOfflineChecklist';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../../utils/supabase/client';
 import { 
@@ -122,11 +125,12 @@ export default function MotoristaDashboardPage() {
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [scannedAluno, setScannedAluno] = useState<Aluno | null>(null);
   const [scanErrorMsg, setScanErrorMsg] = useState<string>('');
-  const [isOnline, setIsOnline] = useState(true);
+  const isOnline = useNetworkStatus();
   const [loading, setLoading] = useState(false);
 
   // Estados do Perfil do Motorista
   const [perfilMotorista, setPerfilMotorista] = useState<MotoristaPerfil | null>(null);
+  const { saveOffline, loadOffline, clearOffline } = useOfflineChecklist(perfilMotorista?.id || null);
   const [showPerfilModal, setShowPerfilModal] = useState(false);
   const [enviandoPerfil, setEnviandoPerfil] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -137,6 +141,8 @@ export default function MotoristaDashboardPage() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isSentSuccessfully, setIsSentSuccessfully] = useState(false);
+  const rotaAtivaTemp = rotas.find(r => r.id === selectedRotaId);
+  useGPSBroadcast(rotaAtivaTemp?.ativa ? selectedRotaId : null, perfilMotorista?.id || null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   // ── Estados do Modal de Ocorrência ─────────────────────────
@@ -431,7 +437,7 @@ export default function MotoristaDashboardPage() {
           table: 'presencas_diarias',
         },
         (payload) => {
-          const newRow = payload.new as any;
+          const newRow = payload.new as { compareceu: boolean, aluno_id: number | string };
           if (newRow && newRow.compareceu === false) {
             const activeRoute = rotaAtivaRef.current;
             if (activeRoute) {
@@ -727,7 +733,7 @@ export default function MotoristaDashboardPage() {
           }));
 
         // 3. Executa todas as inserções no banco em paralelo
-        const [logsRes, notificationsRes, locRes] = await Promise.all([
+        const [logsRes, notificationsRes] = await Promise.all([
           logsToInsert.length > 0 ? supabase.from('logs_embarque').insert(logsToInsert) : Promise.resolve({ error: null }),
           notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve({ error: null }),
           supabase.from('localizacao_veiculo').insert({
@@ -741,7 +747,6 @@ export default function MotoristaDashboardPage() {
 
         if (logsRes?.error) throw logsRes.error;
         if (notificationsRes?.error) throw notificationsRes.error;
-        if (locRes?.error) throw locRes.error;
 
         setToastType('success');
         setToastMessage('Lista enviada com sucesso!');
@@ -1324,7 +1329,6 @@ export default function MotoristaDashboardPage() {
             </button>
 
             <button 
-              onClick={() => setIsOnline(!isOnline)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold tracking-wider transition-all duration-300 ${
                 isOnline 
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
@@ -2500,3 +2504,5 @@ export default function MotoristaDashboardPage() {
     </div>
   );
 }
+
+

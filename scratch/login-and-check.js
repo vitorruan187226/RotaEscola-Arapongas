@@ -23,25 +23,15 @@ try {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   async function run() {
-    console.log('Logging in as driver Carlos...');
+    console.log('Logging in as admin...');
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: '33333333333@rotaescola.com',
-      password: 'motoristasenha'
+      email: '99999999999@rotaescola.com',
+      password: 'adminisenha'
     });
 
     if (authError) {
       console.error('Authentication failed:', authError.message);
-      
-      console.log('Trying alternative email carlos@rotaescola.com with password motoristasenha...');
-      const { data: authData2, error: authError2 } = await supabase.auth.signInWithPassword({
-        email: 'carlos@rotaescola.com',
-        password: 'motoristasenha'
-      });
-      
-      if (authError2) {
-        console.error('Alternative authentication failed:', authError2.message);
-        return;
-      }
+      return;
     }
 
     console.log('Login successful! Fetching data...');
@@ -50,23 +40,6 @@ try {
     const { data: { user } } = await supabase.auth.getUser();
     console.log('Logged in user ID:', user?.id);
 
-    const { data: allPerfis } = await supabase
-      .from('perfis')
-      .select('*');
-    console.log('All Perfis:', JSON.stringify(allPerfis, null, 2));
-
-    const { data: driverPerfil } = await supabase
-      .from('motoristas_perfil')
-      .select('*')
-      .eq('perfil_id', user?.id)
-      .maybeSingle();
-    console.log('Driver Perfil:', JSON.stringify(driverPerfil, null, 2));
-
-    const { data: rotas } = await supabase
-      .from('rotas')
-      .select('*');
-    console.log('All Rotas:', JSON.stringify(rotas, null, 2));
-
     // Query Alunos
     const { data: alunos, error: errAlunos } = await supabase
       .from('alunos')
@@ -74,26 +47,80 @@ try {
 
     if (errAlunos) {
       console.error('Error fetching alunos:', errAlunos.message);
-    } else {
-      console.log(`Found ${alunos.length} Alunos:`);
-      console.log(JSON.stringify(alunos, null, 2));
+      return;
+    }
+    console.log('--- ALUNOS NO BANCO ---');
+    alunos.forEach(a => {
+      console.log(`Aluno ID: ${a.id}, Nome: ${a.nome}`);
+    });
+
+    // Query all logs_embarque
+    const { data: logs, error: errLogs } = await supabase
+      .from('logs_embarque')
+      .select('*');
+
+    if (errLogs) {
+      console.error('Error fetching logs_embarque:', errLogs.message);
+      return;
     }
 
     // Query Presencas Diarias
     const { data: presencas, error: errPresencas } = await supabase
       .from('presencas_diarias')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
 
     if (errPresencas) {
       console.error('Error fetching presencas:', errPresencas.message);
-    } else {
-      console.log(`Found ${presencas.length} Presencas:`);
-      console.log(JSON.stringify(presencas, null, 2));
+      return;
     }
+
+    console.log(`Logs count: ${logs.length}, Presencas count: ${presencas.length}`);
+
+    // Aggregate in JS
+    const absenceDatesByStudent = {}; // studentId -> Set of dates
+    
+    logs.forEach(l => {
+      if (l.status === 'AUSENTE') {
+        const studentId = l.aluno_id;
+        const date = l.data_registro; // date is a string YYYY-MM-DD
+        if (!absenceDatesByStudent[studentId]) {
+          absenceDatesByStudent[studentId] = new Set();
+        }
+        absenceDatesByStudent[studentId].add(date);
+      }
+    });
+
+    presencas.forEach(p => {
+      if (p.compareceu === false) {
+        const studentId = p.aluno_id;
+        const date = p.data_presenca; // date is a string YYYY-MM-DD
+        if (!absenceDatesByStudent[studentId]) {
+          absenceDatesByStudent[studentId] = new Set();
+        }
+        absenceDatesByStudent[studentId].add(date);
+      }
+    });
+
+    const ranking = Object.entries(absenceDatesByStudent).map(([studentId, datesSet]) => {
+      const student = alunos.find(a => a.id === studentId);
+      return {
+        id: studentId,
+        nome: student ? student.nome : 'Unknown',
+        escola: student ? student.escola : 'Unknown',
+        total_faltas: datesSet.size,
+        dates: Array.from(datesSet)
+      };
+    }).sort((a, b) => b.total_faltas - a.total_faltas);
+
+    console.log('--- JS ABSENCE RANKING ---');
+    console.log(JSON.stringify(ranking, null, 2));
+
+
+
   }
 
   run();
 } catch (err) {
   console.error('Execution error:', err);
 }
+

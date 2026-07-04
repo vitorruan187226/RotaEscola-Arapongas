@@ -1548,35 +1548,72 @@ export default function MotoristaDashboardPage() {
                   <div
                     key={aluno.id}
                     onClick={() => cycleAlunoStatus(aluno.id)}
-                    className={`flex items-center justify-between p-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 active:bg-slate-50 transition-colors cursor-pointer ${
+                    className={`flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border ${
+                      aluno.statusLocal === 'presente' ? 'border-emerald-100 border-l-4 border-l-emerald-500 bg-emerald-50/30' :
+                      aluno.statusLocal === 'ausente' ? 'border-rose-100 border-l-4 border-l-rose-500 bg-rose-50/30' :
+                      'border-slate-100'
+                    } active:bg-slate-50 transition-all cursor-pointer ${
                       aluno.ausenciaNotificada ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        aluno.statusLocal === 'presente' ? 'bg-emerald-50 text-emerald-600' :
-                        aluno.statusLocal === 'ausente' ? 'bg-rose-50 text-rose-600' :
-                        'bg-slate-50 text-slate-400'
+                      {/* Left Icon */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        aluno.statusLocal === 'presente' ? 'bg-emerald-500 text-white' :
+                        aluno.statusLocal === 'ausente' ? 'bg-rose-500 text-white' :
+                        'border-2 border-slate-300 text-transparent'
                       }`}>
                         {aluno.statusLocal === 'presente' ? (
-                          <ArrowDownToLine size={20} strokeWidth={2.5} />
+                          <Check size={18} strokeWidth={3} />
                         ) : aluno.statusLocal === 'ausente' ? (
-                          <ArrowUpFromLine size={20} strokeWidth={2.5} />
-                        ) : (
-                          <User size={20} strokeWidth={2.5} />
+                          <X size={18} strokeWidth={3} />
+                        ) : null}
+                      </div>
+
+                      {/* Middle Info */}
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          {aluno.statusLocal === 'presente' && (
+                            <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm tracking-wider">
+                              Presente
+                            </span>
+                          )}
+                          {aluno.statusLocal === 'ausente' && (
+                            <span className="bg-rose-100 text-rose-800 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm tracking-wider">
+                              Faltou
+                            </span>
+                          )}
+                          <p className={`text-[13px] font-extrabold leading-tight ${
+                            aluno.statusLocal === 'presente' ? 'text-emerald-700' : 
+                            aluno.statusLocal === 'ausente' ? 'text-rose-700' : 
+                            'text-[#1a2b4c]'
+                          }`}>
+                            {aluno.nome}
+                          </p>
+                        </div>
+                        <p className="text-[11px] font-semibold text-slate-500">
+                          {aluno.escola}
+                        </p>
+                        {aluno.statusLocal === 'pendente' && aluno.endereco && (
+                          <div className="flex items-center gap-1 text-slate-400 mt-1">
+                            <MapPin size={10} className="shrink-0" />
+                            <p className="text-[10px] font-medium leading-tight truncate max-w-[200px]">
+                              {aluno.endereco}
+                            </p>
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <p className="text-[13px] font-extrabold text-[#1a2b4c] leading-tight mb-0.5">{aluno.nome}</p>
-                        <p className="text-[10px] font-semibold text-slate-400">
-                          {aluno.statusLocal === 'presente' ? 'Embarque Realizado' : aluno.statusLocal === 'ausente' ? 'Faltou ao embarque' : 'Aguardando'}
-                        </p>
-                      </div>
                     </div>
-                    <div className="text-right">
-                       <p className={`text-xs font-bold ${aluno.statusLocal === 'presente' ? 'text-emerald-600' : aluno.statusLocal === 'ausente' ? 'text-rose-600' : 'text-slate-400'}`}>
-                         {aluno.statusLocal === 'presente' ? '+1' : aluno.statusLocal === 'ausente' ? '-1' : '0'}
-                       </p>
+                    
+                    {/* Right Pill */}
+                    <div className="text-right shrink-0">
+                       <div className={`px-3 py-1 rounded-full text-[10px] font-bold border ${
+                         aluno.statusLocal === 'presente' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                         aluno.statusLocal === 'ausente' ? 'bg-rose-50 border-rose-200 text-rose-700' :
+                         'bg-transparent border-slate-200 text-slate-500'
+                       }`}>
+                         {aluno.statusLocal === 'presente' ? 'Presente' : aluno.statusLocal === 'ausente' ? 'Faltou' : 'Pendente'}
+                       </div>
                     </div>
                   </div>
                 ))}

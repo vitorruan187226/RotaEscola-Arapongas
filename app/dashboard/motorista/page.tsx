@@ -1341,70 +1341,80 @@ export default function MotoristaDashboardPage() {
         {/* Área Principal de Scroll */}
         <main className="relative z-10 px-6 pb-32 overflow-y-auto flex-1 scrollbar-thin flex flex-col gap-6">
           
-          {/* Fase 1: Cartão Azul de Configuração (Credit Card Style) */}
+          {/* Fase 1: Cartão Limpo de Configuração Inicial (Premium Layout) */}
           {!rotaAtiva?.ativa && (
             <section className="animate-fadeIn mt-2">
-              <div className="flex justify-between items-end mb-4 px-1">
-                <div>
-                  <p className="text-sm font-semibold text-slate-500">Status do Veículo</p>
-                  <p className="text-2xl font-black text-[#1a2b4c]">Aguardando Rota</p>
-                </div>
+              <div className="mb-6 px-1">
+                <h2 className="text-2xl font-extrabold text-[#002045]">Preparar Viagem</h2>
+                <p className="text-sm text-[#74777f] mt-1">Configure os detalhes antes de iniciar sua rota.</p>
               </div>
 
-              {/* O "Cartão de Crédito" Azul */}
-              <div className="w-full rounded-[1.5rem] p-6 shadow-[0_12px_32px_rgba(29,78,216,0.25)] bg-gradient-to-br from-blue-600 via-blue-700 to-[#1e3a8a] relative overflow-hidden flex flex-col gap-6">
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-                <div className="absolute -left-4 bottom-4 w-24 h-24 bg-blue-400/20 rounded-full blur-xl pointer-events-none"></div>
+              <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 flex flex-col gap-6 relative overflow-hidden">
+                {/* Decorative blob */}
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#d6e3ff]/30 rounded-full blur-2xl pointer-events-none"></div>
                 
-                <div className="flex justify-between items-start relative z-10">
-                  <span className="text-blue-200 text-xs font-semibold uppercase tracking-widest">Configuração</span>
-                  <Bus size={20} className="text-white/80" />
-                </div>
-
-                <div className="space-y-4 relative z-10">
-                  <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10">
-                    {(['Manhã', 'Tarde', 'Noite'] as const).map(t => (
-                      <button
-                        key={t}
-                        onClick={() => setSelectedTurno(t)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${selectedTurno === t ? 'bg-white text-blue-800 shadow-sm' : 'text-blue-100 hover:text-white'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
+                <div className="relative z-10 space-y-6">
+                  {/* Turno */}
+                  <div>
+                    <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Turno</label>
+                    <div className="flex bg-[#f1f4f6] p-1.5 rounded-2xl">
+                      {(['Manhã', 'Tarde', 'Noite'] as const).map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setSelectedTurno(t)}
+                          className={`flex-1 py-3 rounded-xl text-[13px] font-bold transition-all shadow-sm ${selectedTurno === t ? 'bg-white text-[#002045]' : 'text-[#74777f] shadow-none hover:text-[#002045]'}`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10">
-                    {(['IDA', 'VOLTA'] as const).map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setSelectedSentido(s)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${selectedSentido === s ? 'bg-white text-blue-800 shadow-sm' : 'text-blue-100 hover:text-white'}`}
-                      >
-                        {s === 'IDA' ? 'Ida (Escola)' : 'Volta (Casa)'}
-                      </button>
-                    ))}
+                  {/* Sentido */}
+                  <div>
+                    <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Sentido</label>
+                    <div className="flex bg-[#f1f4f6] p-1.5 rounded-2xl">
+                      {(['IDA', 'VOLTA'] as const).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => setSelectedSentido(s)}
+                          className={`flex-1 py-3 rounded-xl text-[13px] font-bold transition-all shadow-sm ${selectedSentido === s ? 'bg-white text-[#002045]' : 'text-[#74777f] shadow-none hover:text-[#002045]'}`}
+                        >
+                          {s === 'IDA' ? 'Ida (Escola)' : 'Volta (Casa)'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <select
-                    value={selectedRotaId}
-                    onChange={(e) => setSelectedRotaId(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-white/50 appearance-none backdrop-blur-sm"
-                    disabled={rotas.length === 0}
+                  {/* Linha / Rota */}
+                  <div>
+                    <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Linha de Ônibus</label>
+                    <div className="relative">
+                      <select
+                        value={selectedRotaId}
+                        onChange={(e) => setSelectedRotaId(e.target.value)}
+                        className="w-full bg-[#f7fafc] border border-slate-200 rounded-2xl pl-12 pr-4 py-4 text-sm font-extrabold text-[#002045] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none transition-all"
+                        disabled={rotas.length === 0}
+                      >
+                        {rotas.length === 0 ? <option value="">Nenhuma rota carregada</option> : rotas.map(r => <option key={r.id} value={r.id}>{r.codigo} - {r.nome}</option>)}
+                      </select>
+                      <Bus size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#74777f]" />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronRight size={18} className="text-[#74777f] rotate-90" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botão de Iniciar */}
+                  <button
+                    onClick={() => handleToggleRotaAtiva(true)}
+                    disabled={!selectedRotaId}
+                    className="w-full mt-2 bg-emerald-600 disabled:opacity-50 disabled:scale-100 text-white font-extrabold text-[15px] py-4 rounded-2xl hover:bg-emerald-700 active:scale-95 transition-all shadow-[0_8px_20px_rgba(5,150,105,0.25)] flex items-center justify-center gap-2"
                   >
-                    {rotas.length === 0 ? <option value="">Nenhuma rota carregada</option> : rotas.map(r => <option key={r.id} value={r.id} className="text-slate-900">{r.codigo} - {r.nome}</option>)}
-                  </select>
+                    Iniciar Operação
+                  </button>
                 </div>
               </div>
-
-              {/* Botão Principal Embaixo do Cartão (Simulando o 'Add Card') */}
-              <button
-                onClick={() => handleToggleRotaAtiva(true)}
-                disabled={!selectedRotaId}
-                className="w-full mt-4 bg-[#1a2b4c] hover:bg-[#111e38] disabled:opacity-50 text-white py-4 rounded-2xl flex justify-center items-center gap-2 shadow-[0_8px_16px_rgba(26,43,76,0.15)] active:scale-95 transition-all"
-              >
-                <span className="font-bold text-sm uppercase tracking-wider">Iniciar Operação</span>
-              </button>
             </section>
           )}
 

@@ -1483,15 +1483,9 @@ export default function MotoristaDashboardPage() {
 
           {/* Quick Actions (Ações Rápidas em Grid Circular) */}
           <section className="grid grid-cols-4 gap-2 mb-6">
-            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => document.getElementById('camera-toggle-btn')?.click()}>
+            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={handleAbrirOcorrenciaModal}>
               <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
-                <QrCode size={22} />
-              </div>
-              <span className="text-[10px] font-bold text-slate-500">Scanner</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowOcorrenciaModal(true)}>
-              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
-                <MessageSquareWarning size={22} />
+                <ShieldAlert size={22} />
               </div>
               <span className="text-[10px] font-bold text-slate-500">Ocorrência</span>
             </div>
@@ -1506,6 +1500,12 @@ export default function MotoristaDashboardPage() {
                 <Map size={22} />
               </div>
               <span className="text-[10px] font-bold text-slate-500">Vias</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowSosModal(true)}>
+              <div className="w-14 h-14 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 group-active:scale-90 transition-all shadow-sm animate-pulse">
+                <AlertOctagon size={22} />
+              </div>
+              <span className="text-[10px] font-bold text-rose-600">Emergência</span>
             </div>
           </section>
 
@@ -2315,48 +2315,7 @@ export default function MotoristaDashboardPage() {
           </div>
         )}
 
-        {/* MENU INFERIOR DE OCORRÊNCIAS */}
-        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60 p-4 grid grid-cols-4 gap-3 z-40 rounded-b-[36px]">
-          <button
-            onClick={handleAbrirOcorrenciaModal}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-orange-950/20 hover:bg-orange-950/40 transition-all cursor-pointer border border-orange-900/20 active-press border-0"
-          >
-            <div className="w-10 h-10 rounded-full bg-orange-500/15 flex items-center justify-center shadow-inner">
-              <ShieldAlert size={16} className="text-orange-400" />
-            </div>
-            <span className="text-[9px] font-bold text-orange-400">Ocorrência</span>
-          </button>
 
-          <button
-            onClick={() => setShowMecanicoModal(true)}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active-press border-0"
-          >
-            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 shadow-inner">
-              <Wrench size={16} />
-            </div>
-            <span className="text-[9px] font-semibold text-slate-400">Mecânico</span>
-          </button>
-
-          <button
-            onClick={() => setShowViasModal(true)}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-slate-950/40 hover:bg-slate-950/80 transition-all cursor-pointer border border-transparent hover:border-slate-800/50 active-press border-0"
-          >
-            <div className="w-10 h-10 rounded-full bg-slate-800/40 flex items-center justify-center text-slate-300 shadow-inner">
-              <Map size={16} />
-            </div>
-            <span className="text-[9px] font-semibold text-slate-400">Vias</span>
-          </button>
-
-          <button
-            onClick={() => setShowSosModal(true)}
-            className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-2xl bg-rose-950/20 hover:bg-rose-950/40 transition-all cursor-pointer border border-rose-900/20 active-press border-0"
-          >
-            <div className="w-10 h-10 rounded-full bg-rose-900/80 flex items-center justify-center text-rose-200 border border-rose-800/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">
-              <AlertOctagon size={16} className="text-rose-450" />
-            </div>
-            <span className="text-[9px] font-bold text-rose-400">SOS</span>
-          </button>
-        </div>
       </div>
     </div>
   );

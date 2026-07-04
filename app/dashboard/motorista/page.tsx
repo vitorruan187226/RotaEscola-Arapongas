@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useGPSBroadcast } from '@/lib/hooks/useGPSBroadcast';
@@ -35,7 +35,16 @@ import {
   Lock,
   MapPin,
   Camera,
-  Phone
+  Phone,
+  PieChart,
+  Square,
+  MessageSquareWarning,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Home,
+  BarChart2,
+  Wallet,
+  UserCircle
 } from 'lucide-react';
 
 interface Aluno {
@@ -1207,7 +1216,7 @@ export default function MotoristaDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center font-sans antialiased text-slate-100 p-0 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center font-sans antialiased text-[#0b1c3c] p-0 sm:p-6 md:p-8">
       <style jsx global>{`
         @keyframes scan-animation {
           0%, 100% { top: 5%; }
@@ -1248,8 +1257,10 @@ export default function MotoristaDashboardPage() {
         }
       `}</style>
 
-      {/* Moldura Celular Simulada Premium */}
-      <div className="w-full max-w-md bg-slate-950 sm:shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col relative min-h-screen sm:min-h-[840px] sm:rounded-[36px] overflow-hidden border border-slate-900">
+      {/* Moldura Celular Simulada Premium (Bank Card Style) */}
+      <div className="w-full max-w-md bg-[#f4f7fb] sm:shadow-[0_24px_64px_rgba(0,0,0,0.08)] flex flex-col relative min-h-screen sm:min-h-[840px] sm:rounded-[40px] overflow-hidden border border-slate-200">
+        
+
         
         {/* Toast Consolidado */}
         {showSuccessToast && (
@@ -1292,453 +1303,290 @@ export default function MotoristaDashboardPage() {
           </div>
         )}
 
-        {/* Header com Logout e Data */}
-        <header className="bg-slate-900/90 backdrop-blur-md px-5 py-4 flex items-center justify-between border-b border-slate-800/60 sticky top-0 z-50">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🚌</span>
-            <div>
-              <h2 className="font-extrabold text-sm tracking-tight text-white leading-none flex items-center gap-2">
-                RotaEscola
-                <span className="text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-medium flex items-center gap-1">
-                  <Calendar size={8} />
-                  {dataAtualFormatada}
-                </span>
-              </h2>
-              <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-widest block mt-1">
-                Arapongas · Bordo
-              </span>
+        {/* Header Minimalista (Bank Style) */}
+        <header className="px-6 pt-12 pb-4 flex items-center justify-between z-10 bg-transparent">
+          <div className="flex flex-col">
+            <h1 className="font-extrabold text-2xl text-[#1a2b4c] leading-tight">
+              Olá, {perfilMotorista?.nome ? perfilMotorista.nome.split(' ')[0] : 'Motorista'}
+            </h1>
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'}`}></div>
+              <p className="text-sm text-slate-500 font-medium">{isOnline ? 'GPS Online' : 'GPS Offline'}</p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
+          
+          <div className="flex gap-3 items-center">
+            <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600 active:scale-95 transition-all p-1 mr-1">
+              <LogOut size={20} />
+            </button>
+            <div 
               onClick={() => {
                 setEditNome(perfilMotorista?.nome || '');
                 setEditTelefone(perfilMotorista?.telefone || '');
                 setShowPerfilModal(true);
               }}
-              className="w-8 h-8 rounded-full border border-slate-700/60 overflow-hidden shrink-0 flex items-center justify-center text-slate-450 bg-slate-800/60 hover:border-amber-500 transition-all active-press"
-              title="Visualizar Perfil"
+              className="w-12 h-12 rounded-full border border-slate-200 overflow-hidden shadow-sm cursor-pointer active:scale-95 transition-transform bg-blue-100 flex items-center justify-center p-0.5"
             >
-              {perfilMotorista?.foto_url ? (
-                <img src={perfilMotorista.foto_url} alt={perfilMotorista.nome} className="w-full h-full object-cover" />
-              ) : (
-                <User size={14} />
-              )}
-            </button>
-
-            <button 
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold tracking-wider transition-all duration-300 ${
-                isOnline 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse'
-              }`}
-            >
-              {isOnline ? (
-                <>
-                  <Wifi size={10} />
-                  <span>ONLINE</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff size={10} />
-                  <span>OFFLINE</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/35 text-slate-400 hover:text-rose-400 transition-colors active-press"
-              title="Sair do Sistema"
-            >
-              <LogOut size={12} />
-            </button>
+              <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                {perfilMotorista?.foto_url ? (
+                  <img src={perfilMotorista.foto_url} alt={perfilMotorista.nome} className="w-full h-full object-cover" />
+                ) : (
+                  <User size={24} className="text-blue-500 mt-2 ml-2" />
+                )}
+              </div>
+            </div>
           </div>
         </header>
 
         {/* Área Principal de Scroll */}
-        <main className="flex-1 overflow-y-auto px-5 py-5 space-y-6 pb-36 scrollbar-thin">
+        <main className="relative z-10 px-6 pb-32 overflow-y-auto flex-1 scrollbar-thin flex flex-col gap-6">
           
-          {/* Card de Rota e Turno (Topo) */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
-            
-            {/* Controle de Rota Ativa (Iniciar/Parar Rota) */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 flex items-center justify-between shadow-inner">
-              <div className="flex-1 pr-3">
-                <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">
-                  Status de Operação
-                </label>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <span className={`w-2 h-2 rounded-full ${rotaAtiva?.ativa ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                  <span className="text-xs font-black text-white uppercase tracking-wide">
-                    {rotaAtiva?.ativa ? 'Em Rota (Ativo)' : 'Fora de Rota'}
-                  </span>
-                </div>
-                <span className="text-[8px] text-slate-500 font-medium block mt-1 leading-snug">
-                  {rotaAtiva?.ativa ? 'Pais e secretaria visualizam GPS ativo' : 'Acesso ao mapa suspenso para os pais'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleToggleRotaAtiva(!rotaAtiva?.ativa)}
-                className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 relative border-0 cursor-pointer active-press ${
-                  rotaAtiva?.ativa ? 'bg-emerald-500' : 'bg-slate-800'
-                }`}
-                aria-label="Alternar status em rota"
-              >
-                <div 
-                  className={`w-5 h-5 rounded-full bg-white transition-all duration-300 absolute top-0.5 ${
-                    rotaAtiva?.ativa ? 'left-[22px]' : 'left-0.5'
-                  }`} 
-                />
-              </button>
-            </div>
-
-            {/* Seletor de Turno Premium */}
-            <div>
-              <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2.5">
-                Turno de Trabalho
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
-                {(['Manhã', 'Tarde', 'Noite'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setSelectedTurno(t)}
-                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 active-press ${
-                      selectedTurno === t 
-                        ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold' 
-                        : 'text-slate-400 hover:text-white bg-transparent hover:bg-slate-900/40'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Sentido da Viagem (Ida / Volta) */}
-            <div>
-              <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2.5">
-                Sentido da Viagem
-              </label>
-              <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
-                {(['IDA', 'VOLTA'] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSelectedSentido(s)}
-                    className={`py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all border-0 active-press ${
-                      selectedSentido === s 
-                        ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold' 
-                        : 'text-slate-400 hover:text-white bg-transparent hover:bg-slate-900/40'
-                    }`}
-                  >
-                    {s === 'IDA' ? 'Ida (Escola)' : 'Volta (Casa)'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
-                Itinerário da Viagem
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedRotaId}
-                  onChange={(e) => setSelectedRotaId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none cursor-pointer pr-10 transition-colors"
-                  disabled={rotas.length === 0}
-                >
-                  {rotas.length === 0 ? (
-                    <option value="">Nenhuma rota vinculada</option>
-                  ) : (
-                    rotas.map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.codigo} - {r.nome}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">
-                  ▼
-                </div>
-              </div>
-            </div>
-
-            {/* Lotação e Contador */}
-            <div className="pt-2 border-t border-slate-800/50">
-              <div className="flex items-center justify-between mb-2">
+          {/* Fase 1: Cartão Azul de Configuração (Credit Card Style) */}
+          {!rotaAtiva?.ativa && (
+            <section className="animate-fadeIn mt-2">
+              <div className="flex justify-between items-end mb-4 px-1">
                 <div>
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
-                    Alunos Presentes
-                  </span>
-                  <span className="text-xs text-slate-500 font-medium block mt-0.5">
-                    Placa: {rotaAtiva ? rotaAtiva.placa : '...'} | {rotaAtiva ? rotaAtiva.veiculo : '...'}
-                  </span>
+                  <p className="text-sm font-semibold text-slate-500">Status do Veículo</p>
+                  <p className="text-2xl font-black text-[#1a2b4c]">Aguardando Rota</p>
                 </div>
-                <span className="text-xl font-extrabold text-white font-mono tracking-tight">
-                  {alunosABordo} <span className="text-slate-500 text-sm font-semibold">/ {totalAlunos}</span>
-                </span>
               </div>
-              
-              {/* Barra de Progresso */}
-              <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/40">
-                <div 
-                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-450 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${percentualOcupacao}%` }}
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* SCANNER DE QR CODE */}
-          <div className="space-y-3">
-            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
-              Validador de Carteirinha (Scanner)
-            </h3>
-
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col items-center gap-5 relative">
-              <div className="relative w-44 h-44 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden border border-slate-800">
-                <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
+              {/* O "Cartão de Crédito" Azul */}
+              <div className="w-full rounded-[1.5rem] p-6 shadow-[0_12px_32px_rgba(29,78,216,0.25)] bg-gradient-to-br from-blue-600 via-blue-700 to-[#1e3a8a] relative overflow-hidden flex flex-col gap-6">
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="absolute -left-4 bottom-4 w-24 h-24 bg-blue-400/20 rounded-full blur-xl pointer-events-none"></div>
                 
-                {/* Overlay visual do Scanner (laser + cantoneiras) */}
-                <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_20px_#ef4444,0_0_8px_#ef4444] z-20 scanner-line pointer-events-none" />
-                
-                <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-amber-400 rounded-tl-md z-10 pointer-events-none" />
-                <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-amber-400 rounded-tr-md z-10 pointer-events-none" />
-                <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-amber-400 rounded-bl-md z-10 pointer-events-none" />
-                <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-amber-400 rounded-br-md z-10 pointer-events-none" />
+                <div className="flex justify-between items-start relative z-10">
+                  <span className="text-blue-200 text-xs font-semibold uppercase tracking-widest">Configuração</span>
+                  <Bus size={20} className="text-white/80" />
+                </div>
 
-                {/* Mostra o ícone fallback apenas se a permissão não foi concedida ou está carregando */}
-                {hasCameraPermission === null && (
-                  <QrCode size={56} className="text-slate-800/60 animate-pulse z-10" />
-                )}
-
-                {hasCameraPermission === false && (
-                  <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-3 text-center gap-2 z-30">
-                    <WifiOff size={24} className="text-rose-500" />
-                    <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wide">Câmera Bloqueada</span>
-                    <p className="text-[8px] text-slate-400">Permita o acesso à câmera para escanear.</p>
+                <div className="space-y-4 relative z-10">
+                  <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10">
+                    {(['Manhã', 'Tarde', 'Noite'] as const).map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setSelectedTurno(t)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${selectedTurno === t ? 'bg-white text-blue-800 shadow-sm' : 'text-blue-100 hover:text-white'}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
                   </div>
-                )}
+
+                  <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10">
+                    {(['IDA', 'VOLTA'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setSelectedSentido(s)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${selectedSentido === s ? 'bg-white text-blue-800 shadow-sm' : 'text-blue-100 hover:text-white'}`}
+                      >
+                        {s === 'IDA' ? 'Ida (Escola)' : 'Volta (Casa)'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <select
+                    value={selectedRotaId}
+                    onChange={(e) => setSelectedRotaId(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-white/50 appearance-none backdrop-blur-sm"
+                    disabled={rotas.length === 0}
+                  >
+                    {rotas.length === 0 ? <option value="">Nenhuma rota carregada</option> : rotas.map(r => <option key={r.id} value={r.id} className="text-slate-900">{r.codigo} - {r.nome}</option>)}
+                  </select>
+                </div>
               </div>
 
-              {/* CARD DE FEEDBACK VISUAL DE LEITURA */}
-              {scanState !== 'idle' && (
-                <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-5 rounded-2xl z-30 animate-fadeIn">
+              {/* Botão Principal Embaixo do Cartão (Simulando o 'Add Card') */}
+              <button
+                onClick={() => handleToggleRotaAtiva(true)}
+                disabled={!selectedRotaId}
+                className="w-full mt-4 bg-[#1a2b4c] hover:bg-[#111e38] disabled:opacity-50 text-white py-4 rounded-2xl flex justify-center items-center gap-2 shadow-[0_8px_16px_rgba(26,43,76,0.15)] active:scale-95 transition-all"
+              >
+                <span className="font-bold text-sm uppercase tracking-wider">Iniciar Operação</span>
+              </button>
+            </section>
+          )}
+
+          {/* Fase 2: Rota Ativa (Cartão Azul de Viagem e Goal Bar) */}
+          {rotaAtiva?.ativa && (
+            <section className="animate-fadeIn mt-2">
+              {/* O "Cartão de Crédito" Azul em Viagem */}
+              <div className="w-full rounded-[1.5rem] p-6 shadow-[0_12px_32px_rgba(29,78,216,0.25)] bg-gradient-to-br from-blue-600 via-blue-700 to-[#1e3a8a] relative overflow-hidden mb-4">
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="absolute -left-4 bottom-4 w-24 h-24 bg-blue-400/20 rounded-full blur-xl pointer-events-none"></div>
+                
+                <div className="flex justify-between items-start relative z-10 mb-8">
+                  <span className="text-blue-200 text-xs font-semibold uppercase tracking-widest">Rota Ativa</span>
+                  <div className="w-8 h-5 flex gap-1 items-center justify-end">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400/80"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80 -ml-2"></div>
+                  </div>
+                </div>
+
+                <div className="relative z-10 flex flex-col">
+                  <h2 className="text-2xl font-extrabold text-white tracking-widest mb-1">{rotaAtiva.codigo}</h2>
+                  <div className="flex justify-between items-end mt-4">
+                    <div>
+                      <p className="text-blue-200 text-[10px] uppercase tracking-wider mb-0.5">Turno</p>
+                      <p className="text-white text-xs font-bold">{selectedTurno}</p>
+                    </div>
+                    <div>
+                      <p className="text-blue-200 text-[10px] uppercase tracking-wider mb-0.5">Sentido</p>
+                      <p className="text-white text-xs font-bold">{selectedSentido === 'IDA' ? 'Escola' : 'Casa'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* The Goal Bar (Barra de Metas / Lotação) */}
+              <div className="bg-[#5984ef] rounded-2xl p-4 flex items-center justify-between shadow-sm mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                     <PieChart size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-blue-100 text-[10px] font-bold uppercase tracking-wider">Ocupação</p>
+                    <p className="text-white text-xs font-medium">Alunos a Bordo</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-baseline gap-1 justify-end">
+                    <span className="text-xl font-black text-white">{alunosABordo}</span>
+                    <span className="text-sm font-bold text-blue-200">/ {totalAlunos}</span>
+                  </div>
+                  <div className="w-24 h-1.5 bg-blue-800/50 rounded-full mt-1.5 overflow-hidden">
+                    <div className="h-full bg-white transition-all duration-500 rounded-full" style={{ width: `${percentualOcupacao}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                  onClick={() => handleToggleRotaAtiva(false)}
+                  className="w-full bg-white border border-rose-100 text-rose-600 py-3 rounded-2xl flex justify-center items-center gap-2 active:scale-95 transition-all font-bold text-sm shadow-sm"
+              >
+                  <Square size={16} fill="currentColor" />
+                  Encerrar Viagem
+              </button>
+            </section>
+          )}
+
+          {/* Quick Actions (Ações Rápidas em Grid Circular) */}
+          <section className="grid grid-cols-4 gap-2 mb-6">
+            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => document.getElementById('camera-toggle-btn')?.click()}>
+              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
+                <QrCode size={22} />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500">Scanner</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowOcorrenciaModal(true)}>
+              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
+                <MessageSquareWarning size={22} />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500">Ocorrência</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowMecanicoModal(true)}>
+              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
+                <Wrench size={22} />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500">Mecânico</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowViasModal(true)}>
+              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
+                <Map size={22} />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500">Vias</span>
+            </div>
+          </section>
+
+          {/* Câmera do Scanner */}
+          {rotaAtiva?.ativa && (
+            <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 mb-6">
+               <div className="flex items-center justify-between mb-3 px-1">
+                 <h3 className="text-sm font-bold text-[#1a2b4c]">Câmera de Leitura</h3>
+                 <button id="camera-toggle-btn" className="text-blue-700 font-bold text-[10px] uppercase bg-blue-50 px-3 py-1.5 rounded-full">Ligar</button>
+               </div>
+               <div className="relative w-full h-40 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200">
+                  <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
+                  <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_20px_#3b82f6] z-20 scanner-line pointer-events-none" />
+                  
                   {scanState === 'success' && scannedAluno && (
-                    <div className="w-full bg-slate-900 border border-emerald-500/20 rounded-xl p-5 flex flex-col items-center text-center gap-4 shadow-xl">
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-450">
-                        <CheckCircle2 size={26} />
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-xs font-extrabold text-emerald-450 uppercase tracking-widest">
-                          Embarque Registrado
-                        </h4>
-                        <p className="text-[10px] text-slate-400 mt-1">Aguardando finalização do lote</p>
-                      </div>
-
-                      {/* Info do Aluno */}
-                      <div className="flex items-center gap-3 bg-slate-950 border border-slate-800/80 p-3 rounded-lg w-full text-left">
-                        <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center text-slate-500">
-                          {scannedAluno.fotoUrl ? (
-                            <img src={scannedAluno.fotoUrl} alt={scannedAluno.nome} className="w-full h-full object-cover" />
-                          ) : (
-                            <User size={18} />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{scannedAluno.nome}</p>
-                          <p className="text-[10px] text-slate-400 truncate mt-0.5">{scannedAluno.escola}</p>
-                        </div>
-                      </div>
+                    <div className="absolute inset-0 bg-emerald-500/95 z-30 flex flex-col items-center justify-center p-4">
+                      <CheckCircle2 size={36} className="text-white mb-2" />
+                      <p className="text-white font-bold text-center text-sm">{scannedAluno.nome}</p>
                     </div>
                   )}
-
                   {scanState === 'error' && (
-                    <div className="w-full bg-slate-900 border border-rose-500/20 rounded-xl p-5 flex flex-col items-center text-center gap-4 shadow-xl">
-                      <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
-                        <XCircle size={26} />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-extrabold text-rose-450 uppercase tracking-widest">
-                          Validação Recusada
-                        </h4>
-                        <p className="text-xs text-white font-bold mt-2 leading-relaxed">
-                          {scanErrorMsg}
-                        </p>
-                      </div>
+                    <div className="absolute inset-0 bg-rose-500/95 z-30 flex flex-col items-center justify-center p-4">
+                      <XCircle size={36} className="text-white mb-2" />
+                      <p className="text-white font-bold text-center text-sm">{scanErrorMsg}</p>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
-          </div>
+               </div>
+            </section>
+          )}
 
-          {/* LISTA DE PASSAGEIROS */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-                Lista de Passageiros
-              </h3>
-              {loading && <span className="text-[9px] text-amber-500 font-bold animate-pulse">CARREGANDO...</span>}
-            </div>
-
-            <div className="relative bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden shadow-inner">
-              {/* Overlay de Bloqueio: Rota Inativa (Fora de Rota) */}
-              {rotaAtiva && !rotaAtiva.ativa && (
-                <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1.5px] z-30 flex flex-col items-center justify-center gap-2 select-none pointer-events-auto transition-all duration-300">
-                  <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-450">
-                    <Lock size={16} />
-                  </div>
-                  <span className="text-xs font-black text-white uppercase tracking-wider">Fora de Rota</span>
-                  <p className="text-[9px] text-slate-400 text-center px-6 leading-relaxed">
-                    Ative a operação no painel superior para liberar o checklist.
-                  </p>
-                </div>
-              )}
-
-              <div className={`divide-y divide-slate-800/40 transition-opacity duration-300 ${rotaAtiva && !rotaAtiva.ativa ? 'opacity-30 pointer-events-none select-none' : ''}`}>
-                {rotas.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider">
-                    Você não possui nenhuma rota vinculada ao seu perfil.
-                  </div>
-                ) : rotaAtiva && rotaAtiva.alunos.length > 0 ? (
-                  rotaAtiva.alunos.map((aluno, index) => (
+          {/* Recent Transactions (Passageiros) */}
+          {rotaAtiva?.ativa && (
+            <section>
+              <div className="flex justify-between items-end mb-4 px-1">
+                <h2 className="text-base font-extrabold text-[#1a2b4c]">Passageiros Recentes</h2>
+                <span className="text-xs font-bold text-slate-400">Ver todos</span>
+              </div>
+              <div className="space-y-3 pb-8">
+                {rotaAtiva.alunos.map(aluno => (
                   <div
                     key={aluno.id}
                     onClick={() => cycleAlunoStatus(aluno.id)}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    className={`flex items-center justify-between p-4 transition-all duration-200 select-none animate-slide-up ${
-                      aluno.ausenciaNotificada 
-                        ? 'bg-rose-950/5 border-l-4 border-rose-600/40 opacity-75 cursor-not-allowed'
-                        : aluno.statusLocal === 'presente' 
-                        ? 'bg-emerald-950/10 border-l-4 border-emerald-500 cursor-pointer' 
-                        : aluno.statusLocal === 'ausente'
-                        ? 'bg-rose-950/10 border-l-4 border-rose-500 cursor-pointer'
-                        : 'hover:bg-slate-900/30 cursor-pointer'
+                    className={`flex items-center justify-between p-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 active:bg-slate-50 transition-colors cursor-pointer ${
+                      aluno.ausenciaNotificada ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all shrink-0 ${
-                        aluno.statusLocal === 'presente' 
-                          ? 'bg-emerald-500 border-emerald-500 text-slate-950' 
-                          : aluno.statusLocal === 'ausente'
-                          ? 'bg-rose-500 border-rose-500 text-slate-950'
-                          : 'border-slate-700 bg-slate-950/60 text-transparent'
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        aluno.statusLocal === 'presente' ? 'bg-emerald-50 text-emerald-600' :
+                        aluno.statusLocal === 'ausente' ? 'bg-rose-50 text-rose-600' :
+                        'bg-slate-50 text-slate-400'
                       }`}>
                         {aluno.statusLocal === 'presente' ? (
-                          <Check size={11} strokeWidth={4} />
+                          <ArrowDownToLine size={20} strokeWidth={2.5} />
                         ) : aluno.statusLocal === 'ausente' ? (
-                          <span className="text-[9px] font-black leading-none">X</span>
-                        ) : null}
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className={`text-xs font-bold transition-all truncate flex items-center gap-2 ${
-                          aluno.statusLocal === 'presente' 
-                            ? 'text-emerald-400 font-extrabold' 
-                            : aluno.statusLocal === 'ausente'
-                            ? `text-rose-500 font-extrabold ${aluno.ausenciaNotificada ? 'line-through opacity-60' : ''}`
-                            : 'text-slate-100'
-                        }`}>
-                          {aluno.ausenciaNotificada && (
-                            <Lock size={10} className="text-rose-450 shrink-0" />
-                          )}
-                          {aluno.statusLocal === 'ausente' && !aluno.ausenciaNotificada && (
-                            <span className="text-[9px] bg-rose-500/25 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
-                              Faltou
-                            </span>
-                          )}
-                          {aluno.ausenciaNotificada && (
-                            <span className="text-[9px] bg-rose-500/20 text-rose-350 border border-rose-500/20 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
-                              Falta Avisada
-                            </span>
-                          )}
-                          {aluno.statusLocal === 'presente' && (
-                            <span className="text-[9px] bg-emerald-555/25 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0">
-                              Presente
-                            </span>
-                          )}
-                          {aluno.nome}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1 min-w-0">
-                          <span className="text-[10px] text-slate-500 truncate max-w-[150px]">{aluno.escola}</span>
-                          {aluno.nee && (
-                            <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                              <Accessibility size={8} />
-                              {aluno.tipoNee}
-                            </span>
-                          )}
-                        </div>
-                        {aluno.endereco && (
-                          <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-0.5 leading-snug">
-                            <MapPin size={10} className="shrink-0 text-slate-500" />
-                            <span className="truncate max-w-[200px]" title={aluno.endereco}>{aluno.endereco}</span>
-                          </div>
+                          <ArrowUpFromLine size={20} strokeWidth={2.5} />
+                        ) : (
+                          <User size={20} strokeWidth={2.5} />
                         )}
                       </div>
+                      <div>
+                        <p className="text-[13px] font-extrabold text-[#1a2b4c] leading-tight mb-0.5">{aluno.nome}</p>
+                        <p className="text-[10px] font-semibold text-slate-400">
+                          {aluno.statusLocal === 'presente' ? 'Embarque Realizado' : aluno.statusLocal === 'ausente' ? 'Faltou ao embarque' : 'Aguardando'}
+                        </p>
+                      </div>
                     </div>
-
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 border ${
-                      aluno.statusLocal === 'presente' 
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                        : aluno.ausenciaNotificada
-                        ? 'bg-rose-900/20 border-rose-900/30 text-rose-350'
-                        : aluno.statusLocal === 'ausente'
-                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                        : 'bg-slate-900 border-slate-800 text-slate-500'
-                    }`}>
-                      {aluno.statusLocal === 'presente' 
-                        ? 'Presente' 
-                        : aluno.ausenciaNotificada
-                        ? 'Avisado' 
-                        : aluno.statusLocal === 'ausente' 
-                        ? 'Faltou' 
-                        : 'Pendente'}
-                    </span>
+                    <div className="text-right">
+                       <p className={`text-xs font-bold ${aluno.statusLocal === 'presente' ? 'text-emerald-600' : aluno.statusLocal === 'ausente' ? 'text-rose-600' : 'text-slate-400'}`}>
+                         {aluno.statusLocal === 'presente' ? '+1' : aluno.statusLocal === 'ausente' ? '-1' : '0'}
+                       </p>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider">
-                  Nenhum aluno cadastrado nesta rota para o turno selecionado.
-                </div>
-              )}
+                ))}
+
+                {(temAlteracoes || isSentSuccessfully) && (
+                  <div className="pt-4">
+                    <button
+                      onClick={handleSendBatch}
+                      disabled={loading || isSentSuccessfully}
+                      className={`w-full py-4 rounded-2xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${
+                        isSentSuccessfully ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.25)] active:scale-95'
+                      }`}
+                    >
+                      {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : isSentSuccessfully ? "Sincronizado" : "Sincronizar Relatório"}
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-            
-            {/* Botão de Envio em Lote (Checklist Finalizado) */}
-            {(temAlteracoes || isSentSuccessfully) && (
-              <div className="pt-4 pb-2">
-                <button
-                  onClick={handleSendBatch}
-                  disabled={loading || isSentSuccessfully || !rotaAtiva?.ativa}
-                  className={`w-full py-4 px-6 rounded-2xl text-[10px] font-extrabold tracking-widest uppercase transition-all transform border-0 flex items-center justify-center gap-2 active-press ${
-                    isSentSuccessfully
-                      ? 'bg-emerald-600 text-white shadow-[0_8px_20px_rgba(16,185,129,0.2)]'
-                      : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.2)] hover:shadow-[0_12px_24px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer'
-                  }`}
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                  ) : isSentSuccessfully ? (
-                    <>
-                      <Check size={14} />
-                      <span>Lista Enviada com Sucesso!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Navigation size={14} className="animate-pulse" />
-                      <span>Finalizar Checklist e Notificar</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
+            </section>
+          )}
         </main>
 
         {/* ══════════════════════════════════════════════════════

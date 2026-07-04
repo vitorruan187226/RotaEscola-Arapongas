@@ -1441,10 +1441,6 @@ export default function MotoristaDashboardPage() {
                 
                 <div className="flex justify-between items-start relative z-10 mb-8">
                   <span className="text-blue-200 text-xs font-semibold uppercase tracking-widest">Rota Ativa</span>
-                  <div className="w-8 h-5 flex gap-1 items-center justify-end">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400/80"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80 -ml-2"></div>
-                  </div>
                 </div>
 
                 <div className="relative z-10 flex flex-col">

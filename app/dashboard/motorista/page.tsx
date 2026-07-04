@@ -196,6 +196,7 @@ export default function MotoristaDashboardPage() {
 
   // Estados do escâner real de câmera
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [cameraErrorMsg, setCameraErrorMsg] = useState<string>('');
   const [isCameraLigada, setIsCameraLigada] = useState(false);
   const mainScannerRef = useRef<any>(null);
   const [lastScannedId, setLastScannedId] = useState<string>('');
@@ -669,7 +670,18 @@ export default function MotoristaDashboardPage() {
   useEffect(() => {
     async function startCamera() {
       try {
+        setCameraErrorMsg('');
         const { Html5Qrcode } = await import('html5-qrcode');
+        
+        // Verifica se o elemento existe antes de tentar instanciar
+        const readerElement = document.getElementById('reader');
+        if (!readerElement) {
+           console.error("Elemento #reader não encontrado no DOM!");
+           setCameraErrorMsg("Elemento do scanner não está pronto na tela.");
+           setHasCameraPermission(false);
+           return;
+        }
+
         mainScannerRef.current = new Html5Qrcode("reader");
         
         await mainScannerRef.current.start(
@@ -681,8 +693,9 @@ export default function MotoristaDashboardPage() {
           () => {}
         );
         setHasCameraPermission(true);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Erro ao iniciar camera:", err);
+        setCameraErrorMsg(err?.message || String(err));
         setHasCameraPermission(false);
       }
     }
@@ -1523,7 +1536,14 @@ export default function MotoristaDashboardPage() {
                </div>
                
                {isCameraLigada ? (
-                 <div className="relative w-full h-40 rounded-2xl bg-slate-900 overflow-hidden border border-slate-200">
+                 <div className="relative w-full h-40 rounded-2xl bg-slate-900 overflow-hidden border border-slate-200 flex items-center justify-center">
+                    {hasCameraPermission === false && (
+                      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 bg-slate-900 text-center">
+                         <AlertTriangle size={32} className="text-amber-500 mb-2" />
+                         <p className="text-amber-500 font-bold text-xs mb-1">Erro na Câmera</p>
+                         <p className="text-slate-400 text-[10px] break-words">{cameraErrorMsg}</p>
+                      </div>
+                    )}
                     <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
                     <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_20px_#3b82f6] z-20 scanner-line pointer-events-none" />
                     

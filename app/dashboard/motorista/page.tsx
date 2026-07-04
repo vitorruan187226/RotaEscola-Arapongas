@@ -196,6 +196,8 @@ export default function MotoristaDashboardPage() {
 
   // Estados do escâner real de câmera
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [isCameraLigada, setIsCameraLigada] = useState(false);
+  const mainScannerRef = useRef<any>(null);
   const [lastScannedId, setLastScannedId] = useState<string>('');
 
   // Refs de segurança para callbacks do scanner

@@ -1,46 +1,40 @@
-import { Phone, Mail, Building2 } from 'lucide-react';
+import { Play, Apple } from 'lucide-react';
 
 export function SuporteSection() {
   return (
-    <section className="lp-suporte" id="suporte" aria-labelledby="suporte-heading">
-      <div className="lp-section-inner">
-        <div className="lp-section-header">
-          <p className="lp-section-eyebrow">Atendimento</p>
-          <h2 id="suporte-heading" className="lp-section-title">Precisa de ajuda?</h2>
-          <p className="lp-section-desc">
-            Nossa equipe da Secretaria Municipal de Educação está pronta para atendê-lo.
-          </p>
-        </div>
-        <div className="lp-suporte-cards">
-          <div className="lp-suporte-card">
-            <div className="lp-suporte-icon">
-              <Phone size={22} />
-            </div>
-            <h3>Telefone</h3>
-            <p>Ligue para a SEMED</p>
-            <a href="tel:+554339021112" className="lp-suporte-link" id="link-telefone">
-              (43) 3902-1112
-            </a>
+    <section className="py-24">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12">
+        <div className="bg-primary rounded-[3rem] p-12 text-center text-white shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+              <path d="M0 0 L100 100 M100 0 L0 100" stroke="white" strokeWidth="0.1"></path>
+            </svg>
           </div>
-          <div className="lp-suporte-card">
-            <div className="lp-suporte-icon">
-              <Mail size={22} />
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Pronto para dar mais segurança aos seus filhos?</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-8">
+              Junte-se a centenas de famílias em Arapongas que já confiam na Rota Escola.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              
+              {/* Store Badge Mockups */}
+              <div className="cursor-pointer bg-slate-900 rounded-xl px-6 py-3 flex items-center gap-3 border border-slate-700 hover:bg-slate-800 transition-colors">
+                <Play className="text-white w-8 h-8 fill-white" />
+                <div className="text-left">
+                  <p className="text-[10px] uppercase font-bold leading-none opacity-70">Disponível no</p>
+                  <p className="text-lg font-bold leading-none mt-1">Google Play</p>
+                </div>
+              </div>
+              
+              <div className="cursor-pointer bg-slate-900 rounded-xl px-6 py-3 flex items-center gap-3 border border-slate-700 hover:bg-slate-800 transition-colors">
+                <Apple className="text-white w-8 h-8 fill-white" />
+                <div className="text-left">
+                  <p className="text-[10px] uppercase font-bold leading-none opacity-70">Baixar na</p>
+                  <p className="text-lg font-bold leading-none mt-1">App Store</p>
+                </div>
+              </div>
+              
             </div>
-            <h3>E-mail</h3>
-            <p>Envie sua dúvida por e-mail</p>
-            <a href="mailto:fosfosilvio@gmail.com" className="lp-suporte-link" id="link-email">
-              fosfosilvio@<br />gmail.com
-            </a>
-          </div>
-          <div className="lp-suporte-card">
-            <div className="lp-suporte-icon">
-              <Building2 size={22} />
-            </div>
-            <h3>Presencial</h3>
-            <p>Secretaria Municipal de Educação</p>
-            <span className="lp-suporte-link">
-              Arapongas · PR<br />Seg–Sex · 08h–17h
-            </span>
           </div>
         </div>
       </div>

@@ -1,92 +1,51 @@
-import {
-  BarChart3,
-  Zap,
-  ShieldCheck,
-  CheckCircle,
-  MapPin,
-  Smartphone,
-  Users,
-  QrCode
-} from 'lucide-react';
-
-const PILARES = [
-  {
-    id: 'secretaria',
-    emoji: '🏛️',
-    titulo: 'Para a Secretaria',
-    subtitulo: 'Controle total com dados em tempo real',
-    cor: 'pillar-navy',
-    itens: [
-      { icon: BarChart3, texto: 'Auditoria com GPS e relatórios automáticos' },
-      { icon: Zap, texto: 'Economia de recursos com processos 100% digitais' },
-      { icon: BarChart3, texto: 'Dados em tempo real para tomada de decisão' },
-      { icon: ShieldCheck, texto: 'Conformidade com a legislação do transporte escolar' },
-    ],
-  },
-  {
-    id: 'pais',
-    emoji: '👨‍👩‍👧',
-    titulo: 'Para os Pais',
-    subtitulo: 'Tranquilidade e praticidade no dia a dia',
-    cor: 'pillar-yellow',
-    itens: [
-      { icon: CheckCircle, texto: 'Fim das filas presenciais na Secretaria' },
-      { icon: MapPin, texto: 'Acompanhamento do trajeto em tempo real' },
-      { icon: ShieldCheck, texto: 'Segurança total para o seu filho' },
-      { icon: Smartphone, texto: 'Recadastro anual 100% pelo celular' },
-    ],
-  },
-  {
-    id: 'motoristas',
-    emoji: '🚌',
-    titulo: 'Para os Motoristas',
-    subtitulo: 'Eficiência operacional em campo',
-    cor: 'pillar-slate',
-    itens: [
-      { icon: Users, texto: 'Lista de passageiros digital e atualizada' },
-      { icon: QrCode, texto: 'Controle de embarque por QR Code' },
-      { icon: Smartphone, texto: 'Comunicação direta com a SEMED' },
-      { icon: ShieldCheck, texto: 'Sincronização instantânea de presenças' },
-    ],
-  },
-];
+import { MapPin, BellRing, History } from 'lucide-react';
 
 export function BeneficiosSection() {
   return (
-    <section className="lp-pilares" id="vantagens" aria-labelledby="vantagens-heading">
-      <div className="lp-section-inner">
-        <div className="lp-section-header">
-          <p className="lp-section-eyebrow">Por que o RotaEscola?</p>
-          <h2 id="vantagens-heading" className="lp-section-title">
-            Uma plataforma, três perfis de usuário
-          </h2>
-          <p className="lp-section-desc">
-            Cada ator do transporte escolar tem sua área personalizada e ferramentas exclusivas.
-          </p>
+    <section className="py-16 md:py-24 bg-slate-50" id="vantagens">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12">
+        <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
+          <div className="max-w-2xl">
+            <h3 className="text-3xl md:text-4xl font-bold text-primary mb-2">Para os Pais</h3>
+            <p className="text-base text-slate-600">
+              Controle total na palma da sua mão para garantir que o seu bem mais precioso esteja sempre seguro.
+            </p>
+          </div>
         </div>
-
-        <div className="lp-pilares-grid">
-          {PILARES.map((pilar) => (
-            <div key={pilar.id} className={`lp-pilar-card ${pilar.cor}`}>
-              <div className="lp-pilar-header">
-                <span className="lp-pilar-emoji" role="img" aria-label={pilar.titulo}>
-                  {pilar.emoji}
-                </span>
-                <div>
-                  <h3 className="lp-pilar-titulo">{pilar.titulo}</h3>
-                  <p className="lp-pilar-subtitulo">{pilar.subtitulo}</p>
-                </div>
-              </div>
-              <ul className="lp-pilar-lista">
-                {pilar.itens.map(({ icon: Icon, texto }) => (
-                  <li key={texto} className="lp-pilar-item">
-                    <Icon size={16} className="lp-pilar-item-icon" />
-                    <span>{texto}</span>
-                  </li>
-                ))}
-              </ul>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Feature 1: Real-time */}
+          <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-8 rounded-2xl hover:shadow-xl transition-shadow group">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <MapPin className="text-primary-700 w-6 h-6" />
             </div>
-          ))}
+            <h4 className="text-xl font-bold text-primary mb-2">Rastreamento Real</h4>
+            <p className="text-slate-600 opacity-90 text-sm md:text-base">
+              Veja a localização exata do ônibus no mapa durante todo o trajeto, da saída até a chegada na escola.
+            </p>
+          </div>
+          
+          {/* Feature 2: Notifications */}
+          <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-8 rounded-2xl hover:shadow-xl transition-shadow group">
+            <div className="w-12 h-12 rounded-xl bg-accent-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <BellRing className="text-accent-700 w-6 h-6" />
+            </div>
+            <h4 className="text-xl font-bold text-primary mb-2">Avisos de Chegada</h4>
+            <p className="text-slate-600 opacity-90 text-sm md:text-base">
+              Receba notificações instantâneas quando o motorista estiver a 5 minutos da sua casa e quando as crianças chegarem à escola.
+            </p>
+          </div>
+          
+          {/* Feature 3: History */}
+          <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-8 rounded-2xl hover:shadow-xl transition-shadow group">
+            <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <History className="text-primary w-6 h-6" />
+            </div>
+            <h4 className="text-xl font-bold text-primary mb-2">Histórico Seguro</h4>
+            <p className="text-slate-600 opacity-90 text-sm md:text-base">
+              Acesse o log completo de horários e rotas percorridas nos últimos 30 dias para total transparência.
+            </p>
+          </div>
         </div>
       </div>
     </section>

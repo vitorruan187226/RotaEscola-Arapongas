@@ -667,24 +667,18 @@ export default function MotoristaDashboardPage() {
 
   // Inicializa o Scanner real usando a camera do dispositivo
   useEffect(() => {
-    let html5QrCode: any = null;
-
     async function startCamera() {
       try {
         const { Html5Qrcode } = await import('html5-qrcode');
-        html5QrCode = new Html5Qrcode("reader");
+        mainScannerRef.current = new Html5Qrcode("reader");
         
-        await html5QrCode.start(
+        await mainScannerRef.current.start(
           { facingMode: "environment" },
-          {
-            fps: 15
-          },
+          { fps: 15 },
           (decodedText: string) => {
             handleQrCodeScanned(decodedText);
           },
-          () => {
-            // Ignorado
-          }
+          () => {}
         );
         setHasCameraPermission(true);
       } catch (err) {
@@ -693,16 +687,20 @@ export default function MotoristaDashboardPage() {
       }
     }
 
-    startCamera();
+    if (isCameraLigada) {
+      setTimeout(() => startCamera(), 200);
+    } else {
+      if (mainScannerRef.current && mainScannerRef.current.isScanning) {
+        mainScannerRef.current.stop().catch((e: any) => console.log(e));
+      }
+    }
 
     return () => {
-      if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop()
-          .then(() => console.log("Camera desligada"))
-          .catch((err: any) => console.error("Erro ao desligar camera:", err));
+      if (mainScannerRef.current && mainScannerRef.current.isScanning) {
+        mainScannerRef.current.stop().catch((e: any) => console.log(e));
       }
     };
-  }, []);
+  }, [isCameraLigada]);
 
   // Envio consolidado em lote (Batch)
   const handleSendBatch = async () => {
@@ -1516,25 +1514,38 @@ export default function MotoristaDashboardPage() {
             <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 mb-6">
                <div className="flex items-center justify-between mb-3 px-1">
                  <h3 className="text-sm font-bold text-[#1a2b4c]">Câmera de Leitura</h3>
-                 <button id="camera-toggle-btn" className="text-blue-700 font-bold text-[10px] uppercase bg-blue-50 px-3 py-1.5 rounded-full">Ligar</button>
+                 <button 
+                   onClick={() => setIsCameraLigada(!isCameraLigada)}
+                   className={`font-bold text-[10px] uppercase px-3 py-1.5 rounded-full transition-all ${isCameraLigada ? 'bg-rose-100 text-rose-700' : 'bg-blue-50 text-blue-700'}`}
+                 >
+                   {isCameraLigada ? 'Desligar' : 'Ligar'}
+                 </button>
                </div>
-               <div className="relative w-full h-40 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200">
-                  <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
-                  <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_20px_#3b82f6] z-20 scanner-line pointer-events-none" />
-                  
-                  {scanState === 'success' && scannedAluno && (
-                    <div className="absolute inset-0 bg-emerald-500/95 z-30 flex flex-col items-center justify-center p-4">
-                      <CheckCircle2 size={36} className="text-white mb-2" />
-                      <p className="text-white font-bold text-center text-sm">{scannedAluno.nome}</p>
-                    </div>
-                  )}
-                  {scanState === 'error' && (
-                    <div className="absolute inset-0 bg-rose-500/95 z-30 flex flex-col items-center justify-center p-4">
-                      <XCircle size={36} className="text-white mb-2" />
-                      <p className="text-white font-bold text-center text-sm">{scanErrorMsg}</p>
-                    </div>
-                  )}
-               </div>
+               
+               {isCameraLigada ? (
+                 <div className="relative w-full h-40 rounded-2xl bg-slate-900 overflow-hidden border border-slate-200">
+                    <div id="reader" className="w-full h-full absolute inset-0 z-0"></div>
+                    <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_20px_#3b82f6] z-20 scanner-line pointer-events-none" />
+                    
+                    {scanState === 'success' && scannedAluno && (
+                      <div className="absolute inset-0 bg-emerald-500/95 z-30 flex flex-col items-center justify-center p-4">
+                        <CheckCircle2 size={36} className="text-white mb-2" />
+                        <p className="text-white font-bold text-center text-sm">{scannedAluno.nome}</p>
+                      </div>
+                    )}
+                    {scanState === 'error' && (
+                      <div className="absolute inset-0 bg-rose-500/95 z-30 flex flex-col items-center justify-center p-4">
+                        <XCircle size={36} className="text-white mb-2" />
+                        <p className="text-white font-bold text-center text-sm">{scanErrorMsg}</p>
+                      </div>
+                    )}
+                 </div>
+               ) : (
+                 <div className="relative w-full h-40 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                   <Camera size={32} className="mb-2 opacity-40" />
+                   <p className="text-xs font-semibold">Câmera Desligada</p>
+                 </div>
+               )}
             </section>
           )}
 

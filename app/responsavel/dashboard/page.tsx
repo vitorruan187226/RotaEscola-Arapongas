@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { calculateDistanceKm, estimateTimeMinutes } from '../../../lib/utils/haversine';
+import { geocodeAddress } from '../../../lib/utils/geocode';
+import { MapPickerModal } from '../../../lib/components/MapPickerModal';
 
 // ─── Contrato de Dados (Lei 4 — Tipagem estrita) ──────────────────────────────
 interface Filho {
@@ -838,6 +840,24 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
   const [turma, setTurma] = useState('');
   const [periodo, setPeriodo] = useState<'manha' | 'tarde' | 'noite'>('manha');
   const [endereco, setEndereco] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const handleGeocode = async () => {
+    setIsGeocoding(true);
+    const coords = await geocodeAddress(endereco);
+    setIsGeocoding(false);
+    if (coords) {
+      setLatitude(coords.lat.toString());
+      setLongitude(coords.lng.toString());
+    } else {
+      alert('Não foi possível encontrar as coordenadas para este endereço.');
+    }
+  };
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
 
   const selectedSchool = escolas.find(esc => esc.id === escolaIdAluno);
   const schoolSeries = selectedSchool?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
@@ -1274,6 +1294,22 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
   const [turma, setTurma] = useState(aluno.turma || '');
   const [periodo, setPeriodo] = useState<'manha' | 'tarde' | 'noite'>(aluno.periodo || 'manha');
   const [endereco, setEndereco] = useState(aluno.endereco || '');
+  const [latitude, setLatitude] = useState(aluno.latitude ? aluno.latitude.toString() : '');
+  const [longitude, setLongitude] = useState(aluno.longitude ? aluno.longitude.toString() : '');
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const handleGeocode = async () => {
+    setIsGeocoding(true);
+    const coords = await geocodeAddress(endereco);
+    setIsGeocoding(false);
+    if (coords) {
+      setLatitude(coords.lat.toString());
+      setLongitude(coords.lng.toString());
+    } else {
+      alert('Não foi possível encontrar as coordenadas para este endereço.');
+    }
+  };
 
   const selectedSchool = escolas.find(esc => esc.id === escolaIdAluno);
   const schoolSeries = selectedSchool?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
@@ -1307,7 +1343,9 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
           turno: periodo === 'manha' ? 'Manhã' : periodo === 'tarde' ? 'Tarde' : 'Noite',
           status: 'aguardando',
           status_carteirinha: 'Pendente',
-          endereco: endereco.trim()
+          endereco: endereco.trim(),
+          latitude: latitude ? parseFloat(latitude.replace(',', '.')) : null,
+          longitude: longitude ? parseFloat(longitude.replace(',', '.')) : null
         };
 
         let { error: updateError } = await supabase
@@ -1408,9 +1446,19 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                Endereço Residencial do Aluno
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  Endereço Residencial do Aluno
+                </label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsMapModalOpen(true)} className="text-[9px] font-bold text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1">
+                    <MapPin size={10} /> Pegar no Mapa
+                  </button>
+                  <button type="button" onClick={handleGeocode} disabled={isGeocoding || !endereco.trim()} className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1">
+                    {isGeocoding ? <span>Buscando...</span> : <><MapPin size={10} /> Auto-preencher</>}
+                  </button>
+                </div>
+              </div>
               <input
                 type="text"
                 value={endereco}
@@ -1418,6 +1466,16 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
                 placeholder="Ex: Av. Paraná, 123 - Centro, Arapongas - PR"
                 className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
               />
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Latitude</label>
+                  <input type="text" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Ex: -23.4178" className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Longitude</label>
+                  <input type="text" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Ex: -51.4269" className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+                </div>
+              </div>
             </div>
 
             <div>
@@ -1503,7 +1561,20 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
             </button>
           </div>
         </div>
+        </div>
       </div>
+
+      <MapPickerModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        initialLat={latitude ? parseFloat(latitude.replace(',', '.')) : undefined}
+        initialLng={longitude ? parseFloat(longitude.replace(',', '.')) : undefined}
+        onConfirm={(lat, lng) => {
+          setLatitude(lat.toString());
+          setLongitude(lng.toString());
+          setIsMapModalOpen(false);
+        }}
+      />
     </div>
   );
 }

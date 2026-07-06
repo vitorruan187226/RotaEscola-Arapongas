@@ -851,7 +851,7 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
     setIsGeocoding(false);
     if (coords) {
       setLatitude(coords.lat.toString());
-      setLongitude(coords.lng.toString());
+      setLongitude(coords.lon.toString());
     } else {
       alert('Não foi possível encontrar as coordenadas para este endereço.');
     }
@@ -1303,7 +1303,7 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
     setIsGeocoding(false);
     if (coords) {
       setLatitude(coords.lat.toString());
-      setLongitude(coords.lng.toString());
+      setLongitude(coords.lon.toString());
     } else {
       alert('Não foi possível encontrar as coordenadas para este endereço.');
     }

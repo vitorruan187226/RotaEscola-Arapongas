@@ -61,13 +61,18 @@ export function useGPSBroadcast(rotaId: string | null, motoristaId: string | nul
             const now = Date.now();
             if (now - lastPersistRef.current > 60000) {
               lastPersistRef.current = now;
-              await supabase.from('localizacao_veiculo').insert({
-                rota_id: rotaId,
-                latitude: latitude,
-                longitude: longitude,
-                velocidade: speed, // Assuming we have these or we can just send null if they don't exist
-                timestamp_registro: payload.timestamp
-              });
+              try {
+                await supabase.from('localizacao_veiculo').insert({
+                  rota_id: rotaId,
+                  latitude: latitude,
+                  longitude: longitude,
+                  velocidade: speed, // Assuming we have these or we can just send null if they don't exist
+                  timestamp_registro: payload.timestamp
+                });
+              } catch (e) {
+                // Silently fail persistence if table is missing or RLS blocks it, 
+                // so it doesn't break the realtime broadcast loop
+              }
             }
           },
           (err) => {

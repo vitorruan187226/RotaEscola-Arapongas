@@ -26,6 +26,7 @@ import {
 import { createClient } from '../../../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../../../lib/mocks/alunos';
 import { geocodeAddress } from '../../../../../lib/utils/geocode';
+import { MapPickerModal } from '../../../../../lib/components/MapPickerModal';
 
 interface AlunoAuditoria {
   id: string;
@@ -146,6 +147,7 @@ export default function EscolaDetalhesPage() {
 
   // Estados dos Modais de Edição/Exclusão Administrativa
   const [escolas, setEscolas] = useState<any[]>([]);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [modalEditar, setModalEditar] = useState<AlunoAuditoria | null>(null);
   const [modalExcluir, setModalExcluir] = useState<AlunoAuditoria | null>(null);
 
@@ -1410,18 +1412,27 @@ export default function EscolaDetalhesPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Endereço Residencial</label>
-                  <button 
-                    type="button" 
-                    onClick={handleGeocode}
-                    disabled={isGeocoding || !enderecoInput.trim()}
-                    className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
-                  >
-                    {isGeocoding ? (
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
-                    ) : (
-                      <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
-                    )}
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsMapModalOpen(true)}
+                      className="text-[9px] font-bold text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <MapPin size={10} /> Pegar no Mapa
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleGeocode}
+                      disabled={isGeocoding || !enderecoInput.trim()}
+                      className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                    >
+                      {isGeocoding ? (
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <input
                   type="text"
@@ -1635,8 +1646,18 @@ export default function EscolaDetalhesPage() {
           </div>
         </div>
       )}
+
+      <MapPickerModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        initialLat={latitudeInput ? parseFloat(latitudeInput.replace(',', '.')) : undefined}
+        initialLng={longitudeInput ? parseFloat(longitudeInput.replace(',', '.')) : undefined}
+        onConfirm={(lat, lng) => {
+          setLatitudeInput(lat.toString());
+          setLongitudeInput(lng.toString());
+          setIsMapModalOpen(false);
+        }}
+      />
     </div>
   );
 }
-
-

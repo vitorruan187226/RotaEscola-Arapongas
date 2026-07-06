@@ -2815,14 +2815,14 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   const [tempoEstimado, setTempoEstimado] = useState(12);
   const [msg, setMsg] = useState<{ type: 'info' | 'success'; text: string } | null>(null);
 
-  // Define se é rota de Ida ou Volta baseado no turno e horário atual
-  const isVolta = (() => {
+  // Define se é rota de Ida ou Volta baseado no turno e horário atual (heurística inicial)
+  const [isVolta, setIsVolta] = useState<boolean>(() => {
     const hour = new Date().getHours();
     if (aluno.periodo === 'manha') return hour >= 11;
     if (aluno.periodo === 'tarde') return hour >= 16;
     if (aluno.periodo === 'noite') return hour >= 21;
     return false;
-  })();
+  });
 
   // Busca Localização GPS
   useEffect(() => {
@@ -2909,17 +2909,23 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           setAlunoEmbarcado(true);
         }
 
-        // 2. Checar se o motorista já confirmou o embarque (tabela logs_embarque)
-        const { data: logEmbarque } = await supabase
+        // 2. Checar a direção atual da rota (motorista escolheu IDA ou VOLTA?) e status do aluno
+        const { data: routeLogs } = await supabase
           .from('logs_embarque')
-          .select('id, status')
-          .eq('aluno_id', aluno.id)
+          .select('tipo_movimento, aluno_id, status')
+          .eq('rota_id', aluno.rotaUuid || aluno.rotaId)
           .eq('data_registro', getLocalDateString())
-          .eq('status', 'PRESENTE')
-          .maybeSingle();
+          .order('created_at', { ascending: false });
 
-        if (logEmbarque) {
-          setAlunoEmbarcado(true);
+        if (routeLogs && routeLogs.length > 0) {
+          // A direção da rota é ditada pelo último envio do motorista para essa rota
+          setIsVolta(routeLogs[0].tipo_movimento === 'VOLTA');
+          
+          // Verifica se o aluno logado está marcado como presente nesses logs recentes
+          const meuLog = routeLogs.find(log => log.aluno_id === aluno.id && log.status === 'PRESENTE');
+          if (meuLog) {
+            setAlunoEmbarcado(true);
+          }
         }
       } catch {
         // Fallback

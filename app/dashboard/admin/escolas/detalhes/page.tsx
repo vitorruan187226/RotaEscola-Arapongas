@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '../../../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../../../lib/mocks/alunos';
+import { geocodeAddress } from '../../../../../lib/utils/geocode';
 
 interface AlunoAuditoria {
   id: string;
@@ -160,6 +161,7 @@ export default function EscolaDetalhesPage() {
   const [enderecoInput, setEnderecoInput] = useState('');
   const [latitudeInput, setLatitudeInput] = useState('');
   const [longitudeInput, setLongitudeInput] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -564,6 +566,23 @@ export default function EscolaDetalhesPage() {
     } finally {
       setLoadingAction(null);
     }
+  };
+
+  const handleGeocode = async () => {
+    if (!enderecoInput.trim()) {
+      showToast('Digite um endereço primeiro para buscar as coordenadas.', 'error');
+      return;
+    }
+    setIsGeocoding(true);
+    const coords = await geocodeAddress(enderecoInput);
+    if (coords) {
+      setLatitudeInput(coords.lat.toString());
+      setLongitudeInput(coords.lon.toString());
+      showToast('Coordenadas encontradas e preenchidas!', 'success');
+    } else {
+      showToast('Não foi possível encontrar as coordenadas para este endereço.', 'error');
+    }
+    setIsGeocoding(false);
   };
 
   const handleSaveEdition = async () => {
@@ -1389,7 +1408,21 @@ export default function EscolaDetalhesPage() {
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Endereço Residencial</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Endereço Residencial</label>
+                  <button 
+                    type="button" 
+                    onClick={handleGeocode}
+                    disabled={isGeocoding || !enderecoInput.trim()}
+                    className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                  >
+                    {isGeocoding ? (
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
+                    )}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={enderecoInput}

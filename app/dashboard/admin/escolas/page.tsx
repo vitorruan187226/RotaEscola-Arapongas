@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle, MapPin, Clock } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../../lib/mocks/alunos';
+import { geocodeAddress } from '../../../../lib/utils/geocode';
 
 interface Escola {
   id: string;
@@ -69,6 +70,7 @@ export default function EscolasPage() {
   const [endereco, setEndereco] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [turnos, setTurnos] = useState<string[]>([]); // ['Manhã', 'Tarde']
   const [tipo, setTipo] = useState<'municipal' | 'estadual'>('municipal');
   const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
@@ -182,6 +184,23 @@ export default function EscolasPage() {
     } else {
       setTurnos(prev => [...prev, turno]);
     }
+  };
+
+  const handleGeocode = async () => {
+    if (!endereco.trim()) {
+      showToast('Digite um endereço primeiro para buscar as coordenadas.', 'error');
+      return;
+    }
+    setIsGeocoding(true);
+    const coords = await geocodeAddress(endereco);
+    if (coords) {
+      setLatitude(coords.lat.toString());
+      setLongitude(coords.lon.toString());
+      showToast('Coordenadas encontradas e preenchidas!', 'success');
+    } else {
+      showToast('Não foi possível encontrar as coordenadas para este endereço.', 'error');
+    }
+    setIsGeocoding(false);
   };
 
   const handleCreate = async () => {
@@ -685,7 +704,21 @@ export default function EscolasPage() {
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Endereço</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Endereço</label>
+                  <button 
+                    type="button" 
+                    onClick={handleGeocode}
+                    disabled={isGeocoding || !endereco.trim()}
+                    className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                  >
+                    {isGeocoding ? (
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
+                    )}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={endereco}
@@ -855,7 +888,21 @@ export default function EscolasPage() {
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Endereço</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Endereço</label>
+                  <button 
+                    type="button" 
+                    onClick={handleGeocode}
+                    disabled={isGeocoding || !endereco.trim()}
+                    className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                  >
+                    {isGeocoding ? (
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
+                    )}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={endereco}

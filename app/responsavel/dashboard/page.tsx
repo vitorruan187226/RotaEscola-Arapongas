@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -2882,29 +2882,9 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     }
   };
 
-  // Coordenadas limites de Arapongas (Bounding Box)
-  const LAT_MIN = -23.4300;
-  const LAT_MAX = -23.4100;
-  const LNG_MIN = -51.4350;
-  const LNG_MAX = -51.4150;
-
-  function getProjectedCoords(lat: number, lng: number) {
-    const clampedLat = Math.min(Math.max(lat, LAT_MIN), LAT_MAX);
-    const clampedLng = Math.min(Math.max(lng, LNG_MIN), LNG_MAX);
-
-    const x = ((clampedLng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * 100;
-    const y = ((LAT_MAX - clampedLat) / (LAT_MAX - LAT_MIN)) * 100;
-    return { x, y };
-  }
-
-  // Pontos fixos projetados para Escola e Stop (Ponto)
-  const schoolCoords = getProjectedCoords(-23.4120, -51.4200);
-  const stopCoords = getProjectedCoords(-23.4240, -51.4280);
-
-  // Posição projetada do ônibus
-  const busCoords = localizacao && !localizacao.foraDeTurno
-    ? getProjectedCoords(localizacao.latitude, localizacao.longitude)
-    : null;
+  // Posição do ônibus real (Mock removido)
+  const busLat = localizacao && !localizacao.foraDeTurno ? localizacao.latitude : -23.4178;
+  const busLng = localizacao && !localizacao.foraDeTurno ? localizacao.longitude : -51.4269;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2935,55 +2915,30 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               </div>
             ) : (
               <>
-                <svg className="absolute inset-0 w-full h-full text-slate-200 opacity-60" xmlns="http://www.w3.org/2000/svg">
-                  <line x1="0" y1="40" x2="400" y2="40" stroke="currentColor" strokeWidth="4" />
-                  <line x1="0" y1="100" x2="400" y2="100" stroke="currentColor" strokeWidth="6" />
-                  <line x1="0" y1="170" x2="400" y2="170" stroke="currentColor" strokeWidth="4" />
-                  <line x1="60" y1="0" x2="60" y2="300" stroke="currentColor" strokeWidth="4" />
-                  <line x1="150" y1="0" x2="150" y2="300" stroke="currentColor" strokeWidth="8" />
-                  <line x1="260" y1="0" x2="260" y2="300" stroke="currentColor" strokeWidth="4" />
-                  <path d="M 60,170 L 150,170 L 150,100 L 260,100" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray="5" />
-                </svg>
+                {/* MAPA REAL OPENSTREETMAP */}
+                <iframe 
+                  width="100%" 
+                  height="100%" 
+                  frameBorder="0" 
+                  scrolling="no" 
+                  marginHeight={0} 
+                  marginWidth={0} 
+                  className="absolute inset-0 z-0 opacity-80"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${busLng - 0.006}%2C${busLat - 0.006}%2C${busLng + 0.006}%2C${busLat + 0.006}&layer=mapnik&marker=${busLat}%2C${busLng}`} 
+                />
 
-                {/* Escola */}
-                <div 
-                  className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: `${schoolCoords.x}%`, top: `${schoolCoords.y}%` }}
-                >
-                  <div className="w-6 h-6 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-[10px] shadow animate-pulse">🏫</div>
-                  <span className="text-[7px] bg-slate-900 text-white font-extrabold px-1.5 py-0.5 rounded mt-0.5 whitespace-nowrap shadow uppercase">
-                    Escola
-                  </span>
-                </div>
-
-                {/* Ponto de Embarque */}
-                <div 
-                  className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: `${stopCoords.x}%`, top: `${stopCoords.y}%` }}
-                >
-                  <div className="w-6 h-6 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center shadow">
-                    <MapPin size={11} className="text-white" />
-                  </div>
-                  <span className="text-[7px] bg-slate-900 text-white font-extrabold px-1.5 py-0.5 rounded mt-0.5 whitespace-nowrap shadow uppercase">
-                    Seu Ponto
-                  </span>
-                </div>
-
-                {/* Ônibus (Baseado em Coordenadas GPS Reais) */}
-                {busCoords && isRouteActive ? (
+                {/* Marcador Real Sobreposto no Centro Exato */}
+                {localizacao && !localizacao.foraDeTurno && isRouteActive && (
                   <div
-                    className="absolute flex flex-col items-center transition-all duration-1000 z-10 -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${busCoords.x}%`, top: `${busCoords.y}%` }}
+                    className="absolute flex flex-col items-center transition-all duration-1000 z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                   >
-                    <div className="w-7 h-7 rounded-full bg-slate-950 border border-amber-500 flex items-center justify-center shadow-md animate-bounce">
-                      <Bus size={13} className="text-amber-500" />
+                    <div className="w-9 h-9 rounded-full bg-slate-950 border-2 border-amber-500 flex items-center justify-center shadow-lg animate-bounce">
+                      <Bus size={18} className="text-amber-500" />
                     </div>
-                    <span className="text-[7px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full mt-0.5 shadow whitespace-nowrap uppercase tracking-wider scale-90">
-                      Ônibus
+                    <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full mt-0.5 shadow-md whitespace-nowrap uppercase tracking-wider">
+                      {(localizacao.velocidade_kmh || 0).toFixed(0)} km/h
                     </span>
                   </div>
-                ) : (
-                  null
                 )}
 
                 {/* Fora de turno ou Rota Inativa */}

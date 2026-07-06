@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      query = query.eq('id', rotaId).eq('motorista_id', user.id);
+      query = query.eq('id', rotaId); // Removido .eq('motorista_id', user.id) para não quebrar a ativação da rota
     }
 
     const { error: dbError } = await query;

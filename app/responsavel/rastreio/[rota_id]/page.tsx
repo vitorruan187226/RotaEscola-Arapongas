@@ -171,56 +171,32 @@ export default function RastreioAusenciaPage() {
           </div>
         ) : (
           <>
-            {/* Traçado de ruas simuladas (SVG decorativo) */}
-            <svg className="absolute inset-0 w-full h-full text-slate-300 opacity-40" xmlns="http://www.w3.org/2000/svg">
-              <line x1="0"   y1="50"  x2="400" y2="50"  stroke="currentColor" strokeWidth="6" />
-              <line x1="0"   y1="120" x2="400" y2="120" stroke="currentColor" strokeWidth="8" />
-              <line x1="0"   y1="210" x2="400" y2="210" stroke="currentColor" strokeWidth="6" />
-              <line x1="80"  y1="0"   x2="80"  y2="300" stroke="currentColor" strokeWidth="6" />
-              <line x1="180" y1="0"   x2="180" y2="300" stroke="currentColor" strokeWidth="10" />
-              <line x1="310" y1="0"   x2="310" y2="300" stroke="currentColor" strokeWidth="6" />
-              <path d="M 80,210 L 180,210 L 180,120 L 310,120" fill="none" stroke="#2563EB" strokeWidth="4" strokeDasharray="6" />
-            </svg>
+            {/* MAPA REAL OPENSTREETMAP */}
+            <iframe 
+              width="100%" 
+              height="100%" 
+              frameBorder="0" 
+              scrolling="no" 
+              marginHeight={0} 
+              marginWidth={0} 
+              className="absolute inset-0 z-0 opacity-80"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${(localizacao?.longitude || -51.4269) - 0.006}%2C${(localizacao?.latitude || -23.4178) - 0.006}%2C${(localizacao?.longitude || -51.4269) + 0.006}%2C${(localizacao?.latitude || -23.4178) + 0.006}&layer=mapnik&marker=${localizacao?.latitude || -23.4178}%2C${localizacao?.longitude || -51.4269}`} 
+            />
 
-            {/* Marcador: Escola (destino) */}
-            <div className="absolute top-[96px] left-[295px] flex flex-col items-center z-10">
-              <div className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-md animate-pulse">
-                <span className="text-white text-xs">🏫</span>
-              </div>
-              <span className="text-[8px] bg-slate-900 text-white font-extrabold px-1 rounded mt-0.5 whitespace-nowrap shadow">
-                Escola D. Folador
-              </span>
-            </div>
-
-            {/* Marcador: Ponto de Embarque */}
-            <div className="absolute top-[186px] left-[65px] flex flex-col items-center z-10">
-              <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center shadow-md">
-                <MapPin size={15} className="text-white" />
-              </div>
-              <span className="text-[8px] bg-slate-900 text-white font-extrabold px-1 rounded mt-0.5 whitespace-nowrap shadow">
-                Seu Ponto
-              </span>
-            </div>
-
-            {/* Marcador: Ônibus em Movimento */}
+            {/* Marcador: Ônibus em Movimento (Centralizado no iFrame) */}
             {!localizacao?.foraDeTurno && isRouteActive && (
               <div
-                className="absolute flex flex-col items-center transition-all duration-[1000ms] z-20"
-                style={{
-                  top:  tempoEstimado > 6 ? '194px' : '104px',
-                  left: tempoEstimado > 6
-                    ? `${120 + (12 - tempoEstimado) * 8}px`
-                    : `${180 + (6 - tempoEstimado) * 20}px`,
-                }}
+                className="absolute flex flex-col items-center transition-all duration-[1000ms] z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
               >
                 <div className="w-9 h-9 rounded-full bg-slate-900 border-2 border-amber-500 flex items-center justify-center shadow-lg">
                   <Bus size={18} className="text-amber-500 animate-bounce" />
                 </div>
                 <span className="text-[8px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full mt-0.5 shadow whitespace-nowrap uppercase tracking-wider">
-                  Em Movimento
+                  {(localizacao.velocidade_kmh || 0).toFixed(0)} km/h
                 </span>
               </div>
             )}
+
 
             {/* Overlay: veículo fora de turno ou inativo */}
             {(!isRouteActive || localizacao?.foraDeTurno) && (

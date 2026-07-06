@@ -1062,7 +1062,9 @@ export default function MotoristaDashboardPage() {
         body: JSON.stringify({
           status: newVal,
           global: newVal === false,
-          rotaId: selectedRotaId
+          rotaId: selectedRotaId,
+          sentido: selectedSentido,
+          turno: selectedTurno
         })
       });
       const data = await res.json();

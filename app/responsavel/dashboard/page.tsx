@@ -2830,15 +2830,18 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
       try {
         const queryRouteId = aluno.rotaUuid || aluno.rotaId;
 
-        // Busca o status ativo da rota
+        // Busca o status ativo da rota e o sentido em tempo real
         if (queryRouteId && queryRouteId.length > 10) {
           const { data: routeData } = await supabase
             .from('rotas')
-            .select('ativa')
+            .select('ativa, sentido_atual')
             .eq('id', queryRouteId)
             .maybeSingle();
           if (routeData) {
             setIsRouteActive(routeData.ativa);
+            if (routeData.ativa && routeData.sentido_atual) {
+              setIsVolta(routeData.sentido_atual === 'VOLTA');
+            }
           }
         } else {
           setIsRouteActive(aluno.rotaAtiva ?? true);
@@ -2910,16 +2913,31 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
         }
 
         // 2. Checar a direção atual da rota (motorista escolheu IDA ou VOLTA?) e status do aluno
+        // Primeiro, lemos o estado ao vivo da rota para evitar piscar tela com logs antigos
+        const queryRouteId = aluno.rotaUuid || aluno.rotaId;
+        let isAtivaNow = false;
+        if (queryRouteId && queryRouteId.length > 10) {
+          const { data: rd } = await supabase.from('rotas').select('ativa, sentido_atual').eq('id', queryRouteId).maybeSingle();
+          if (rd) {
+            isAtivaNow = rd.ativa;
+            if (rd.ativa && rd.sentido_atual) {
+              setIsVolta(rd.sentido_atual === 'VOLTA');
+            }
+          }
+        }
+
         const { data: routeLogs } = await supabase
           .from('logs_embarque')
           .select('tipo_movimento, aluno_id, status')
-          .eq('rota_id', aluno.rotaUuid || aluno.rotaId)
+          .eq('rota_id', queryRouteId)
           .eq('data_registro', getLocalDateString())
           .order('criado_em', { ascending: false });
 
         if (routeLogs && routeLogs.length > 0) {
-          // A direção da rota é ditada pelo último envio do motorista para essa rota
-          setIsVolta(routeLogs[0].tipo_movimento === 'VOLTA');
+          // A direção da rota usa fallback para o último log apenas se a rota NÃO estiver ativa agora
+          if (!isAtivaNow) {
+            setIsVolta(routeLogs[0].tipo_movimento === 'VOLTA');
+          }
           
           // Verifica se o aluno logado está marcado como presente nesses logs recentes
           const meuLog = routeLogs.find(log => log.aluno_id === aluno.id && log.status === 'PRESENTE');

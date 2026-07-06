@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { status, global, rotaId } = await req.json();
+    const { status, global, rotaId, sentido, turno } = await req.json();
 
     if (typeof status !== 'boolean') {
       return NextResponse.json(
@@ -65,7 +65,16 @@ export async function POST(req: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    let query = adminSupabase.from('rotas').update({ ativa: status });
+    const updatePayload: any = { ativa: status };
+    if (status && !global) {
+      if (sentido) updatePayload.sentido_atual = sentido;
+      if (turno) updatePayload.turno_atual = turno;
+    } else if (!status) {
+      updatePayload.sentido_atual = null;
+      updatePayload.turno_atual = null;
+    }
+
+    let query = adminSupabase.from('rotas').update(updatePayload);
 
     if (global) {
       // Se global for true, desativa todas as rotas deste motorista

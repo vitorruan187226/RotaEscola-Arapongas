@@ -1322,7 +1322,6 @@ export default function MotoristaDashboardPage() {
             <h1 className="font-extrabold text-2xl text-[#1a2b4c] leading-tight">
               Olá, {perfilMotorista?.nome ? perfilMotorista.nome.split(' ')[0] : 'Motorista'}
             </h1>
-            </div>
           </div>
           
           <div className="flex gap-3 items-center">
@@ -1415,8 +1414,9 @@ export default function MotoristaDashboardPage() {
                       </div>
                     </div>
                   </div>
-                  {/* Botão de Iniciar */}
-                  <div className="pt-6 mt-auto">
+                </div>
+                {/* Botão de Iniciar */}
+                <div className="pt-6 mt-auto">
                     <button
                       onClick={() => handleToggleRotaAtiva(true)}
                       disabled={!selectedRotaId}

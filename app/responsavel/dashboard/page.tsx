@@ -2811,6 +2811,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   const [loadingLoc, setLoadingLoc] = useState(true);
   const [loadingAusencia, setLoadingAusencia] = useState(false);
   const [ausenciaNotificada, setAusenciaNotificada] = useState(false);
+  const [alunoEmbarcado, setAlunoEmbarcado] = useState(false);
   const [tempoEstimado, setTempoEstimado] = useState(12);
   const [msg, setMsg] = useState<{ type: 'info' | 'success'; text: string } | null>(null);
 
@@ -2881,24 +2882,29 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     return () => clearInterval(interval);
   }, [aluno.rotaId, aluno.rotaUuid, supabase]);
 
-  // Carrega status anterior de ausência diária
+  // Carrega status de embarque e de ausência
   useEffect(() => {
-    async function checkAusencia() {
+    async function checkStatusAluno() {
       try {
         const { data } = await supabase
           .from('presencas_diarias')
-          .select('id')
+          .select('id, compareceu')
           .eq('aluno_id', aluno.id)
           .eq('data_presenca', getLocalDateString())
-          .eq('compareceu', false)
           .maybeSingle();
 
-        if (data) setAusenciaNotificada(true);
+        if (data) {
+          if (data.compareceu === false) {
+            setAusenciaNotificada(true);
+          } else if (data.compareceu === true) {
+            setAlunoEmbarcado(true);
+          }
+        }
       } catch {
         // Fallback
       }
     }
-    checkAusencia();
+    checkStatusAluno();
   }, [aluno.id, supabase]);
 
   // Cálculo do tempo estimado real com base no GPS do ônibus e endereço do aluno
@@ -2917,8 +2923,13 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
       const speed = localizacao.velocidade_kmh > 10 ? localizacao.velocidade_kmh : 25; 
       const estimated = estimateTimeMinutes(distance, speed);
 
-      // Adicionar uns 2 minutinhos de margem de erro por conta de paradas e trânsito
-      setTempoEstimado(estimated + 2);
+      // Se a distância for menor que 150 metros, o ônibus já chegou praticamente
+      if (distance < 0.15) {
+        setTempoEstimado(0);
+      } else {
+        // Adicionar margem de erro
+        setTempoEstimado(estimated > 0 ? estimated + 2 : 1);
+      }
     } else {
       // Fallback visual caso o aluno não tenha coordenada cadastrada
       setTempoEstimado(12);
@@ -3052,20 +3063,32 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           {/* Estimativa */}
           <div className="bg-slate-50 border rounded-2xl p-3.5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
-                <Clock size={16} />
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                alunoEmbarcado || tempoEstimado === 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+              }`}>
+                {alunoEmbarcado ? <CheckCircle2 size={16} /> : tempoEstimado === 0 ? <MapPin size={16} /> : <Clock size={16} />}
               </div>
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">Estimativa de Chegada</h4>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">
+                  {alunoEmbarcado ? 'Status do Estudante' : 'Estimativa de Chegada'}
+                </h4>
                 <span className="text-xs font-extrabold text-slate-900 mt-1 block">
-                  {!isRouteActive ? 'Fora de Rota' : localizacao?.foraDeTurno ? 'Fora de turno' : `Atualizado às ${localizacao?.atualizado_em}`}
+                  {alunoEmbarcado ? 'Aluno Embarcado Seguramente' : !isRouteActive ? 'Fora de Rota' : localizacao?.foraDeTurno ? 'Fora de turno' : `Atualizado às ${localizacao?.atualizado_em}`}
                 </span>
               </div>
             </div>
             {!localizacao?.foraDeTurno && isRouteActive && (
-              <div className="text-right">
-                <span className="text-xl font-black font-mono text-slate-900">~{tempoEstimado}</span>
-                <span className="text-[9px] text-slate-500 block leading-none font-bold">min</span>
+              <div className="text-right flex flex-col items-end">
+                {alunoEmbarcado ? (
+                  <span className="text-xs font-black text-emerald-600 uppercase tracking-wider">A Bordo</span>
+                ) : tempoEstimado === 0 ? (
+                  <span className="text-xs font-black text-emerald-600 uppercase tracking-wider animate-pulse">Chegou</span>
+                ) : (
+                  <>
+                    <span className="text-xl font-black font-mono text-slate-900">~{tempoEstimado}</span>
+                    <span className="text-[9px] text-slate-500 block leading-none font-bold">min</span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -3091,6 +3114,10 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
                   ausenciaNotificada 
                     ? 'border-rose-500' 
+                    : alunoEmbarcado
+                    ? 'border-emerald-500'
+                    : tempoEstimado === 0
+                    ? 'border-emerald-500 animate-pulse'
                     : (localizacao?.foraDeTurno || !isRouteActive) 
                     ? 'border-slate-350' 
                     : 'border-amber-500 animate-pulse'
@@ -3098,6 +3125,10 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     ausenciaNotificada 
                       ? 'bg-rose-500' 
+                      : alunoEmbarcado
+                      ? 'bg-emerald-500'
+                      : tempoEstimado === 0
+                      ? 'bg-emerald-500'
                       : (localizacao?.foraDeTurno || !isRouteActive) 
                       ? 'bg-slate-350' 
                       : 'bg-amber-500'
@@ -3109,6 +3140,14 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                     <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       Falta Avisada
                     </span>
+                  ) : alunoEmbarcado ? (
+                    <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                      Embarcado
+                    </span>
+                  ) : tempoEstimado === 0 && !localizacao?.foraDeTurno && isRouteActive ? (
+                    <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0 animate-pulse">
+                      Chegou
+                    </span>
                   ) : (!localizacao?.foraDeTurno && isRouteActive) ? (
                     <span className="text-[8px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       A Caminho
@@ -3118,8 +3157,12 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className="text-[9px] text-slate-500">
                   {ausenciaNotificada 
                     ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
+                    : alunoEmbarcado
+                    ? 'O aluno já embarcou no veículo com segurança'
                     : (!isRouteActive || localizacao?.foraDeTurno) 
                     ? 'Previsão indisponível' 
+                    : tempoEstimado === 0
+                    ? 'O ônibus está no local de embarque!'
                     : `Previsão de chegada: ~${tempoEstimado} min`}
                 </span>
               </div>

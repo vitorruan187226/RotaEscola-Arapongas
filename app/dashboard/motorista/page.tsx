@@ -1363,7 +1363,7 @@ export default function MotoristaDashboardPage() {
                 <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#d6e3ff]/30 rounded-full blur-2xl pointer-events-none"></div>
                 
                 <div className="relative z-10 flex flex-col flex-1">
-                  <div className="space-y-6 flex-1">
+                  <div className="flex flex-col justify-evenly flex-1 py-2">
                   {/* Turno */}
                   <div>
                     <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Turno</label>

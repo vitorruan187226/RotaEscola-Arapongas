@@ -1679,7 +1679,7 @@ export default function MotoristaDashboardPage() {
                         isSentSuccessfully ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.25)] active:scale-95'
                       }`}
                     >
-                      {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : isSentSuccessfully ? "Sincronizado" : "Sincronizar Relatório"}
+                      {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : isSentSuccessfully ? "Enviado" : "Enviar Relatório"}
                     </button>
                   </div>
                 )}

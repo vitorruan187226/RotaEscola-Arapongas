@@ -901,18 +901,27 @@ export default function EscolasPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Endereço</label>
-                  <button 
-                    type="button" 
-                    onClick={handleGeocode}
-                    disabled={isGeocoding || !endereco.trim()}
-                    className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
-                  >
-                    {isGeocoding ? (
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
-                    ) : (
-                      <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
-                    )}
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsMapModalOpen(true)}
+                      className="text-[9px] font-bold text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <MapPin size={10} /> Pegar no Mapa
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleGeocode}
+                      disabled={isGeocoding || !endereco.trim()}
+                      className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                    >
+                      {isGeocoding ? (
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin"></span>Buscando...</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><MapPin size={10} /> Auto-preencher Coordenadas</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <input
                   type="text"

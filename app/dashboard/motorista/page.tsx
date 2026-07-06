@@ -1363,7 +1363,7 @@ export default function MotoristaDashboardPage() {
                 <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#d6e3ff]/30 rounded-full blur-2xl pointer-events-none"></div>
                 
                 <div className="relative z-10 flex flex-col flex-1">
-                  <div className="flex flex-col justify-evenly flex-1 py-2">
+                  <div className="space-y-6">
                   {/* Turno */}
                   <div>
                     <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Turno</label>
@@ -1415,8 +1415,25 @@ export default function MotoristaDashboardPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Radar Gráfico (Preenchimento Elegante do Vazio) */}
+                <div className="flex-1 flex flex-col items-center justify-center relative mt-6 min-h-[140px] pointer-events-none select-none">
+                   <div className="absolute w-full h-full flex items-center justify-center opacity-60">
+                      <div className="w-24 h-24 rounded-full border-2 border-blue-200 absolute animate-ping" style={{ animationDuration: '2.5s' }}></div>
+                      <div className="w-32 h-32 rounded-full border border-slate-200 absolute"></div>
+                      <div className="w-40 h-40 rounded-full border border-slate-100 absolute"></div>
+                   </div>
+                   <div className="w-16 h-16 bg-gradient-to-br from-white to-blue-50 rounded-full flex items-center justify-center shadow-sm border border-blue-100 z-10 mb-4 relative overflow-hidden">
+                      <div className="absolute w-12 h-12 bg-blue-400/10 rounded-full blur-xl"></div>
+                      <Navigation size={26} className="text-blue-500 relative z-10 ml-0.5 mt-0.5" />
+                   </div>
+                   <p className="text-[10px] font-extrabold text-slate-400 z-10 text-center uppercase tracking-[0.2em]">
+                     Pronto Para Partir
+                   </p>
+                </div>
+
                 {/* Botão de Iniciar */}
-                <div className="pt-6 mt-auto">
+                <div className="mt-auto">
                     <button
                       onClick={() => handleToggleRotaAtiva(true)}
                       disabled={!selectedRotaId}

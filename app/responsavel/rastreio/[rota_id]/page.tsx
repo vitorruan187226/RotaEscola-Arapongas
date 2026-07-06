@@ -171,7 +171,7 @@ export default function RastreioAusenciaPage() {
           </div>
         ) : (
           <>
-            {/* MAPA REAL OPENSTREETMAP */}
+            {/* MAPA REAL OPENSTREETMAP COM MARCADOR NATIVO */}
             <iframe 
               width="100%" 
               height="100%" 
@@ -180,23 +180,8 @@ export default function RastreioAusenciaPage() {
               marginHeight={0} 
               marginWidth={0} 
               className="absolute inset-0 z-0 opacity-80"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${(localizacao?.longitude || -51.4269) - 0.006}%2C${(localizacao?.latitude || -23.4178) - 0.006}%2C${(localizacao?.longitude || -51.4269) + 0.006}%2C${(localizacao?.latitude || -23.4178) + 0.006}&layer=mapnik`} 
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${(localizacao?.longitude || -51.4269) - 0.006}%2C${(localizacao?.latitude || -23.4178) - 0.006}%2C${(localizacao?.longitude || -51.4269) + 0.006}%2C${(localizacao?.latitude || -23.4178) + 0.006}&layer=mapnik&marker=${localizacao?.latitude || -23.4178}%2C${localizacao?.longitude || -51.4269}`} 
             />
-
-            {/* Marcador: Ônibus em Movimento (Centralizado no iFrame) */}
-            {!localizacao?.foraDeTurno && isRouteActive && (
-              <div className="absolute transition-all duration-1000 z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center drop-shadow-2xl">
-                <div className="relative flex flex-col items-center">
-                  <svg width="44" height="58" viewBox="0 0 48 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-bounce" style={{ animationDuration: '2s' }}>
-                    <path d="M24 0C10.745 0 0 10.745 0 24C0 42 24 64 24 64C24 64 48 42 48 24C48 10.745 37.255 0 24 0Z" fill="#F59E0B" />
-                    <circle cx="24" cy="24" r="15" fill="white" />
-                  </svg>
-                  <div className="absolute top-[14px] left-[12px] animate-bounce" style={{ animationDuration: '2s' }}>
-                    <Bus size={20} className="text-slate-900" fill="currentColor" />
-                  </div>
-                </div>
-              </div>
-            )}
 
 
             {/* Overlay: veículo fora de turno ou inativo */}

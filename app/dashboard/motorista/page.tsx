@@ -1322,9 +1322,6 @@ export default function MotoristaDashboardPage() {
             <h1 className="font-extrabold text-2xl text-[#1a2b4c] leading-tight">
               Olá, {perfilMotorista?.nome ? perfilMotorista.nome.split(' ')[0] : 'Motorista'}
             </h1>
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'}`}></div>
-              <p className="text-sm text-slate-500 font-medium">{isOnline ? 'GPS Online' : 'GPS Offline'}</p>
             </div>
           </div>
           
@@ -1352,21 +1349,22 @@ export default function MotoristaDashboardPage() {
         </header>
 
         {/* Área Principal de Scroll */}
-        <main className="relative z-10 px-6 pb-32 overflow-y-auto flex-1 scrollbar-thin flex flex-col gap-6">
+        <main className="relative z-10 px-6 pb-8 overflow-y-auto flex-1 scrollbar-thin flex flex-col gap-6">
           
           {/* Fase 1: Cartão Limpo de Configuração Inicial (Premium Layout) */}
           {!rotaAtiva?.ativa && (
-            <section className="animate-fadeIn mt-2">
-              <div className="mb-6 px-1">
+            <section className="animate-fadeIn mt-2 flex flex-col flex-1">
+              <div className="mb-6 px-1 shrink-0">
                 <h2 className="text-2xl font-extrabold text-[#002045]">Preparar Viagem</h2>
                 <p className="text-sm text-[#74777f] mt-1">Configure os detalhes antes de iniciar sua rota.</p>
               </div>
 
-              <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 flex flex-col gap-6 relative overflow-hidden">
+              <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 flex flex-col relative overflow-hidden flex-1">
                 {/* Decorative blob */}
                 <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#d6e3ff]/30 rounded-full blur-2xl pointer-events-none"></div>
                 
-                <div className="relative z-10 space-y-6">
+                <div className="relative z-10 flex flex-col flex-1">
+                  <div className="space-y-6 flex-1">
                   {/* Turno */}
                   <div>
                     <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Turno</label>
@@ -1417,15 +1415,16 @@ export default function MotoristaDashboardPage() {
                       </div>
                     </div>
                   </div>
-
                   {/* Botão de Iniciar */}
-                  <button
-                    onClick={() => handleToggleRotaAtiva(true)}
-                    disabled={!selectedRotaId}
-                    className="w-full mt-2 bg-emerald-600 disabled:opacity-50 disabled:scale-100 text-white font-extrabold text-[15px] py-4 rounded-2xl hover:bg-emerald-700 active:scale-95 transition-all shadow-[0_8px_20px_rgba(5,150,105,0.25)] flex items-center justify-center gap-2"
-                  >
-                    Iniciar Operação
-                  </button>
+                  <div className="pt-6 mt-auto">
+                    <button
+                      onClick={() => handleToggleRotaAtiva(true)}
+                      disabled={!selectedRotaId}
+                      className="w-full bg-emerald-600 disabled:opacity-50 disabled:scale-100 text-white font-extrabold text-[15px] py-4 rounded-2xl hover:bg-emerald-700 active:scale-95 transition-all shadow-[0_8px_20px_rgba(5,150,105,0.25)] flex items-center justify-center gap-2"
+                    >
+                      Iniciar Operação
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -1490,33 +1489,7 @@ export default function MotoristaDashboardPage() {
             </section>
           )}
 
-          {/* Quick Actions (Ações Rápidas em Grid Circular) */}
-          <section className="grid grid-cols-4 gap-2 mb-6">
-            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={handleAbrirOcorrenciaModal}>
-              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
-                <ShieldAlert size={22} />
-              </div>
-              <span className="text-[10px] font-bold text-slate-500">Ocorrência</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowMecanicoModal(true)}>
-              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
-                <Wrench size={22} />
-              </div>
-              <span className="text-[10px] font-bold text-slate-500">Mecânico</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowViasModal(true)}>
-              <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-active:scale-90 transition-all shadow-sm">
-                <Map size={22} />
-              </div>
-              <span className="text-[10px] font-bold text-slate-500">Vias</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={() => setShowSosModal(true)}>
-              <div className="w-14 h-14 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 group-active:scale-90 transition-all shadow-sm animate-pulse">
-                <AlertOctagon size={22} />
-              </div>
-              <span className="text-[10px] font-bold text-rose-600">Emergência</span>
-            </div>
-          </section>
+
 
           {/* Câmera do Scanner */}
           {rotaAtiva?.ativa && (

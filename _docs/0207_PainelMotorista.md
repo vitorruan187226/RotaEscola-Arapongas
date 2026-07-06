@@ -18,7 +18,6 @@ app/dashboard/motorista/
 
 ### 1. Cabeçalho de Status
 - Mantém o encapsulamento móvel responsivo.
-- Seletor de conectividade no topo (**ONLINE / OFFLINE**) com efeitos de cor verde (online) e vermelho pulsante (offline) baseados em opacidades sutis.
 - Título minimalista e selo do município ("Arapongas · Bordo").
 
 ### 2. Card de Rota e Turno (Topo)
@@ -47,14 +46,6 @@ app/dashboard/motorista/
 - **Reset Automático:** Após 3 segundos da confirmação, limpa e reseta todos os status locais dos alunos para "Pendente", redefinindo a lista para a próxima viagem.
 - **Salvamento no Banco:** Registra a data atual do evento (`data_registro`) e mapeia o seletor 'Turno de Trabalho' (Manhã -> 'Matutino', Tarde -> 'Vespertino', Noite -> 'Noturno') na tabela `logs_embarque`.
 
-### 6. Menu Inferior de Ações Rápidas
-- Barra flutuante com efeito blur de vidro (`backdrop-blur-md bg-slate-900/80 border-t border-slate-800/60`).
-- Botões super arredondados com ícones Lucide minimalistas e rótulos curtos.
-- Botão **Prestar Ocorrência** (substituiu o antigo "Trânsito") destacado em laranja (`bg-orange-950/20 border-orange-900/20`) com ícone `ShieldAlert` âmbar.
-  - Ao clicar, abre o **Modal de Ocorrência** (ver seção 7).
-- Botão **Mecânico** com ícone `Wrench` âmbar.
-- Botão **Vias** com ícone `Map` neutro.
-- Botão **SOS** destacado com fundo vermelho escuro e ícone `AlertOctagon` pulsante.
 
 ### 7. Modal de Prestar Ocorrência (Fluxo 2 Estágios)
 Overlay completo sobre o painel (z-50), com dois estágios sequenciais:

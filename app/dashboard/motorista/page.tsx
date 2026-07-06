@@ -789,14 +789,7 @@ export default function MotoristaDashboardPage() {
         // 3. Executa todas as inserções no banco em paralelo
         const [logsRes, notificationsRes] = await Promise.all([
           logsToInsert.length > 0 ? supabase.from('logs_embarque').insert(logsToInsert) : Promise.resolve({ error: null }),
-          notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve({ error: null }),
-          supabase.from('localizacao_veiculo').insert({
-            rota_id: rotaAtiva.id,
-            latitude: -23.4178,
-            longitude: -51.4269,
-            velocidade_kmh: 40,
-            atualizado_em: new Date().toISOString()
-          })
+          notificationsToInsert.length > 0 ? supabase.from('notificacoes').insert(notificationsToInsert) : Promise.resolve({ error: null })
         ]);
 
         if (logsRes?.error) throw logsRes.error;

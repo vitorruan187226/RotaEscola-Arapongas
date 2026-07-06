@@ -2886,19 +2886,31 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   useEffect(() => {
     async function checkStatusAluno() {
       try {
-        const { data } = await supabase
+        // 1. Checar ausência informada (se o pai cancelou a ida hoje)
+        const { data: dataPresenca } = await supabase
           .from('presencas_diarias')
           .select('id, compareceu')
           .eq('aluno_id', aluno.id)
           .eq('data_presenca', getLocalDateString())
           .maybeSingle();
 
-        if (data) {
-          if (data.compareceu === false) {
-            setAusenciaNotificada(true);
-          } else if (data.compareceu === true) {
-            setAlunoEmbarcado(true);
-          }
+        if (dataPresenca && dataPresenca.compareceu === false) {
+          setAusenciaNotificada(true);
+        } else if (dataPresenca && dataPresenca.compareceu === true) {
+          setAlunoEmbarcado(true);
+        }
+
+        // 2. Checar se o motorista já confirmou o embarque (tabela logs_embarque)
+        const { data: logEmbarque } = await supabase
+          .from('logs_embarque')
+          .select('id, status')
+          .eq('aluno_id', aluno.id)
+          .eq('data_registro', getLocalDateString())
+          .eq('status', 'PRESENTE')
+          .maybeSingle();
+
+        if (logEmbarque) {
+          setAlunoEmbarcado(true);
         }
       } catch {
         // Fallback

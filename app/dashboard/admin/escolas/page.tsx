@@ -10,6 +10,8 @@ interface Escola {
   id: string;
   nome: string;
   endereco: string;
+  latitude?: number;
+  longitude?: number;
   turnos: string[]; // ['Manhã', 'Tarde', 'Noite']
   tipo?: 'municipal' | 'estadual';
   series?: string[]; // ['1º Ano', '2º Ano']
@@ -65,6 +67,8 @@ export default function EscolasPage() {
   // Form Fields (Novo / Editar)
   const [nome, setNome] = useState('');
   const [endereco, setEndereco] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [turnos, setTurnos] = useState<string[]>([]); // ['Manhã', 'Tarde']
   const [tipo, setTipo] = useState<'municipal' | 'estadual'>('municipal');
   const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
@@ -100,7 +104,7 @@ export default function EscolasPage() {
       // 1. Busca as escolas do banco de dados (tentando logo_url)
       let res: any = await supabase
         .from('escolas')
-        .select('id, nome, endereco, turnos, tipo, series, logo_url')
+        .select('id, nome, endereco, turnos, tipo, series, logo_url, latitude, longitude')
         .order('nome', { ascending: true });
 
       // Se a coluna logo_url não existir no banco (erro 400 ou código PGRST100)
@@ -210,6 +214,8 @@ export default function EscolasPage() {
         let insertData: any = {
           nome,
           endereco,
+          latitude: latitude ? parseFloat(latitude.replace(',', '.')) : null,
+          longitude: longitude ? parseFloat(longitude.replace(',', '.')) : null,
           turnos,
           tipo,
           series: selectedSeries,
@@ -258,6 +264,8 @@ export default function EscolasPage() {
       setModalNovo(false);
       setNome('');
       setEndereco('');
+      setLatitude('');
+      setLongitude('');
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
@@ -279,6 +287,8 @@ export default function EscolasPage() {
       setModalNovo(false);
       setNome('');
       setEndereco('');
+      setLatitude('');
+      setLongitude('');
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
@@ -319,6 +329,8 @@ export default function EscolasPage() {
         let updateData: any = {
           nome,
           endereco,
+          latitude: latitude ? parseFloat(latitude.replace(',', '.')) : null,
+          longitude: longitude ? parseFloat(longitude.replace(',', '.')) : null,
           turnos,
           tipo,
           series: selectedSeries,
@@ -362,6 +374,8 @@ export default function EscolasPage() {
       setModalEditar(null);
       setNome('');
       setEndereco('');
+      setLatitude('');
+      setLongitude('');
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
@@ -381,6 +395,8 @@ export default function EscolasPage() {
       setModalEditar(null);
       setNome('');
       setEndereco('');
+      setLatitude('');
+      setLongitude('');
       setTurnos([]);
       setTipo('municipal');
       setSelectedSeries([]);
@@ -437,6 +453,8 @@ export default function EscolasPage() {
           onClick={() => {
             setNome('');
             setEndereco('');
+            setLatitude('');
+            setLongitude('');
             setTurnos([]);
             setTipo('municipal');
             setSelectedSeries([]);
@@ -570,6 +588,8 @@ export default function EscolasPage() {
                         e.stopPropagation();
                         setNome(escola.nome);
                         setEndereco(escola.endereco);
+                        setLatitude(escola.latitude !== undefined && escola.latitude !== null ? String(escola.latitude) : '');
+                        setLongitude(escola.longitude !== undefined && escola.longitude !== null ? String(escola.longitude) : '');
                         setTurnos(escola.turnos);
                         setTipo(escola.tipo || 'municipal');
                         setSelectedSeries(escola.series || []);
@@ -673,6 +693,29 @@ export default function EscolasPage() {
                   placeholder="Rua, Número - Bairro"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
                 />
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Latitude</label>
+                  <input
+                    type="text"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="Ex: -23.4178"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Longitude</label>
+                  <input
+                    type="text"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="Ex: -51.4269"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
               </div>
 
               <div>
@@ -820,6 +863,29 @@ export default function EscolasPage() {
                   placeholder="Rua, Número - Bairro"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 transition-all"
                 />
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Latitude</label>
+                  <input
+                    type="text"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="Ex: -23.4178"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Longitude</label>
+                  <input
+                    type="text"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="Ex: -51.4269"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
               </div>
 
               <div>

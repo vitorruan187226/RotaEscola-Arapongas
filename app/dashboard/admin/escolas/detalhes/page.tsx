@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -41,6 +41,8 @@ interface AlunoAuditoria {
   rotaId?: string;
   fotoUrl?: string;
   endereco?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   dataVencimento?: string | null;
   notificadoExpiracao?: boolean;
 }
@@ -156,6 +158,8 @@ export default function EscolaDetalhesPage() {
   const [rotaIdSelect, setRotaIdSelect] = useState('');
   const [statusSelect, setStatusSelect] = useState<AlunoAuditoria['status']>('Pendente');
   const [enderecoInput, setEnderecoInput] = useState('');
+  const [latitudeInput, setLatitudeInput] = useState('');
+  const [longitudeInput, setLongitudeInput] = useState('');
 
   // Estado de Toast
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -257,7 +261,7 @@ export default function EscolaDetalhesPage() {
       const primaryRes = await supabase
         .from('alunos')
         .select(`
-          id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url, endereco,
+          id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url, endereco, latitude, longitude,
           carteirinhas (
             data_vencimento,
             notificado_expiracao
@@ -273,7 +277,7 @@ export default function EscolaDetalhesPage() {
         const secondaryRes = await supabase
           .from('alunos')
           .select(`
-            id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url,
+            id, nome, escola, escola_id, status_carteirinha, rota_id, created_at, ano_serie, turma, periodo, turno, serie, foto_url, latitude, longitude,
             carteirinhas (
               data_vencimento,
               notificado_expiracao
@@ -322,6 +326,8 @@ export default function EscolaDetalhesPage() {
             rotaId: a.rota_id ?? undefined,
             fotoUrl: a.foto_url ?? undefined,
             endereco: a.endereco ?? undefined,
+            latitude: a.latitude ?? null,
+            longitude: a.longitude ?? null,
             dataVencimento: a.carteirinhas?.[0]?.data_vencimento ?? null,
             notificadoExpiracao: a.carteirinhas?.[0]?.notificado_expiracao ?? false
           };
@@ -580,7 +586,9 @@ export default function EscolaDetalhesPage() {
           turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
           status_carteirinha: statusSelect === 'Rejeitado' ? 'Pendente' : statusSelect,
           rota_id: rotaIdSelect || null,
-          endereco: enderecoInput.trim()
+          endereco: enderecoInput.trim(),
+          latitude: latitudeInput ? parseFloat(latitudeInput.replace(',', '.')) : null,
+          longitude: longitudeInput ? parseFloat(longitudeInput.replace(',', '.')) : null
         };
 
         let { error } = await supabase
@@ -619,7 +627,9 @@ export default function EscolaDetalhesPage() {
           turno: periodoSelect === 'manha' ? 'Manhã' : periodoSelect === 'tarde' ? 'Tarde' : 'Noite',
           status: statusSelect,
           rotaId: rotaIdSelect || undefined,
-          endereco: enderecoInput.trim()
+          endereco: enderecoInput.trim(),
+          latitude: latitudeInput ? parseFloat(latitudeInput.replace(',', '.')) : null,
+          longitude: longitudeInput ? parseFloat(longitudeInput.replace(',', '.')) : null
         } : a);
       });
 
@@ -1136,6 +1146,8 @@ export default function EscolaDetalhesPage() {
                                               setRotaIdSelect(a.rotaId || '');
                                               setStatusSelect(a.status);
                                               setEnderecoInput(a.endereco || '');
+                                              setLatitudeInput(a.latitude !== undefined && a.latitude !== null ? String(a.latitude) : '');
+                                              setLongitudeInput(a.longitude !== undefined && a.longitude !== null ? String(a.longitude) : '');
                                               setModalEditar(a);
                                             }}
                                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-950 transition-colors border border-transparent hover:border-slate-200"
@@ -1385,6 +1397,29 @@ export default function EscolaDetalhesPage() {
                   placeholder="Endereço completo"
                   className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Latitude</label>
+                  <input
+                    type="text"
+                    value={latitudeInput}
+                    onChange={(e) => setLatitudeInput(e.target.value)}
+                    placeholder="Ex: -23.4178"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Longitude</label>
+                  <input
+                    type="text"
+                    value={longitudeInput}
+                    onChange={(e) => setLongitudeInput(e.target.value)}
+                    placeholder="Ex: -51.4269"
+                    className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
               </div>
 
               <div>

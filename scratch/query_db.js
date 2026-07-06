@@ -6,13 +6,9 @@ const supabase = createClient(
 );
 
 async function run() {
-  try {
-    const { data, error } = await supabase.from('rotas').select('id, nome, ativa, motorista_id');
-    if (error) console.error('Erro rotas:', error);
-    else console.log(JSON.stringify(data, null, 2));
-  } catch (e) {
-    console.error('Erro geral:', e);
-  }
+  const { data: alunos } = await supabase.from('alunos').select('*').limit(1);
+  const { data: escolas } = await supabase.from('escolas').select('*').limit(1);
+  console.log('Alunos columns:', alunos && alunos[0] ? Object.keys(alunos[0]) : 'no data');
+  console.log('Escolas columns:', escolas && escolas[0] ? Object.keys(escolas[0]) : 'no data');
 }
-
 run();

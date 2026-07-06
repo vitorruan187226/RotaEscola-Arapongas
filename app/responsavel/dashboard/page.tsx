@@ -1400,167 +1400,168 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-fadeIn max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50 sticky top-0 z-10">
-          <div>
-            <h3 className="font-black text-slate-900 text-sm">Editar Cadastro do Estudante</h3>
-            <span className="text-[9px] text-rose-500 font-bold block mt-0.5 uppercase tracking-wide">
-              ⚠️ A alteração exigirá nova aprovação da SEMED
-            </span>
+    <>
+      <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-fadeIn max-h-[90vh]">
+          
+          {/* Header */}
+          <div className="px-5 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50 sticky top-0 z-10">
+            <div>
+              <h3 className="font-black text-slate-900 text-sm">Editar Cadastro do Estudante</h3>
+              <span className="text-[9px] text-rose-500 font-bold block mt-0.5 uppercase tracking-wide">
+                ⚠️ A alteração exigirá nova aprovação da SEMED
+              </span>
+            </div>
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+              <X size={16} />
+            </button>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-            <X size={16} />
-          </button>
-        </div>
 
-        {/* Content (Scrollable) */}
-        <div className="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col gap-3">
-            
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                Nome Completo
-              </label>
-              <input
-                type="text"
-                value={nomeAluno}
-                onChange={(e) => setNomeAluno(e.target.value)}
-                placeholder="Ex: João da Silva"
-                className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                Data de Nascimento
-              </label>
-              <input
-                type="date"
-                value={dataNascimento}
-                onChange={(e) => setDataNascimento(e.target.value)}
-                className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all uppercase"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                  Endereço Residencial do Aluno
-                </label>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setIsMapModalOpen(true)} className="text-[9px] font-bold text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1">
-                    <MapPin size={10} /> Pegar no Mapa
-                  </button>
-                  <button type="button" onClick={handleGeocode} disabled={isGeocoding || !endereco.trim()} className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1">
-                    {isGeocoding ? <span>Buscando...</span> : <><MapPin size={10} /> Auto-preencher</>}
-                  </button>
-                </div>
-              </div>
-              <input
-                type="text"
-                value={endereco}
-                onChange={(e) => setEndereco(e.target.value)}
-                placeholder="Ex: Av. Paraná, 123 - Centro, Arapongas - PR"
-                className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
-              />
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Latitude</label>
-                  <input type="text" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Ex: -23.4178" className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Longitude</label>
-                  <input type="text" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Ex: -51.4269" className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                Instituição de Ensino
-              </label>
-              <select
-                value={escolaIdAluno}
-                onChange={(e) => {
-                  const selId = e.target.value;
-                  setEscolaIdAluno(selId);
-                  const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
-                  setEscolaAluno(selNome);
-                }}
-                className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
-              >
-                <option value="" disabled>-- Selecione uma Escola --</option>
-                {escolas.map((esc) => (
-                  <option key={esc.id} value={esc.id}>{esc.nome}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+          {/* Content (Scrollable) */}
+          <div className="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+            <div className="flex flex-col gap-3">
+              
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                  Ano / Série
-                </label>
-                <select
-                  value={anoSerie}
-                  onChange={(e) => setAnoSerie(e.target.value)}
-                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
-                >
-                  <option value="" disabled>-- Série --</option>
-                  {schoolSeries.map((s: string) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                  Turma
+                  Nome Completo
                 </label>
                 <input
                   type="text"
-                  value={turma}
-                  onChange={(e) => setTurma(e.target.value.toUpperCase())}
-                  placeholder="Ex: B"
-                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                  value={nomeAluno}
+                  onChange={(e) => setNomeAluno(e.target.value)}
+                  placeholder="Ex: João da Silva"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                Turno
-              </label>
-              <select
-                value={periodo}
-                onChange={(e) => setPeriodo(e.target.value as 'manha' | 'tarde' | 'noite')}
-                className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Data de Nascimento
+                </label>
+                <input
+                  type="date"
+                  value={dataNascimento}
+                  onChange={(e) => setDataNascimento(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                    Endereço Residencial do Aluno
+                  </label>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setIsMapModalOpen(true)} className="text-[9px] font-bold text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1">
+                      <MapPin size={10} /> Pegar no Mapa
+                    </button>
+                    <button type="button" onClick={handleGeocode} disabled={isGeocoding || !endereco.trim()} className="text-[9px] font-bold text-amber-500 hover:text-amber-600 disabled:opacity-50 transition-colors flex items-center gap-1">
+                      {isGeocoding ? <span>Buscando...</span> : <><MapPin size={10} /> Auto-preencher</>}
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={endereco}
+                  onChange={(e) => setEndereco(e.target.value)}
+                  placeholder="Ex: Av. Paraná, 123 - Centro, Arapongas - PR"
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+                />
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Latitude</label>
+                    <input type="text" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Ex: -23.4178" className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Longitude</label>
+                    <input type="text" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Ex: -51.4269" className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Instituição de Ensino
+                </label>
+                <select
+                  value={escolaIdAluno}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setEscolaIdAluno(selId);
+                    const selNome = escolas.find(esc => esc.id === selId)?.nome || '';
+                    setEscolaAluno(selNome);
+                  }}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                >
+                  <option value="" disabled>-- Selecione uma Escola --</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>{esc.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    Ano / Série
+                  </label>
+                  <select
+                    value={anoSerie}
+                    onChange={(e) => setAnoSerie(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                  >
+                    <option value="" disabled>-- Série --</option>
+                    {schoolSeries.map((s: string) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    Turma
+                  </label>
+                  <input
+                    type="text"
+                    value={turma}
+                    onChange={(e) => setTurma(e.target.value.toUpperCase())}
+                    placeholder="Ex: B"
+                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all uppercase"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                  Turno
+                </label>
+                <select
+                  value={periodo}
+                  onChange={(e) => setPeriodo(e.target.value as 'manha' | 'tarde' | 'noite')}
+                  className="w-full px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+                >
+                  <option value="manha">Manhã</option>
+                  <option value="tarde">Tarde</option>
+                  <option value="noite">Noite</option>
+                </select>
+              </div>
+
+              <button
+                disabled={loading || !nomeAluno.trim() || !endereco.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento}
+                onClick={handleSalvarEdicao}
+                className={`w-full py-3.5 mt-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
+                  nomeAluno.trim() && endereco.trim() && anoSerie.trim() && turma.trim() && dataNascimento && !loading
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
+                }`}
               >
-                <option value="manha">Manhã</option>
-                <option value="tarde">Tarde</option>
-                <option value="noite">Noite</option>
-              </select>
+                {loading ? (
+                  <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span>Concluir Alterações</span>
+                )}
+              </button>
             </div>
-
-            <button
-              disabled={loading || !nomeAluno.trim() || !endereco.trim() || !anoSerie.trim() || !turma.trim() || !dataNascimento}
-              onClick={handleSalvarEdicao}
-              className={`w-full py-3.5 mt-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow ${
-                nomeAluno.trim() && endereco.trim() && anoSerie.trim() && turma.trim() && dataNascimento && !loading
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : 'bg-slate-100 text-slate-400 border cursor-not-allowed'
-              }`}
-            >
-              {loading ? (
-                <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <span>Concluir Alterações</span>
-              )}
-            </button>
           </div>
-        </div>
         </div>
       </div>
 
@@ -1575,7 +1576,7 @@ function EditarFilhoModal({ aluno, escolas, onClose, onSuccess, onError }: Edita
           setIsMapModalOpen(false);
         }}
       />
-    </div>
+    </>
   );
 }
 

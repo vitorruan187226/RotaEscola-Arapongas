@@ -856,8 +856,6 @@ function CadastroFilhoModal({ escolas, onClose, onSuccess, onError }: CadastroFi
       alert('Não foi possível encontrar as coordenadas para este endereço.');
     }
   };
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
 
   const selectedSchool = escolas.find(esc => esc.id === escolaIdAluno);
   const schoolSeries = selectedSchool?.series || ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];

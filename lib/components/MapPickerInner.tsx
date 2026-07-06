@@ -49,7 +49,6 @@ export default function MapPickerInner({ initialLat, initialLng, onLocationSelec
 
   return (
     <>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
       <MapContainer 
         center={[initialLat, initialLng]} 
         zoom={14} 

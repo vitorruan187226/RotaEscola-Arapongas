@@ -2924,20 +2924,19 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   marginHeight={0} 
                   marginWidth={0} 
                   className="absolute inset-0 z-0 opacity-80"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${busLng - 0.006}%2C${busLat - 0.006}%2C${busLng + 0.006}%2C${busLat + 0.006}&layer=mapnik&marker=${busLat}%2C${busLng}`} 
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${busLng - 0.006}%2C${busLat - 0.006}%2C${busLng + 0.006}%2C${busLat + 0.006}&layer=mapnik`} 
                 />
 
                 {/* Marcador Real Sobreposto no Centro Exato */}
                 {localizacao && !localizacao.foraDeTurno && isRouteActive && (
-                  <div
-                    className="absolute flex flex-col items-center transition-all duration-1000 z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-slate-950 border-2 border-amber-500 flex items-center justify-center shadow-lg animate-bounce">
+                  <div className="absolute transition-all duration-1000 z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
+                    <div className="w-10 h-10 rounded-full bg-slate-950 border-4 border-amber-500 flex items-center justify-center shadow-2xl relative z-20">
                       <Bus size={18} className="text-amber-500" />
                     </div>
-                    <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full mt-0.5 shadow-md whitespace-nowrap uppercase tracking-wider">
+                    {/* Tag de velocidade projetada para a direita, sem bloquear a visão do ícone */}
+                    <div className="bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-r-lg shadow-lg -ml-2 pl-4 flex items-center text-[10px] whitespace-nowrap uppercase tracking-wider h-7">
                       {(localizacao.velocidade_kmh || 0).toFixed(0)} km/h
-                    </span>
+                    </div>
                   </div>
                 )}
 

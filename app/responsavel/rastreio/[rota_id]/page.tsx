@@ -101,8 +101,6 @@ export default function RastreioAusenciaPage() {
     }
   }, [realtimePosition]);
 
-  }, [realtimePosition]);
-
   // Busca coordenadas do aluno
   useEffect(() => {
     async function fetchAluno() {

@@ -185,13 +185,15 @@ export default function RastreioAusenciaPage() {
 
             {/* Marcador: Ônibus em Movimento (Centralizado no iFrame) */}
             {!localizacao?.foraDeTurno && isRouteActive && (
-              <div className="absolute transition-all duration-[1000ms] z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-                <div className="w-10 h-10 rounded-full bg-slate-900 border-4 border-amber-500 flex items-center justify-center shadow-2xl relative z-20">
-                  <Bus size={18} className="text-amber-500 animate-bounce" />
-                </div>
-                {/* Tag de velocidade projetada para a direita, sem bloquear a visão do ícone */}
-                <div className="bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-r-lg shadow-lg -ml-2 pl-4 flex items-center text-[10px] whitespace-nowrap uppercase tracking-wider h-7">
-                  {(localizacao.velocidade_kmh || 0).toFixed(0)} km/h
+              <div className="absolute transition-all duration-1000 z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center drop-shadow-2xl">
+                <div className="relative flex flex-col items-center">
+                  <svg width="44" height="58" viewBox="0 0 48 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-bounce" style={{ animationDuration: '2s' }}>
+                    <path d="M24 0C10.745 0 0 10.745 0 24C0 42 24 64 24 64C24 64 48 42 48 24C48 10.745 37.255 0 24 0Z" fill="#F59E0B" />
+                    <circle cx="24" cy="24" r="15" fill="white" />
+                  </svg>
+                  <div className="absolute top-[14px] left-[12px] animate-bounce" style={{ animationDuration: '2s' }}>
+                    <Bus size={20} className="text-slate-900" fill="currentColor" />
+                  </div>
                 </div>
               </div>
             )}

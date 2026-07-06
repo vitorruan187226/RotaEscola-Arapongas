@@ -9,6 +9,7 @@ import {
   RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus, ShieldAlert, Camera, Pencil
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { calculateDistanceKm, estimateTimeMinutes } from '../../../lib/utils/haversine';
 
 // ─── Contrato de Dados (Lei 4 — Tipagem estrita) ──────────────────────────────
 interface Filho {
@@ -32,6 +33,8 @@ interface Filho {
   rotaAtiva?: boolean;
   endereco?: string;
   data_nascimento?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   dataVencimento?: string | null;
   notificadoExpiracao?: boolean;
 }
@@ -178,7 +181,7 @@ export default function ResponsavelDashboard() {
           const primaryRes = await supabase
             .from('alunos')
             .select(`
-              id, nome, data_nascimento, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria, endereco,
+              id, nome, data_nascimento, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria, endereco, latitude, longitude,
               rotas (
                 id,
                 nome,
@@ -208,7 +211,7 @@ export default function ResponsavelDashboard() {
             const secondaryRes = await supabase
               .from('alunos')
               .select(`
-                id, nome, data_nascimento, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria,
+                id, nome, data_nascimento, escola, escola_id, serie, ano_serie, turma, turno, periodo, status, status_carteirinha, foto_url, rota_id, observacao_secretaria, latitude, longitude,
                 rotas (
                   id,
                   nome,
@@ -268,6 +271,8 @@ export default function ResponsavelDashboard() {
                 observacao_secretaria: a.observacao_secretaria ?? null,
                 rotaAtiva:         rota?.ativa ?? false,
                 endereco:          a.endereco ?? undefined,
+                latitude:          a.latitude ?? null,
+                longitude:         a.longitude ?? null,
                 dataVencimento:    a.carteirinhas?.[0]?.data_vencimento ?? null,
                 notificadoExpiracao: a.carteirinhas?.[0]?.notificado_expiracao ?? false
               };
@@ -282,7 +287,7 @@ export default function ResponsavelDashboard() {
           // Carrega as escolas do Supabase para o dropdown
           const { data: escolasDB } = await supabase
             .from('escolas')
-            .select('id, nome, turnos, series')
+            .select('id, nome, turnos, series, latitude, longitude')
             .order('nome', { ascending: true });
           
           if (escolasDB && escolasDB.length > 0) {
@@ -2825,14 +2830,29 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     checkAusencia();
   }, [aluno.id, supabase]);
 
-  // Simulação de aproximação se estiver em turno
+  // Cálculo do tempo estimado real com base no GPS do ônibus e endereço do aluno
   useEffect(() => {
-    if (localizacao?.foraDeTurno || !isRouteActive) return;
-    const interval = setInterval(() => {
-      setTempoEstimado(prev => (prev > 1 ? prev - 1 : 12));
-    }, 12000);
-    return () => clearInterval(interval);
-  }, [localizacao?.foraDeTurno, isRouteActive]);
+    if (localizacao?.foraDeTurno || !isRouteActive || !localizacao) return;
+
+    if (aluno.latitude && aluno.longitude) {
+      const distance = calculateDistanceKm(
+        localizacao.latitude,
+        localizacao.longitude,
+        aluno.latitude,
+        aluno.longitude
+      );
+
+      // Usar a velocidade atual, ou uma média de 25km/h em área urbana se estiver parado no sinal, por exemplo.
+      const speed = localizacao.velocidade_kmh > 10 ? localizacao.velocidade_kmh : 25; 
+      const estimated = estimateTimeMinutes(distance, speed);
+
+      // Adicionar uns 2 minutinhos de margem de erro por conta de paradas e trânsito
+      setTempoEstimado(estimated + 2);
+    } else {
+      // Fallback visual caso o aluno não tenha coordenada cadastrada
+      setTempoEstimado(12);
+    }
+  }, [localizacao, isRouteActive, aluno.latitude, aluno.longitude]);
 
   const handleReportarAusencia = async () => {
     setLoadingAusencia(true);

@@ -8,6 +8,7 @@ import {
   MapPin, Navigation, Bus, Clock, CalendarX,
   CheckCircle, RotateCcw, WifiOff
 } from 'lucide-react';
+import { calculateDistanceKm, estimateTimeMinutes } from '../../../../lib/utils/haversine';
 
 // ─── Contrato de dados (Lei 4 — Tipagem estrita) ──────────────────────────────
 interface LocalizacaoVeiculo {
@@ -40,6 +41,7 @@ export default function RastreioAusenciaPage() {
   const [loadingAusencia,  setLoadingAusencia]  = useState(false);
   const [ausenciaNotificada, setAusenciaNotificada] = useState(false);
   const [tempoEstimado,    setTempoEstimado]    = useState(12);
+  const [alunoCoords,      setAlunoCoords]      = useState<{lat: number, lon: number} | null>(null);
   const [msg, setMsg] = useState<{ type: 'info' | 'success'; text: string } | null>(null);
 
   // ─── Escuta Realtime + Carga Inicial ──────────────────────────────────────
@@ -99,12 +101,44 @@ export default function RastreioAusenciaPage() {
     }
   }, [realtimePosition]);
 
-  // Remove o timer fake de 15s, a posição real será mostrada diretamente
+  }, [realtimePosition]);
+
+  // Busca coordenadas do aluno
   useEffect(() => {
-    // Calculamos o 'tempoEstimado' apenas como visual baseado no GPS, mas aqui
-    // vamos deixar fixo em 5 min apenas como mock ou usar um cálculo real de rota no futuro.
-    setTempoEstimado(5);
-  }, [localizacao]);
+    async function fetchAluno() {
+      if (!alunoId || alunoId.startsWith('aluno-')) return;
+      try {
+        const { data } = await supabase
+          .from('alunos')
+          .select('latitude, longitude')
+          .eq('id', alunoId)
+          .maybeSingle();
+        if (data && data.latitude && data.longitude) {
+          setAlunoCoords({ lat: data.latitude, lon: data.longitude });
+        }
+      } catch (err) {}
+    }
+    fetchAluno();
+  }, [alunoId, supabase]);
+
+  // Calcula o tempo estimado real baseado na posição
+  useEffect(() => {
+    if (localizacao?.foraDeTurno || !isRouteActive || !localizacao) return;
+
+    if (alunoCoords) {
+      const distance = calculateDistanceKm(
+        localizacao.latitude,
+        localizacao.longitude,
+        alunoCoords.lat,
+        alunoCoords.lon
+      );
+      const speed = localizacao.velocidade_kmh > 10 ? localizacao.velocidade_kmh : 25;
+      const estimated = estimateTimeMinutes(distance, speed);
+      setTempoEstimado(estimated + 2);
+    } else {
+      setTempoEstimado(12);
+    }
+  }, [localizacao, isRouteActive, alunoCoords]);
 
   // ─── Registrar Ausência ───────────────────────────────────────────────────
   const handleReportarAusencia = async () => {

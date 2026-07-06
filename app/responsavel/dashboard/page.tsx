@@ -2915,7 +2915,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           .select('tipo_movimento, aluno_id, status')
           .eq('rota_id', aluno.rotaUuid || aluno.rotaId)
           .eq('data_registro', getLocalDateString())
-          .order('created_at', { ascending: false });
+          .order('criado_em', { ascending: false });
 
         if (routeLogs && routeLogs.length > 0) {
           // A direção da rota é ditada pelo último envio do motorista para essa rota

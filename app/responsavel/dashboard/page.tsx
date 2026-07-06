@@ -12,6 +12,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { calculateDistanceKm, estimateTimeMinutes } from '../../../lib/utils/haversine';
 import { geocodeAddress } from '../../../lib/utils/geocode';
 import { MapPickerModal } from '../../../lib/components/MapPickerModal';
+import { RastreioMap } from '../../../lib/components/RastreioMap';
 
 // ─── Contrato de Dados (Lei 4 — Tipagem estrita) ──────────────────────────────
 interface Filho {
@@ -3005,16 +3006,13 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               </div>
             ) : (
               <>
-                {/* MAPA REAL OPENSTREETMAP COM MARCADOR NATIVO */}
-                <iframe 
-                  width="100%" 
-                  height="100%" 
-                  frameBorder="0" 
-                  scrolling="no" 
-                  marginHeight={0} 
-                  marginWidth={0} 
-                  className="absolute inset-0 z-0 opacity-80"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${busLng - 0.006}%2C${busLat - 0.006}%2C${busLng + 0.006}%2C${busLat + 0.006}&layer=mapnik&marker=${busLat}%2C${busLng}`} 
+                {/* MAPA REAL LEAFLET COM DOIS MARCADORES */}
+                <RastreioMap 
+                  busLat={busLat} 
+                  busLng={busLng} 
+                  studentLat={aluno.latitude} 
+                  studentLng={aluno.longitude} 
+                  studentName={aluno.nome} 
                 />
 
                 {/* Fora de turno ou Rota Inativa */}

@@ -52,7 +52,7 @@ export default function MapPickerInner({ initialLat, initialLng, onLocationSelec
       <MapContainer 
         center={[initialLat, initialLng]} 
         zoom={14} 
-        style={{ height: '100%', width: '100%', zIndex: 0 }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 0 }}
       >
         <MapFixer />
         <TileLayer

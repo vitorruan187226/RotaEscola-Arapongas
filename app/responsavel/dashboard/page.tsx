@@ -3153,7 +3153,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
                   ausenciaNotificada 
                     ? 'border-rose-500' 
-                    : alunoEmbarcado
+                    : (alunoEmbarcado && !isVolta)
                     ? 'border-emerald-500'
                     : tempoEstimado === 0
                     ? 'border-emerald-500 animate-pulse'
@@ -3164,7 +3164,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     ausenciaNotificada 
                       ? 'bg-rose-500' 
-                      : alunoEmbarcado
+                      : (alunoEmbarcado && !isVolta)
                       ? 'bg-emerald-500'
                       : tempoEstimado === 0
                       ? 'bg-emerald-500'
@@ -3181,29 +3181,29 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                     <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       Falta Avisada
                     </span>
-                  ) : alunoEmbarcado ? (
+                  ) : (alunoEmbarcado && !isVolta) ? (
                     <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                      {isVolta ? 'Desembarcado' : 'Embarcado'}
+                      Embarcado
                     </span>
                   ) : tempoEstimado === 0 && !localizacao?.foraDeTurno && isRouteActive ? (
                     <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0 animate-pulse">
-                      Chegou
+                      {isVolta && alunoEmbarcado ? 'Desembarcado' : 'Chegou'}
                     </span>
                   ) : (!localizacao?.foraDeTurno && isRouteActive) ? (
                     <span className="text-[8px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                      A Caminho
+                      {isVolta && alunoEmbarcado ? 'A Bordo' : 'A Caminho'}
                     </span>
                   ) : null}
                 </div>
                 <span className="text-[9px] text-slate-500">
                   {ausenciaNotificada 
                     ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
-                    : alunoEmbarcado
-                    ? (isVolta ? 'O aluno desembarcou com segurança' : 'O aluno já embarcou no veículo com segurança')
+                    : (alunoEmbarcado && !isVolta)
+                    ? 'O aluno já embarcou no veículo com segurança'
                     : (!isRouteActive || localizacao?.foraDeTurno) 
                     ? 'Previsão indisponível' 
                     : tempoEstimado === 0
-                    ? `O ônibus está no local de ${isVolta ? 'desembarque' : 'embarque'}!`
+                    ? (isVolta && alunoEmbarcado ? 'O aluno desembarcou com segurança em casa' : `O ônibus está no local de ${isVolta ? 'desembarque' : 'embarque'}!`)
                     : `Previsão de chegada: ~${tempoEstimado} min`}
                 </span>
               </div>

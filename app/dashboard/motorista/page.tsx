@@ -668,49 +668,82 @@ export default function MotoristaDashboardPage() {
 
   // Inicializa o Scanner real usando a camera do dispositivo
   useEffect(() => {
-    async function startCamera() {
-      try {
-        setCameraErrorMsg('');
-        const { Html5Qrcode } = await import('html5-qrcode');
-        
-        // Verifica se o elemento existe antes de tentar instanciar
-        const readerElement = document.getElementById('reader');
-        if (!readerElement) {
-           console.error("Elemento #reader não encontrado no DOM!");
-           setCameraErrorMsg("Elemento do scanner não está pronto na tela.");
-           setHasCameraPermission(false);
-           return;
+    let isActive = true;
+
+    async function toggleCamera() {
+      if (isCameraLigada) {
+        try {
+          setCameraErrorMsg('');
+          const { Html5Qrcode } = await import('html5-qrcode');
+          
+          if (!isActive) return;
+          const readerElement = document.getElementById('reader');
+          if (!readerElement) {
+             setCameraErrorMsg("Elemento do scanner não está pronto na tela.");
+             setHasCameraPermission(false);
+             return;
+          }
+
+          if (!mainScannerRef.current) {
+             mainScannerRef.current = new Html5Qrcode("reader");
+          }
+          
+          const currentState = mainScannerRef.current.getState();
+          // Html5QrcodeScannerState: 1 = NOT_STARTED, 2 = STARTING, 3 = SCANNING
+          if (currentState !== 2 && currentState !== 3) {
+            await mainScannerRef.current.start(
+              { facingMode: "environment" },
+              { fps: 15 },
+              (decodedText: string) => {
+                if (isActive) handleQrCodeScanned(decodedText);
+              },
+              () => {}
+            );
+          }
+          
+          if (!isActive) {
+             // O componente desmontou ou isCameraLigada virou false enquanto iniciava
+             const state = mainScannerRef.current?.getState();
+             if (state === 2 || state === 3) {
+               await mainScannerRef.current.stop().catch(() => {});
+             }
+          } else {
+             setHasCameraPermission(true);
+          }
+        } catch (err: any) {
+          if (isActive) {
+            console.error("Erro ao iniciar camera:", err);
+            setCameraErrorMsg(err?.message || String(err));
+            setHasCameraPermission(false);
+          }
         }
-
-        mainScannerRef.current = new Html5Qrcode("reader");
-        
-        await mainScannerRef.current.start(
-          { facingMode: "environment" },
-          { fps: 15 },
-          (decodedText: string) => {
-            handleQrCodeScanned(decodedText);
-          },
-          () => {}
-        );
-        setHasCameraPermission(true);
-      } catch (err: any) {
-        console.error("Erro ao iniciar camera:", err);
-        setCameraErrorMsg(err?.message || String(err));
-        setHasCameraPermission(false);
+      } else {
+        if (mainScannerRef.current) {
+          try {
+            const state = mainScannerRef.current.getState();
+            if (state === 2 || state === 3) {
+               await mainScannerRef.current.stop().catch(() => {});
+            }
+            mainScannerRef.current.clear();
+          } catch(e) {}
+        }
       }
     }
 
-    if (isCameraLigada) {
-      setTimeout(() => startCamera(), 200);
-    } else {
-      if (mainScannerRef.current && mainScannerRef.current.isScanning) {
-        mainScannerRef.current.stop().catch((e: any) => console.log(e));
-      }
-    }
+    const timer = setTimeout(() => {
+      if (isActive) toggleCamera();
+    }, 200);
 
     return () => {
-      if (mainScannerRef.current && mainScannerRef.current.isScanning) {
-        mainScannerRef.current.stop().catch((e: any) => console.log(e));
+      isActive = false;
+      clearTimeout(timer);
+      if (mainScannerRef.current) {
+        try {
+          const state = mainScannerRef.current.getState();
+          if (state === 2 || state === 3) {
+             mainScannerRef.current.stop().catch(() => {});
+          }
+        } catch(e) {}
       }
     };
   }, [isCameraLigada]);

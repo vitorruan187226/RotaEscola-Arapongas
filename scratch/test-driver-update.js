@@ -29,17 +29,17 @@ try {
       return;
     }
 
-    console.log('Logged in successfully. Attempting to update route RT-TESTE to false...');
+    console.log('Logged in successfully. Fetching logs_embarque...');
     const { data, error } = await supabase
-      .from('rotas')
-      .update({ ativa: false })
-      .eq('id', '4d706f5b-b24e-48ee-a849-e1e0b3c11949')
-      .select();
+      .from('logs_embarque')
+      .select('*')
+      .order('criado_em', { ascending: false })
+      .limit(10);
 
     if (error) {
-      console.error('Update failed with error:', error);
+      console.error('Fetch failed with error:', error);
     } else {
-      console.log('Update response data:', data);
+      console.log('Fetch response data:', data);
     }
   }
 

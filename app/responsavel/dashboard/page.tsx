@@ -2815,6 +2815,15 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   const [tempoEstimado, setTempoEstimado] = useState(12);
   const [msg, setMsg] = useState<{ type: 'info' | 'success'; text: string } | null>(null);
 
+  // Define se é rota de Ida ou Volta baseado no turno e horário atual
+  const isVolta = (() => {
+    const hour = new Date().getHours();
+    if (aluno.periodo === 'manha') return hour >= 11;
+    if (aluno.periodo === 'tarde') return hour >= 16;
+    if (aluno.periodo === 'noite') return hour >= 21;
+    return false;
+  })();
+
   // Busca Localização GPS
   useEffect(() => {
     async function fetchLoc() {
@@ -3076,22 +3085,30 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           <div className="bg-slate-50 border rounded-2xl p-3.5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                alunoEmbarcado || tempoEstimado === 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                (alunoEmbarcado && !isVolta) || tempoEstimado === 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
               }`}>
-                {alunoEmbarcado ? <CheckCircle2 size={16} /> : tempoEstimado === 0 ? <MapPin size={16} /> : <Clock size={16} />}
+                {(alunoEmbarcado && !isVolta) ? <CheckCircle2 size={16} /> : tempoEstimado === 0 ? <MapPin size={16} /> : <Clock size={16} />}
               </div>
               <div>
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">
-                  {alunoEmbarcado ? 'Status do Estudante' : 'Estimativa de Chegada'}
+                  {alunoEmbarcado && !isVolta ? 'Status do Estudante' : 'Estimativa de Chegada'}
                 </h4>
                 <span className="text-xs font-extrabold text-slate-900 mt-1 block">
-                  {alunoEmbarcado ? 'Aluno Embarcado Seguramente' : !isRouteActive ? 'Fora de Rota' : localizacao?.foraDeTurno ? 'Fora de turno' : `Atualizado às ${localizacao?.atualizado_em}`}
+                  {alunoEmbarcado && !isVolta 
+                    ? 'Aluno Embarcado Seguramente' 
+                    : alunoEmbarcado && isVolta 
+                    ? 'A caminho de casa'
+                    : !isRouteActive 
+                    ? 'Fora de Rota' 
+                    : localizacao?.foraDeTurno 
+                    ? 'Fora de turno' 
+                    : `Atualizado às ${localizacao?.atualizado_em}`}
                 </span>
               </div>
             </div>
             {!localizacao?.foraDeTurno && isRouteActive && (
               <div className="text-right flex flex-col items-end">
-                {alunoEmbarcado ? (
+                {alunoEmbarcado && !isVolta ? (
                   <span className="text-xs font-black text-emerald-600 uppercase tracking-wider">A Bordo</span>
                 ) : tempoEstimado === 0 ? (
                   <span className="text-xs font-black text-emerald-600 uppercase tracking-wider animate-pulse">Chegou</span>
@@ -3117,8 +3134,12 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className="absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 border-emerald-500 bg-white flex items-center justify-center">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 </span>
-                <span className="text-xs font-bold text-slate-900 leading-tight">Partida da Garagem</span>
-                <span className="text-[9px] text-slate-500">Checklist inicial concluído pelo motorista</span>
+                <span className="text-xs font-bold text-slate-900 leading-tight">
+                  {isVolta ? `Partida: ${aluno.escola}` : 'Partida da Garagem'}
+                </span>
+                <span className="text-[9px] text-slate-500">
+                  {isVolta ? 'Os alunos estão saindo da instituição' : 'Checklist inicial concluído pelo motorista'}
+                </span>
               </div>
 
               {/* Parada 2: Ponto do Aluno */}
@@ -3147,14 +3168,16 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   }`} />
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900 leading-tight">Seu Ponto (Embarque)</span>
+                  <span className="text-xs font-bold text-slate-900 leading-tight">
+                    {isVolta ? 'Seu Ponto (Desembarque)' : 'Seu Ponto (Embarque)'}
+                  </span>
                   {ausenciaNotificada ? (
                     <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       Falta Avisada
                     </span>
                   ) : alunoEmbarcado ? (
                     <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                      Embarcado
+                      {isVolta ? 'Desembarcado' : 'Embarcado'}
                     </span>
                   ) : tempoEstimado === 0 && !localizacao?.foraDeTurno && isRouteActive ? (
                     <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0 animate-pulse">
@@ -3170,24 +3193,26 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   {ausenciaNotificada 
                     ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
                     : alunoEmbarcado
-                    ? 'O aluno já embarcou no veículo com segurança'
+                    ? (isVolta ? 'O aluno desembarcou com segurança' : 'O aluno já embarcou no veículo com segurança')
                     : (!isRouteActive || localizacao?.foraDeTurno) 
                     ? 'Previsão indisponível' 
                     : tempoEstimado === 0
-                    ? 'O ônibus está no local de embarque!'
+                    ? `O ônibus está no local de ${isVolta ? 'desembarque' : 'embarque'}!`
                     : `Previsão de chegada: ~${tempoEstimado} min`}
                 </span>
               </div>
 
-              {/* Parada 3: Escola */}
+              {/* Parada 3: Destino */}
               <div className="relative flex flex-col gap-0.5">
                 <span className="absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 border-slate-350 bg-white flex items-center justify-center">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-350" />
                 </span>
                 <span className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[280px]">
-                  Destino: {aluno.escola}
+                  {isVolta ? 'Destino: Garagem / Fim de Rota' : `Destino: ${aluno.escola}`}
                 </span>
-                <span className="text-[9px] text-slate-500">Desembarque seguro dos estudantes</span>
+                <span className="text-[9px] text-slate-500">
+                  {isVolta ? 'Encerramento do turno' : 'Desembarque seguro dos estudantes'}
+                </span>
               </div>
             </div>
           </div>

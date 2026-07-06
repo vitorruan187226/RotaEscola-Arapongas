@@ -32,22 +32,36 @@ function LocationMarker({ position, setPosition, onSelect }: any) {
   );
 }
 
+function MapFixer() {
+  const map = useMapEvents({});
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+  }, [map]);
+  return null;
+}
+
 export default function MapPickerInner({ initialLat, initialLng, onLocationSelect }: MapPickerInnerProps) {
   const [position, setPosition] = useState<L.LatLng | null>(
     new L.LatLng(initialLat, initialLng)
   );
 
   return (
-    <MapContainer 
-      center={[initialLat, initialLng]} 
-      zoom={14} 
-      style={{ height: '100%', width: '100%', zIndex: 0 }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <LocationMarker position={position} setPosition={setPosition} onSelect={onLocationSelect} />
-    </MapContainer>
+    <>
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+      <MapContainer 
+        center={[initialLat, initialLng]} 
+        zoom={14} 
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
+      >
+        <MapFixer />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <LocationMarker position={position} setPosition={setPosition} onSelect={onLocationSelect} />
+      </MapContainer>
+    </>
   );
 }

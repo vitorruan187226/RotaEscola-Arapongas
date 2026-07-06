@@ -66,8 +66,8 @@ export function useGPSBroadcast(rotaId: string | null, motoristaId: string | nul
                   rota_id: rotaId,
                   latitude: latitude,
                   longitude: longitude,
-                  velocidade: speed, // Assuming we have these or we can just send null if they don't exist
-                  timestamp_registro: payload.timestamp
+                  velocidade_kmh: speed ? Math.round(speed * 3.6) : 0, // Converte m/s para km/h
+                  atualizado_em: payload.timestamp
                 });
               } catch (e) {
                 // Silently fail persistence if table is missing or RLS blocks it, 

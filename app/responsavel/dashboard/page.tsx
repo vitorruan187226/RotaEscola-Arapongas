@@ -537,7 +537,13 @@ export default function ResponsavelDashboard() {
             </button>
           </div>
         ) : (
-          filhos.map((filho) => {
+          [...filhos].sort((a, b) => {
+              const aIsTop = !!topAssiduos.find(t => t.id === a.id);
+              const bIsTop = !!topAssiduos.find(t => t.id === b.id);
+              if (aIsTop && !bIsTop) return -1;
+              if (!aIsTop && bIsTop) return 1;
+              return 0;
+            }).map((filho) => {
             const isExpired = filho.statusCarteirinha === 'Aprovado' && filho.dataVencimento && new Date(filho.dataVencimento) < getSimulatedDate();
             const topAssiduoData = topAssiduos.find(t => t.id === filho.id);
             const isTop = !!topAssiduoData;
@@ -551,7 +557,7 @@ export default function ResponsavelDashboard() {
             return (
               <div
                 key={filho.id}
-                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col transition-all duration-300 relative overflow-hidden`}
+                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col transition-all duration-300 relative`}
               >
                 {/* Fundo MP4 Animado se for Top 1 */}
                 {isTop && (
@@ -560,7 +566,7 @@ export default function ResponsavelDashboard() {
                     loop 
                     muted 
                     playsInline 
-                    className="absolute inset-0 w-full h-full object-cover opacity-100 pointer-events-none z-0"
+                    className="absolute inset-0 w-full h-full object-cover opacity-100 pointer-events-none z-0 rounded-2xl"
                   >
                     <source src="/videos/top_assiduo.mp4" type="video/mp4" />
                   </video>
@@ -577,7 +583,7 @@ export default function ResponsavelDashboard() {
                 <div className="relative shrink-0">
                   {/* Coroa do Top 1 */}
                   {isTop && (
-                    <div className="absolute -top-3.5 -right-2.5 z-20 text-3xl drop-shadow-md rotate-[15deg]" title="Aluno Exemplar">
+                    <div className="absolute -top-6 -left-4 z-30 text-[2.75rem] drop-shadow-[0_4px_10px_rgba(251,191,36,0.8)] -rotate-[15deg] pointer-events-none" title="Aluno Exemplar">
                       👑
                     </div>
                   )}

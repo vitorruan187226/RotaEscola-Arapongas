@@ -574,11 +574,18 @@ export default function ResponsavelDashboard() {
                 <div className="relative z-10 flex flex-col gap-4 w-full h-full">
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
-                <div 
-                  onClick={() => document.getElementById(`upload-photo-${filho.id}`)?.click()}
-                  className="w-16 h-20 rounded-xl bg-slate-100 border border-slate-200/60 overflow-hidden flex items-center justify-center shrink-0 cursor-pointer relative group transition-all duration-200 hover:border-amber-500 hover:scale-[1.03]"
-                  title="Clique para alterar a foto do aluno"
-                >
+                <div className="relative shrink-0">
+                  {/* Coroa do Top 1 */}
+                  {isTop && (
+                    <div className="absolute -top-3.5 -right-2.5 z-20 text-3xl drop-shadow-md rotate-[15deg]" title="Aluno Exemplar">
+                      👑
+                    </div>
+                  )}
+                  <div 
+                    onClick={() => document.getElementById(`upload-photo-${filho.id}`)?.click()}
+                    className={`w-16 h-20 rounded-xl bg-slate-100 border overflow-hidden flex items-center justify-center cursor-pointer relative group transition-all duration-200 hover:scale-[1.03] ${isTop ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]' : 'border-slate-200/60 hover:border-amber-500'}`}
+                    title="Clique para alterar a foto do aluno"
+                  >
                   {filho.fotoUrl ? (
                     <img src={filho.fotoUrl} alt={filho.nome} className="w-full h-full object-cover" />
                   ) : (
@@ -615,6 +622,7 @@ export default function ResponsavelDashboard() {
                       }
                     }}
                   />
+                  </div>
                 </div>
 
                 <div className="flex-1 flex flex-col justify-center min-w-0">
@@ -640,7 +648,7 @@ export default function ResponsavelDashboard() {
                     )}
                     <button
                       onClick={() => setSelectedFilhoEdicao(filho)}
-                      className="p-1.5 hover:bg-slate-150 rounded-lg text-slate-500 hover:text-slate-900 transition-colors border border-slate-100 shrink-0"
+                      className={`p-1.5 rounded-lg transition-colors border shrink-0 ${isTop ? 'text-amber-100 hover:bg-slate-800/50 hover:text-white border-amber-500/30' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-150 border-slate-100'}`}
                       title="Editar dados do aluno"
                     >
                       <Pencil size={13} />

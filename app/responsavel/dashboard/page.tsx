@@ -2966,20 +2966,23 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
 
         if (dataPresenca && dataPresenca.compareceu === false) {
           setAusenciaNotificada(true);
-        } else if (dataPresenca && dataPresenca.compareceu === true) {
-          setAlunoEmbarcado(true);
         }
+        // Nota: Não usamos dataPresenca.compareceu === true para definir setAlunoEmbarcado(true)
+        // porque se o aluno foi de manhã (IDA), a tarde (VOLTA) ele já apareceria como embarcado antes de entrar na van!
+        // O embarque real da viagem atual será verificado via logs_embarque abaixo.
 
-        // 2. Checar a direção atual da rota (motorista escolheu IDA ou VOLTA?) e status do aluno
-        // Primeiro, lemos o estado ao vivo da rota para evitar piscar tela com logs antigos
+        // 2. Checar a direção atual da rota e status do aluno
         const queryRouteId = aluno.rotaUuid || aluno.rotaId;
         let isAtivaNow = false;
+        let localSentido: 'IDA' | 'VOLTA' | null = null;
+        
         if (queryRouteId && queryRouteId.length > 10) {
           const { data: rd } = await supabase.from('rotas').select('ativa, sentido_atual').eq('id', queryRouteId).maybeSingle();
           if (rd) {
             isAtivaNow = rd.ativa;
             if (rd.ativa && rd.sentido_atual) {
-              setIsVolta(rd.sentido_atual === 'VOLTA');
+              localSentido = rd.sentido_atual as 'IDA' | 'VOLTA';
+              setIsVolta(localSentido === 'VOLTA');
             }
           }
         }
@@ -2993,14 +2996,21 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
 
         if (routeLogs && routeLogs.length > 0) {
           // A direção da rota usa fallback para o último log apenas se a rota NÃO estiver ativa agora
-          if (!isAtivaNow) {
-            setIsVolta(routeLogs[0].tipo_movimento === 'VOLTA');
+          if (!isAtivaNow && !localSentido) {
+            localSentido = routeLogs[0].tipo_movimento as 'IDA' | 'VOLTA';
+            setIsVolta(localSentido === 'VOLTA');
           }
           
-          // Verifica se o aluno logado está marcado como presente nesses logs recentes
-          const meuLog = routeLogs.find(log => log.aluno_id === aluno.id && log.status === 'PRESENTE');
-          if (meuLog) {
-            setAlunoEmbarcado(true);
+          // Verifica se o aluno logado está marcado como presente NO MESMO SENTIDO da viagem atual
+          if (localSentido) {
+            const meuLog = routeLogs.find(log => 
+              log.aluno_id === aluno.id && 
+              log.status === 'PRESENTE' &&
+              log.tipo_movimento === localSentido
+            );
+            if (meuLog) {
+              setAlunoEmbarcado(true);
+            }
           }
         }
       } catch {

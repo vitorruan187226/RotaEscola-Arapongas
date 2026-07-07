@@ -551,12 +551,27 @@ export default function ResponsavelDashboard() {
             return (
               <div
                 key={filho.id}
-                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col gap-4 transition-all duration-300 relative overflow-hidden`}
+                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col transition-all duration-300 relative overflow-hidden`}
               >
+                {/* Fundo MP4 Animado se for Top 1 */}
+                {isTop && (
+                  <video 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none mix-blend-overlay"
+                  >
+                    <source src="/videos/top_assiduo.mp4" type="video/mp4" />
+                  </video>
+                )}
+
                 {/* Efeito visual de brilho se for Top 1 */}
                 {isTop && (
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/20 blur-3xl -mr-10 -mt-10 pointer-events-none" />
                 )}
+
+                <div className="relative z-10 flex flex-col gap-4 w-full h-full">
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
                 <div 
@@ -738,6 +753,7 @@ export default function ResponsavelDashboard() {
                   )}
                 </div>
               )}
+                </div>
               </div>
             );
           })

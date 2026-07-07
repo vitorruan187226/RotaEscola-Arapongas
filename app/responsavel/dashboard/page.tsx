@@ -583,7 +583,7 @@ export default function ResponsavelDashboard() {
                 <div className="relative shrink-0">
                   {/* Coroa do Top 1 */}
                   {isTop && (
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 text-[3.5rem] drop-shadow-[0_4px_10px_rgba(251,191,36,0.8)] pointer-events-none select-none leading-none" title="Aluno Exemplar">
+                    <div className="absolute -top-[46px] left-1/2 -translate-x-1/2 z-30 text-[3.75rem] drop-shadow-[0_4px_10px_rgba(251,191,36,0.8)] pointer-events-none select-none leading-none" title="Aluno Exemplar">
                       👑
                     </div>
                   )}

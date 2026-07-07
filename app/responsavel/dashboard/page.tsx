@@ -581,12 +581,6 @@ export default function ResponsavelDashboard() {
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
                 <div className="relative shrink-0">
-                  {/* Coroa do Top 1 */}
-                  {isTop && (
-                    <div className="absolute -top-[46px] left-1/2 -translate-x-1/2 z-30 text-[3.75rem] drop-shadow-[0_4px_10px_rgba(251,191,36,0.8)] pointer-events-none select-none leading-none" title="Aluno Exemplar">
-                      👑
-                    </div>
-                  )}
                   <div 
                     onClick={() => document.getElementById(`upload-photo-${filho.id}`)?.click()}
                     className={`w-16 h-20 rounded-xl bg-slate-100 border overflow-hidden flex items-center justify-center cursor-pointer relative group transition-all duration-200 hover:scale-[1.03] ${isTop ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]' : 'border-slate-200/60 hover:border-amber-500'}`}

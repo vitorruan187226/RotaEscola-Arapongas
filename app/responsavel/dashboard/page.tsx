@@ -2952,6 +2952,10 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   useEffect(() => {
     async function checkStatusAluno() {
       try {
+        // Reset states to avoid stale data between polls
+        setAlunoEmbarcado(false);
+        setAusenciaNotificada(false);
+
         // 1. Checar ausência informada (se o pai cancelou a ida hoje)
         const { data: dataPresenca } = await supabase
           .from('presencas_diarias')

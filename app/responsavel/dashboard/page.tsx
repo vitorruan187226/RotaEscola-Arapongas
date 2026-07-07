@@ -646,11 +646,11 @@ export default function ResponsavelDashboard() {
                       <Pencil size={13} />
                     </button>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 truncate mt-1.5">{filho.nome}</h4>
-                  <span className="text-xs text-slate-500 mt-0.5 truncate">{filho.escola}</span>
+                  <h4 className={`text-sm font-bold truncate mt-1.5 ${isTop ? 'text-white drop-shadow-md' : 'text-slate-900'}`}>{filho.nome}</h4>
+                  <span className={`text-xs mt-0.5 truncate ${isTop ? 'text-amber-100/90 drop-shadow-md' : 'text-slate-500'}`}>{filho.escola}</span>
                   {filho.endereco && (
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1 leading-snug">
-                      <MapPin size={11} className="shrink-0 text-slate-400" />
+                    <div className={`flex items-center gap-1 text-[10px] mt-1 leading-snug ${isTop ? 'text-slate-200 drop-shadow-md' : 'text-slate-500'}`}>
+                      <MapPin size={11} className={`shrink-0 ${isTop ? 'text-amber-400' : 'text-slate-400'}`} />
                       <span className="truncate" title={filho.endereco}>{filho.endereco}</span>
                     </div>
                   )}
@@ -667,18 +667,20 @@ export default function ResponsavelDashboard() {
                   )}
                   
                   {filho.statusCarteirinha === 'Aprovado' ? (
-                    <div className="mt-1.5 flex flex-col gap-1 text-[10px] text-emerald-800 bg-emerald-50/60 border border-emerald-100 p-2 rounded-xl font-medium shadow-sm">
-                      <span className="flex items-center gap-1.5"><User size={11} className="text-emerald-600" /> Motorista: <strong className="font-bold text-slate-800">{filho.motorista_nome || 'Aguardando'}</strong></span>
-                      <span className="flex items-center gap-1.5"><Bus size={11} className="text-emerald-600" /> Veículo: <strong className="font-bold text-slate-800">{filho.veiculo_numero || 'Aguardando'}</strong></span>
-                      <div className="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-emerald-100/50">
+                    <div className={`mt-1.5 flex flex-col gap-1 text-[10px] p-2 rounded-xl font-medium shadow-sm ${
+                      isTop ? 'bg-slate-900/60 border border-amber-500/30 text-emerald-100 backdrop-blur-md' : 'text-emerald-800 bg-emerald-50/60 border border-emerald-100'
+                    }`}>
+                      <span className="flex items-center gap-1.5"><User size={11} className={isTop ? 'text-amber-400' : 'text-emerald-600'} /> Motorista: <strong className={`font-bold ${isTop ? 'text-white' : 'text-slate-800'}`}>{filho.motorista_nome || 'Aguardando'}</strong></span>
+                      <span className="flex items-center gap-1.5"><Bus size={11} className={isTop ? 'text-amber-400' : 'text-emerald-600'} /> Veículo: <strong className={`font-bold ${isTop ? 'text-white' : 'text-slate-800'}`}>{filho.veiculo_numero || 'Aguardando'}</strong></span>
+                      <div className={`flex items-center gap-1.5 mt-1 pt-1.5 border-t ${isTop ? 'border-amber-500/20' : 'border-emerald-100/50'}`}>
                         <span className={`w-2 h-2 rounded-full ${filho.rotaAtiva ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                        <span className="font-bold uppercase tracking-wider text-[9px] text-slate-700">
+                        <span className={`font-bold uppercase tracking-wider text-[9px] ${isTop ? 'text-emerald-200' : 'text-slate-700'}`}>
                           {filho.rotaAtiva ? 'Motorista em Rota' : 'Motorista Fora de Rota'}
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    <span className={`text-[10px] font-mono mt-0.5 ${isTop ? 'text-amber-100/70' : 'text-slate-400'}`}>
                       {filho.serie} · {filho.rotaId || 'Sem Rota'}
                     </span>
                   )}
@@ -695,15 +697,15 @@ export default function ResponsavelDashboard() {
                   </div>
                 </div>
               ) : (
-                <HistoricoEmbarque alunoId={filho.id} usandoMock={usandoMock} />
+                <HistoricoEmbarque alunoId={filho.id} usandoMock={usandoMock} isTop={isTop} />
               )}
 
               {/* Ocorrências Disciplinares do Aluno */}
-              <OcorrenciasFilho alunoId={filho.id} usandoMock={usandoMock} />
+              <OcorrenciasFilho alunoId={filho.id} usandoMock={usandoMock} isTop={isTop} />
 
               {/* Ações Rápidas ou Botão Único de Re-cadastro (Carteirinha Expirada) */}
               {isExpired ? (
-                <div className="pt-1 border-t border-slate-100">
+                <div className={`pt-1 border-t ${isTop ? 'border-amber-500/20' : 'border-slate-100'}`}>
                   <button
                     onClick={() => setSelectedFilhoRecadastro(filho)}
                     className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm uppercase tracking-wider w-full"
@@ -713,11 +715,13 @@ export default function ResponsavelDashboard() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                <div className={`grid grid-cols-2 gap-2 pt-1 border-t ${isTop ? 'border-amber-500/20' : 'border-slate-100'}`}>
                   {/* Documentos */}
                   <button
                     onClick={() => setSelectedFilhoDoc(filho)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border border-slate-200/40"
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors ${
+                      isTop ? 'bg-slate-900/60 border border-amber-500/30 text-amber-100 hover:bg-slate-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/40'
+                    }`}
                   >
                     <UploadCloud size={14} />
                     <span>Documentos</span>
@@ -742,7 +746,9 @@ export default function ResponsavelDashboard() {
                       <span>Visualizar Carteirinha Digital</span>
                     </button>
                   ) : (
-                    <div className="col-span-2 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-dashed border-slate-200 cursor-not-allowed select-none">
+                    <div className={`col-span-2 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold border border-dashed cursor-not-allowed select-none ${
+                      isTop ? 'bg-slate-900/40 border-amber-500/30 text-amber-100/50' : 'bg-slate-100 text-slate-400 border-slate-200'
+                    }`}>
                       <FileText size={14} className="opacity-50" />
                       <span>
                         Carteirinha {filho.statusCarteirinha === 'Em análise'
@@ -3376,7 +3382,7 @@ interface LogEmbarque {
   criado_em?: string;
 }
 
-function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMock: boolean }) {
+function HistoricoEmbarque({ alunoId, usandoMock, isTop }: { alunoId: string; usandoMock: boolean; isTop?: boolean }) {
   const supabase = createClient();
   const [logs, setLogs] = useState<LogEmbarque[]>([]);
   const [loading, setLoading] = useState(true);
@@ -3444,8 +3450,8 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
   }
 
   return (
-    <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
-      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+    <div className={`flex flex-col gap-1.5 pt-2 border-t ${isTop ? 'border-amber-500/20' : 'border-slate-100'}`}>
+      <span className={`text-[9px] font-black uppercase tracking-widest block mb-1 ${isTop ? 'text-amber-400 drop-shadow-md' : 'text-slate-400'}`}>
         Histórico de Embarque Recente
       </span>
       <div className="grid grid-cols-2 gap-2">
@@ -3462,9 +3468,13 @@ function HistoricoEmbarque({ alunoId, usandoMock }: { alunoId: string; usandoMoc
             <div 
               key={log.id} 
               className={`flex items-center justify-between p-2 rounded-xl border text-[10px] font-bold ${
-                isPresente 
-                  ? 'bg-emerald-50/60 border-emerald-100 text-emerald-700' 
-                  : 'bg-rose-50/60 border-rose-100 text-rose-700'
+                isTop
+                  ? isPresente
+                    ? 'bg-slate-900/60 border-amber-500/30 text-emerald-100'
+                    : 'bg-slate-900/60 border-rose-500/30 text-rose-100'
+                  : isPresente 
+                    ? 'bg-emerald-50/60 border-emerald-100 text-emerald-700' 
+                    : 'bg-rose-50/60 border-rose-100 text-rose-700'
               }`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
@@ -3490,7 +3500,7 @@ interface Ocorrencia {
   criado_em: string;
 }
 
-function OcorrenciasFilho({ alunoId, usandoMock }: { alunoId: string; usandoMock: boolean }) {
+function OcorrenciasFilho({ alunoId, usandoMock, isTop }: { alunoId: string; usandoMock: boolean; isTop?: boolean }) {
   const supabase = createClient();
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [loading, setLoading] = useState(true);

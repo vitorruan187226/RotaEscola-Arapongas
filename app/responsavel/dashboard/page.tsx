@@ -581,12 +581,6 @@ export default function ResponsavelDashboard() {
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
                 <div className="relative shrink-0">
-                  {/* Coroa do Top 1 */}
-                  {isTop && (
-                    <div className="absolute -top-6 -left-4 z-30 text-[2.75rem] drop-shadow-[0_4px_10px_rgba(251,191,36,0.8)] -rotate-[15deg] pointer-events-none" title="Aluno Exemplar">
-                      👑
-                    </div>
-                  )}
                   <div 
                     onClick={() => document.getElementById(`upload-photo-${filho.id}`)?.click()}
                     className={`w-16 h-20 rounded-xl bg-slate-100 border overflow-hidden flex items-center justify-center cursor-pointer relative group transition-all duration-200 hover:scale-[1.03] ${isTop ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]' : 'border-slate-200/60 hover:border-amber-500'}`}
@@ -3089,9 +3083,15 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     }
   };
 
-  // Posição do ônibus real (Mock removido)
+  // Posição do ônibus real
   const busLat = localizacao && !localizacao.foraDeTurno ? localizacao.latitude : -23.4178;
   const busLng = localizacao && !localizacao.foraDeTurno ? localizacao.longitude : -51.4269;
+
+  // Lógica definitiva de estado da viagem (baseada exclusivamente em ações do motorista)
+  const routeEnded = !isRouteActive && alunoEmbarcado;
+  const inTransit = isRouteActive && alunoEmbarcado;
+  const waitingPickup = isRouteActive && !alunoEmbarcado;
+  const notStarted = !isRouteActive && !alunoEmbarcado;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3169,39 +3169,45 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           <div className="bg-slate-50 border rounded-2xl p-3.5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                (alunoEmbarcado && !isVolta) || tempoEstimado === 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                routeEnded ? 'bg-emerald-500/10 text-emerald-500' : 
+                (inTransit || waitingPickup) ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'
               }`}>
-                {(alunoEmbarcado && !isVolta) ? <CheckCircle2 size={16} /> : tempoEstimado === 0 ? <MapPin size={16} /> : <Clock size={16} />}
+                {routeEnded ? <CheckCircle2 size={16} /> : <Clock size={16} />}
               </div>
               <div>
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">
-                  {alunoEmbarcado && !isVolta ? 'Status do Estudante' : 'Estimativa de Chegada'}
+                  {routeEnded ? 'Status Final' : (inTransit && !isVolta) ? 'Status do Estudante' : 'Estimativa de Chegada'}
                 </h4>
                 <span className="text-xs font-extrabold text-slate-900 mt-1 block">
-                  {alunoEmbarcado && !isVolta 
+                  {routeEnded 
+                    ? (isVolta ? 'Desembarcou em Casa' : 'Desembarcou na Escola')
+                    : inTransit && !isVolta 
                     ? 'Aluno Embarcado Seguramente' 
-                    : alunoEmbarcado && isVolta 
+                    : inTransit && isVolta 
                     ? 'A caminho de casa'
-                    : !isRouteActive 
-                    ? 'Fora de Rota' 
+                    : notStarted 
+                    ? 'Aguardando Início da Rota' 
                     : localizacao?.foraDeTurno 
                     ? 'Fora de turno' 
                     : `Atualizado às ${localizacao?.atualizado_em}`}
                 </span>
               </div>
             </div>
-            {!localizacao?.foraDeTurno && isRouteActive && (
+            {!localizacao?.foraDeTurno && !routeEnded && !notStarted && (
               <div className="text-right flex flex-col items-end">
-                {alunoEmbarcado && !isVolta ? (
+                {inTransit && !isVolta ? (
                   <span className="text-xs font-black text-emerald-600 uppercase tracking-wider">A Bordo</span>
-                ) : tempoEstimado === 0 ? (
-                  <span className="text-xs font-black text-emerald-600 uppercase tracking-wider animate-pulse">Chegou</span>
                 ) : (
                   <>
                     <span className="text-xl font-black font-mono text-slate-900">~{tempoEstimado}</span>
                     <span className="text-[9px] text-slate-500 block leading-none font-bold">min</span>
                   </>
                 )}
+              </div>
+            )}
+            {routeEnded && (
+              <div className="text-right flex flex-col items-end">
+                 <span className="text-xs font-black text-emerald-600 uppercase tracking-wider">Chegou</span>
               </div>
             )}
           </div>
@@ -3229,26 +3235,18 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               {/* Parada 2: Ponto do Aluno */}
               <div className="relative flex flex-col gap-0.5">
                 <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
-                  ausenciaNotificada 
-                    ? 'border-rose-500' 
-                    : (alunoEmbarcado && !isVolta)
-                    ? 'border-emerald-500'
-                    : tempoEstimado === 0
-                    ? 'border-emerald-500 animate-pulse'
-                    : (localizacao?.foraDeTurno || !isRouteActive) 
-                    ? 'border-slate-350' 
-                    : 'border-amber-500 animate-pulse'
+                  ausenciaNotificada ? 'border-rose-500' : 
+                  routeEnded ? 'border-emerald-500' :
+                  inTransit && !isVolta ? 'border-emerald-500' :
+                  inTransit && isVolta ? 'border-amber-500 animate-pulse' :
+                  waitingPickup ? 'border-amber-500 animate-pulse' : 'border-slate-350'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                    ausenciaNotificada 
-                      ? 'bg-rose-500' 
-                      : (alunoEmbarcado && !isVolta)
-                      ? 'bg-emerald-500'
-                      : tempoEstimado === 0
-                      ? 'bg-emerald-500'
-                      : (localizacao?.foraDeTurno || !isRouteActive) 
-                      ? 'bg-slate-350' 
-                      : 'bg-amber-500'
+                  ausenciaNotificada ? 'bg-rose-500' : 
+                  routeEnded ? 'bg-emerald-500' :
+                  inTransit && !isVolta ? 'bg-emerald-500' :
+                  inTransit && isVolta ? 'bg-amber-500' :
+                  waitingPickup ? 'bg-amber-500' : 'bg-slate-350'
                   }`} />
                 </span>
                 <div className="flex items-center gap-2">
@@ -3259,37 +3257,39 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                     <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       Falta Avisada
                     </span>
-                  ) : (alunoEmbarcado && !isVolta) ? (
+                  ) : routeEnded ? (
                     <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                      Embarcado
+                      {isVolta ? 'Desembarcado' : 'Embarcado'}
                     </span>
-                  ) : tempoEstimado === 0 && !localizacao?.foraDeTurno && isRouteActive ? (
-                    <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0 animate-pulse">
-                      {isVolta && alunoEmbarcado ? 'Desembarcado' : 'Chegou'}
+                  ) : inTransit ? (
+                    <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                      {isVolta ? 'A Bordo' : 'Embarcado'}
                     </span>
-                  ) : (!localizacao?.foraDeTurno && isRouteActive) ? (
-                    <span className="text-[8px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                      {isVolta && alunoEmbarcado ? 'A Bordo' : 'A Caminho'}
+                  ) : waitingPickup ? (
+                    <span className="text-[8px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0 animate-pulse">
+                      A Caminho
                     </span>
                   ) : null}
                 </div>
                 <span className="text-[9px] text-slate-500">
                   {ausenciaNotificada 
                     ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
-                    : (alunoEmbarcado && !isVolta)
-                    ? 'O aluno já embarcou no veículo com segurança'
-                    : (!isRouteActive || localizacao?.foraDeTurno) 
-                    ? 'Previsão indisponível' 
-                    : tempoEstimado === 0
-                    ? (isVolta && alunoEmbarcado ? 'O aluno desembarcou com segurança em casa' : `O ônibus está no local de ${isVolta ? 'desembarque' : 'embarque'}!`)
-                    : `Previsão de chegada: ~${tempoEstimado} min`}
+                    : routeEnded
+                    ? (isVolta ? 'O aluno desembarcou com segurança em casa' : 'O aluno embarcou no veículo com segurança')
+                    : inTransit
+                    ? (isVolta ? `A caminho! Previsão: ~${tempoEstimado} min` : 'O aluno já embarcou no veículo com segurança')
+                    : waitingPickup
+                    ? `O veículo está a caminho. Previsão: ~${tempoEstimado} min`
+                    : 'Aguardando o início da rota'}
                 </span>
               </div>
 
               {/* Parada 3: Destino */}
               <div className="relative flex flex-col gap-0.5">
-                <span className="absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 border-slate-350 bg-white flex items-center justify-center">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-350" />
+                <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
+                  routeEnded ? 'border-emerald-500' : 'border-slate-350'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${routeEnded ? 'bg-emerald-500' : 'bg-slate-350'}`} />
                 </span>
                 <span className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[280px]">
                   {isVolta ? 'Destino: Garagem / Fim de Rota' : `Destino: ${aluno.escola}`}

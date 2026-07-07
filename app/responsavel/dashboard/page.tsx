@@ -6,7 +6,7 @@ import { createClient } from '../../../utils/supabase/client';
 import {
   User, Shield, MapPin, UploadCloud, AlertCircle, FileText,
   CheckCircle, Clock, MessageCircle, X, Trash2, CalendarX,
-  RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus, ShieldAlert, Camera, Pencil
+  RotateCcw, WifiOff, Bus, Navigation, CheckCircle2, Image, Download, Plus, ShieldAlert, Camera, Pencil, Star
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { calculateDistanceKm, estimateTimeMinutes } from '../../../lib/utils/haversine';
@@ -140,6 +140,7 @@ export default function ResponsavelDashboard() {
   const [loading,  setLoading]  = useState(true);
   const [usandoMock, setUsandoMock] = useState(false);
   const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null);
+  const [topAssiduos, setTopAssiduos] = useState<{ id: string, presencas: number }[]>([]);
 
   // Estados dos Modais
   const [selectedFilhoDoc, setSelectedFilhoDoc] = useState<Filho | null>(null);
@@ -285,6 +286,12 @@ export default function ResponsavelDashboard() {
           } else {
             setFilhos([]);
             setUsandoMock(false);
+          }
+
+          // Busca Top Assíduos
+          const { data: topAssiduosData } = await supabase.rpc('get_top_assiduos_ids');
+          if (topAssiduosData) {
+            setTopAssiduos(topAssiduosData.map((d: any) => ({ id: d.aluno_id, presencas: d.total_presencas })));
           }
 
           // Carrega as escolas do Supabase para o dropdown
@@ -532,15 +539,24 @@ export default function ResponsavelDashboard() {
         ) : (
           filhos.map((filho) => {
             const isExpired = filho.statusCarteirinha === 'Aprovado' && filho.dataVencimento && new Date(filho.dataVencimento) < getSimulatedDate();
+            const topAssiduoData = topAssiduos.find(t => t.id === filho.id);
+            const isTop = !!topAssiduoData;
+
             const cardBgClass = isExpired
               ? "bg-rose-50/40 border-rose-300 shadow-rose-50/50 hover:shadow-rose-100/60"
+              : isTop
+              ? "bg-gradient-to-br from-amber-50/30 to-amber-100/10 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)] hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]"
               : "bg-white border-slate-200/80 hover:shadow-md";
 
             return (
               <div
                 key={filho.id}
-                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col gap-4 shadow-sm transition-all duration-200`}
+                className={`${cardBgClass} border rounded-2xl p-4 flex flex-col gap-4 transition-all duration-300 relative overflow-hidden`}
               >
+                {/* Efeito visual de brilho se for Top 1 */}
+                {isTop && (
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                )}
               {/* Foto + Detalhes + Status */}
               <div className="flex gap-3">
                 <div 
@@ -589,15 +605,23 @@ export default function ResponsavelDashboard() {
                 <div className="flex-1 flex flex-col justify-center min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     {isExpired ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full border bg-rose-100 border-rose-300 text-rose-700 shadow-sm animate-pulse">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full border bg-rose-100 border-rose-300 text-rose-700 shadow-sm animate-pulse relative z-10">
                         <AlertCircle size={13} />
                         <span>Carteirinha Expirada</span>
                       </span>
                     ) : (
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border w-fit ${getStatusBadgeClass(filho.statusCarteirinha)}`}>
-                        {getStatusIcon(filho.statusCarteirinha)}
-                        <span>{filho.statusCarteirinha === 'Aprovado' ? 'Aprovado' : 'Em Análise pela Secretaria'}</span>
-                      </span>
+                      <div className="flex gap-2 items-center flex-wrap relative z-10">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border w-fit ${getStatusBadgeClass(filho.statusCarteirinha)}`}>
+                          {getStatusIcon(filho.statusCarteirinha)}
+                          <span>{filho.statusCarteirinha === 'Aprovado' ? 'Aprovado' : 'Em Análise pela Secretaria'}</span>
+                        </span>
+                        {isTop && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full border bg-gradient-to-r from-amber-400 to-amber-500 border-amber-500 text-white shadow-sm" title="Aluno Exemplar: 1º Lugar em Presenças na Rota!">
+                            <Star size={11} fill="currentColor" />
+                            <span>#1 MAIS ASSÍDUO</span>
+                          </span>
+                        )}
+                      </div>
                     )}
                     <button
                       onClick={() => setSelectedFilhoEdicao(filho)}

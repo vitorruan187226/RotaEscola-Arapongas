@@ -14,7 +14,8 @@ import {
   UserCheck,
   Wrench,
   Map,
-  AlertOctagon
+  AlertOctagon,
+  Star
 } from 'lucide-react';
 import Link from 'next/link';
 import AutoRefresh from '../../../components/AutoRefresh';
@@ -87,7 +88,8 @@ export default async function AdminDashboardPage() {
       { data: logsData },
       { data: rotasData },
       { data: solicitacoesData },
-      { data: notificationsData }
+      { data: notificationsData },
+      { data: topAssiduosData }
     ] = await Promise.all([
       supabase.from('alunos').select('*', { count: 'exact', head: true }),
       supabase.from('veiculos').select('*', { count: 'exact', head: true }),
@@ -100,6 +102,7 @@ export default async function AdminDashboardPage() {
           id,
           tipo_movimento,
           criado_em,
+          aluno_id,
           alunos (nome, escola, turno)
         `)
         .order('criado_em', { ascending: false })
@@ -126,13 +129,19 @@ export default async function AdminDashboardPage() {
         .from('notificacoes')
         .select('id, titulo, mensagem, criado_em')
         .is('aluno_id', null)
-        .eq('lida', false)
+        .eq('lida', false),
+      supabase.rpc('get_top_assiduos_ids')
     ]);
 
     if (alunosCount !== null) totalAlunos = alunosCount;
     if (veiculosCount !== null) totalVeiculos = veiculosCount;
     if (pendentesCount !== null) solicitacoesPendentes = pendentesCount;
     if (ativasCount !== null) rotasAtivasCount = ativasCount;
+
+    let topAssiduosIds: string[] = [];
+    if (topAssiduosData) {
+      topAssiduosIds = topAssiduosData.map((d: any) => d.aluno_id);
+    }
 
     if (notificationsData) {
       alertasAtivos = notificationsData.filter((n: any) =>
@@ -155,7 +164,8 @@ export default async function AdminDashboardPage() {
         status: 'PRESENTE',
         dataRegistro: new Date(log.criado_em).toISOString().split('T')[0],
         turno: log.alunos?.turno || 'Matutino',
-        hora: new Date(log.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        hora: new Date(log.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        isTop: topAssiduosIds.includes(log.aluno_id)
       }));
     }
 
@@ -191,7 +201,8 @@ export default async function AdminDashboardPage() {
           status: statusLabel,
           avatarColor,
           iniciais,
-          fotoUrl: s.foto_url
+          fotoUrl: s.foto_url,
+          isTop: topAssiduosIds.includes(s.id)
         };
       });
     }
@@ -491,9 +502,18 @@ export default async function AdminDashboardPage() {
                     </div>
 
                     {/* Detalhes do Aluno */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">{sol.aluno}</h4>
-                      <span className="text-[10px] text-slate-400 block truncate mt-0.5">{sol.escola}</span>
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">{sol.aluno}</h4>
+                          {sol.isTop && (
+                            <span className="text-[8px] bg-amber-100 text-amber-700 font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5" title="Mais Assíduo">
+                              <Star size={8} fill="currentColor" /> #1
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 block truncate mt-0.5">{sol.escola}</span>
+                      </div>
                     </div>
 
                     {/* Badge Elegante de Status */}
@@ -564,8 +584,13 @@ export default async function AdminDashboardPage() {
                   }
                   
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">{log.alunoNome}</td>
+                    <tr key={log.id} className={`hover:bg-slate-50/60 transition-colors ${log.isTop ? 'bg-amber-50/20' : ''}`}>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-1.5">
+                        {log.alunoNome}
+                        {log.isTop && (
+                          <Star size={10} className="text-amber-500" fill="currentColor" />
+                        )}
+                      </td>
                       <td className="py-3.5 px-4 text-slate-500 font-semibold">{log.escola}</td>
                       <td className="py-3.5 px-4">
                         <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[10px] uppercase">

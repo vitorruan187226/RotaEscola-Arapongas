@@ -21,6 +21,9 @@ import {
   Check, 
   Wifi, 
   WifiOff,
+  Star,
+  Camera,
+  X,
   User,
   Navigation,
   LogOut,
@@ -31,10 +34,8 @@ import {
   Search,
   UserCheck,
   ChevronRight,
-  X,
   Lock,
   MapPin,
-  Camera,
   Phone,
   PieChart,
   Square,
@@ -136,6 +137,7 @@ export default function MotoristaDashboardPage() {
   const [scanErrorMsg, setScanErrorMsg] = useState<string>('');
   const isOnline = useNetworkStatus();
   const [loading, setLoading] = useState(false);
+  const [topAssiduos, setTopAssiduos] = useState<Array<{id: string, presencas: number}>>([]);
 
   // Estados do Perfil do Motorista
   const [perfilMotorista, setPerfilMotorista] = useState<MotoristaPerfil | null>(null);
@@ -246,6 +248,12 @@ export default function MotoristaDashboardPage() {
           });
           setEditNome(perfil.nome || '');
           setEditTelefone(perfil.telefone || '');
+
+          // Busca Top Assíduos
+          const { data: topAssiduosData } = await supabase.rpc('get_top_assiduos_ids');
+          if (topAssiduosData) {
+            setTopAssiduos(topAssiduosData.map((d: any) => ({ id: d.aluno_id, presencas: d.total_presencas })));
+          }
 
           // Na tabela public.rotas, a coluna motorista_id referencia public.perfis.id
           const { data: dbRotas } = await supabase
@@ -1591,14 +1599,18 @@ export default function MotoristaDashboardPage() {
                 <span className="text-xs font-bold text-slate-400">Ver todos</span>
               </div>
               <div className="space-y-3 pb-8">
-                {rotaAtiva.alunos.map(aluno => (
+                {rotaAtiva.alunos.map(aluno => {
+                  const topAssiduoData = topAssiduos.find(t => t.id === aluno.id);
+                  const isTop = !!topAssiduoData;
+
+                  return (
                   <div
                     key={aluno.id}
                     onClick={() => cycleAlunoStatus(aluno.id)}
                     className={`flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border ${
                       aluno.statusLocal === 'presente' ? 'border-emerald-100 border-l-4 border-l-emerald-500 bg-emerald-50/30' :
                       aluno.statusLocal === 'ausente' ? 'border-rose-100 border-l-4 border-l-rose-500 bg-rose-50/30' :
-                      'border-slate-100'
+                      isTop ? 'border-amber-400 bg-amber-50/30 shadow-[0_0_15px_rgba(251,191,36,0.15)]' : 'border-slate-100'
                     } active:bg-slate-50 transition-all cursor-pointer ${
                       aluno.ausenciaNotificada ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
@@ -1608,12 +1620,15 @@ export default function MotoristaDashboardPage() {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                         aluno.statusLocal === 'presente' ? 'bg-emerald-500 text-white' :
                         aluno.statusLocal === 'ausente' ? 'bg-rose-500 text-white' :
+                        isTop ? 'border-2 border-amber-300 text-amber-500 bg-amber-50/50' :
                         'border-2 border-slate-300 text-transparent'
                       }`}>
                         {aluno.statusLocal === 'presente' ? (
                           <Check size={18} strokeWidth={3} />
                         ) : aluno.statusLocal === 'ausente' ? (
                           <X size={18} strokeWidth={3} />
+                        ) : isTop ? (
+                          <Star size={16} fill="currentColor" />
                         ) : null}
                       </div>
 
@@ -1628,6 +1643,11 @@ export default function MotoristaDashboardPage() {
                           {aluno.statusLocal === 'ausente' && (
                             <span className="bg-rose-100 text-rose-800 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm tracking-wider">
                               Faltou
+                            </span>
+                          )}
+                          {isTop && (
+                            <span className="flex items-center gap-0.5 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm tracking-wider shadow-sm">
+                              <Star size={8} fill="currentColor" /> {topAssiduoData?.presencas}
                             </span>
                           )}
                           <p className={`text-[13px] font-extrabold leading-tight ${
@@ -1663,7 +1683,8 @@ export default function MotoristaDashboardPage() {
                        </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
 
                 {(temAlteracoes || isSentSuccessfully) && (
                   <div className="pt-4">

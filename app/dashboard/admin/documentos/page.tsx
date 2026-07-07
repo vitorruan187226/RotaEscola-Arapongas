@@ -16,7 +16,8 @@ import {
   Send,
   ArrowLeft,
   Search,
-  Sparkles
+  Sparkles,
+  Star
 } from 'lucide-react';
 import { createClient } from '../../../../utils/supabase/client';
 
@@ -32,6 +33,7 @@ interface AlunoAnalise {
   observacao_secretaria?: string | null;
   enviadoEm: string;
   fotoUrl?: string | null;
+  isTop?: boolean;
 }
 
 interface DocumentoAnexo {
@@ -150,6 +152,8 @@ export default function DocumentosPage() {
       }
 
       const { data, error } = await query.order('criado_em', { ascending: false });
+      const { data: topAssiduosData } = await supabase.rpc('get_top_assiduos_ids');
+      const topAssiduosIds = topAssiduosData ? topAssiduosData.map((d: any) => d.aluno_id) : [];
 
       if (!error && data && data.length > 0) {
         const mapped: AlunoAnalise[] = data.map((a: any) => ({
@@ -163,7 +167,8 @@ export default function DocumentosPage() {
           status: a.status || 'aguardando',
           observacao_secretaria: a.observacao_secretaria,
           fotoUrl: a.foto_url,
-          enviadoEm: a.criado_em ? new Date(a.criado_em).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')
+          enviadoEm: a.criado_em ? new Date(a.criado_em).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+          isTop: topAssiduosIds.includes(a.id)
         }));
         setAlunos(mapped);
         setUsandoMock(false);
@@ -552,7 +557,7 @@ export default function DocumentosPage() {
             {filteredAlunos.map((aluno) => (
               <div 
                 key={aluno.id} 
-                className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.01)] hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4 card-premium animate-fade-in"
+                className={`bg-white border rounded-2xl p-5 hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4 card-premium animate-fade-in relative overflow-hidden ${aluno.isTop ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-gradient-to-br from-amber-50/20 to-transparent' : 'border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.01)]'}`}
               >
                 
                 {/* Cabeçalho do Card */}
@@ -570,7 +575,14 @@ export default function DocumentosPage() {
 
                   {/* Nome e Escola */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-black text-slate-950 truncate tracking-tight">{aluno.nome}</h4>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xs font-black text-slate-950 truncate tracking-tight">{aluno.nome}</h4>
+                      {aluno.isTop && (
+                        <span className="text-[8px] bg-amber-100 text-amber-700 font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5" title="Mais Assíduo">
+                          <Star size={8} fill="currentColor" /> #1
+                        </span>
+                      )}
+                    </div>
                     <span className="inline-block px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-600 mt-1 truncate max-w-full">
                       {aluno.escola}
                     </span>

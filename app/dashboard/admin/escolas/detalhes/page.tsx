@@ -47,6 +47,7 @@ interface AlunoAuditoria {
   longitude?: number | null;
   dataVencimento?: string | null;
   notificadoExpiracao?: boolean;
+  isTop?: boolean;
 }
 
 interface DocumentoAnexo {
@@ -313,6 +314,9 @@ export default function EscolaDetalhesPage() {
 
       // Se não houver erro, usa os dados do banco, mesmo que vazio
       if (data) {
+        const { data: topAssiduosData } = await supabase.rpc('get_top_assiduos_ids');
+        const topAssiduosIds = topAssiduosData ? topAssiduosData.map((d: any) => d.aluno_id) : [];
+
         const mapped: AlunoAuditoria[] = data.map((a: any) => {
           const parsed = parseSerie(a.serie);
           return {
@@ -333,7 +337,8 @@ export default function EscolaDetalhesPage() {
             latitude: a.latitude ?? null,
             longitude: a.longitude ?? null,
             dataVencimento: a.carteirinhas?.[0]?.data_vencimento ?? null,
-            notificadoExpiracao: a.carteirinhas?.[0]?.notificado_expiracao ?? false
+            notificadoExpiracao: a.carteirinhas?.[0]?.notificado_expiracao ?? false,
+            isTop: topAssiduosIds.includes(a.id)
           };
         });
         setAlunos(mapped);
@@ -994,28 +999,44 @@ export default function EscolaDetalhesPage() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium">
                                   {list.map((a) => (
-                                    <tr key={a.id} className="hover:bg-slate-50/30 transition-colors">
+                                    <tr key={a.id} className={`hover:bg-slate-50/30 transition-colors ${a.isTop ? 'bg-gradient-to-r from-amber-50/40 to-transparent' : ''}`}>
                                       <td className="py-2.5 px-3 font-bold text-slate-900">
                                         <div className="flex items-center gap-2.5">
-                                          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-150 bg-slate-100 flex items-center justify-center">
-                                            {a.fotoUrl ? (
-                                              <img 
-                                                src={a.fotoUrl} 
-                                                alt={a.nome} 
-                                                className="w-full h-full object-cover" 
-                                              />
-                                            ) : (
-                                              <div className="w-full h-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-extrabold text-[10px]">
-                                                {(() => {
-                                                  const partes = a.nome.split(' ');
-                                                  return partes.length > 1 
-                                                    ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() 
-                                                    : `${partes[0][0]}${partes[0][1] || ''}`.toUpperCase();
-                                                })()}
+                                          <div className="relative shrink-0">
+                                            <div className={`w-8 h-8 rounded-lg overflow-hidden border flex items-center justify-center ${a.isTop ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.3)] bg-slate-50' : 'border-slate-150 bg-slate-100'}`}>
+                                              {a.fotoUrl ? (
+                                                <img 
+                                                  src={a.fotoUrl} 
+                                                  alt={a.nome} 
+                                                  className="w-full h-full object-cover" 
+                                                />
+                                              ) : (
+                                                <div className={`w-full h-full flex items-center justify-center font-extrabold text-[10px] ${a.isTop ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' : 'bg-amber-500/10 text-amber-600'}`}>
+                                                  {(() => {
+                                                    const partes = a.nome.split(' ');
+                                                    return partes.length > 1 
+                                                      ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() 
+                                                      : `${partes[0][0]}${partes[0][1] || ''}`.toUpperCase();
+                                                  })()}
+                                                </div>
+                                              )}
+                                            </div>
+                                            
+                                            {/* Coroa do Top 1 */}
+                                            {a.isTop && (
+                                              <div className="absolute -top-2.5 -right-2 z-10 drop-shadow-md animate-bounce-slow">
+                                                <span className="text-sm filter drop-shadow-[0_2px_2px_rgba(251,191,36,0.5)]">👑</span>
                                               </div>
                                             )}
                                           </div>
-                                          <span>{a.nome}</span>
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span>{a.nome}</span>
+                                            {a.isTop && (
+                                              <span className="text-[7px] bg-gradient-to-r from-amber-400 to-amber-500 text-white font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5 shadow-sm animate-pulse-slow">
+                                                <Star size={7} fill="currentColor" className="text-amber-100" /> TOP 1 ASSIDUIDADE
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       </td>
                                       <td className="py-3 px-3 text-slate-450 font-mono">

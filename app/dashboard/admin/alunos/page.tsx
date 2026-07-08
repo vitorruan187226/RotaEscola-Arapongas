@@ -537,20 +537,25 @@ export default function AlunosPage() {
               <p className="text-xs text-slate-400 text-center py-6">Sem registros de embarque disponíveis.</p>
             ) : (
               metrics.mais_assiduos.map((item, idx) => (
-                <div key={`${item.nome}-${idx}`} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="text-emerald-700 bg-emerald-50 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0">
-                      #{idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate">{item.nome}</p>
-                      <p className="text-[9px] text-slate-400 truncate mt-0.5">{item.escola}</p>
+                <div key={`${item.nome}-${idx}`} className={`flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl border hover:-translate-y-0.5 hover:shadow-sm active-press transition-all duration-200 cursor-pointer ${idx === 0 ? 'bg-gradient-to-r from-amber-50 to-transparent border-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.15)]' : 'border-slate-100 hover:bg-slate-50'}`}>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-6 h-6 flex items-center justify-center rounded-full text-[9px] font-black shrink-0 shadow-sm ${idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white border-2 border-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.5)] animate-pulse-slow' : 'text-emerald-700 bg-emerald-50'}`}>
+                        {idx === 0 ? '👑' : `#${idx + 1}`}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1">
+                          <p className={`font-bold truncate ${idx === 0 ? 'text-amber-700' : 'text-slate-900'}`}>{item.nome}</p>
+                          {idx === 0 && (
+                            <span className="text-[7px] bg-amber-500 text-white font-black px-1 py-0.5 rounded-sm uppercase tracking-wider">TOP 1</span>
+                          )}
+                        </div>
+                        <p className={`text-[9px] truncate mt-0.5 ${idx === 0 ? 'text-amber-600/80' : 'text-slate-400'}`}>{item.escola}</p>
+                      </div>
                     </div>
+                    <span className={`${idx === 0 ? 'text-amber-800 bg-amber-200/80 border border-amber-300' : 'text-emerald-700 bg-emerald-100/60'} text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0`}>
+                      {item.total_presencas} check-ins
+                    </span>
                   </div>
-                  <span className="text-emerald-700 bg-emerald-100/60 text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0">
-                    {item.total_presencas} check-ins
-                  </span>
-                </div>
               ))
             )}
           </div>

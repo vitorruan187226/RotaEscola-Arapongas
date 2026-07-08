@@ -484,19 +484,27 @@ export default async function AdminDashboardPage() {
 
               <div className="flex flex-col gap-3.5">
                 {ultimasSolicitacoes.map((sol) => (
-                  <div key={sol.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50 transition-colors">
+                  <div key={sol.id} className={`flex items-center gap-3 p-2.5 rounded-xl border transition-colors ${sol.isTop ? 'bg-gradient-to-r from-amber-50/40 to-transparent border-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.1)]' : 'border-slate-100 bg-slate-50/20 hover:bg-slate-50'}`}>
                     
                     {/* Avatar Circular */}
-                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm flex items-center justify-center relative bg-slate-100">
-                      {sol.fotoUrl ? (
-                        <img 
-                          src={sol.fotoUrl} 
-                          alt={sol.aluno} 
-                          className="w-full h-full object-cover" 
-                        />
-                      ) : (
-                        <div className={`w-full h-full ${sol.avatarColor} text-white flex items-center justify-center font-bold text-xs`}>
-                          {sol.iniciais}
+                    <div className="relative shrink-0">
+                      <div className={`w-8 h-8 rounded-full overflow-hidden shadow-sm flex items-center justify-center relative bg-slate-100 ${sol.isTop ? 'ring-2 ring-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : ''}`}>
+                        {sol.fotoUrl ? (
+                          <img 
+                            src={sol.fotoUrl} 
+                            alt={sol.aluno} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <div className={`w-full h-full text-white flex items-center justify-center font-bold text-xs ${sol.isTop ? 'bg-gradient-to-br from-amber-400 to-amber-600' : sol.avatarColor}`}>
+                            {sol.iniciais}
+                          </div>
+                        )}
+                      </div>
+                      {/* Coroa do Top 1 */}
+                      {sol.isTop && (
+                        <div className="absolute -top-2.5 -right-2 z-10 drop-shadow-md animate-bounce-slow">
+                          <span className="text-sm filter drop-shadow-[0_2px_2px_rgba(251,191,36,0.5)]">👑</span>
                         </div>
                       )}
                     </div>
@@ -504,11 +512,11 @@ export default async function AdminDashboardPage() {
                     {/* Detalhes do Aluno */}
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">{sol.aluno}</h4>
                           {sol.isTop && (
-                            <span className="text-[8px] bg-amber-100 text-amber-700 font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5" title="Mais Assíduo">
-                              <Star size={8} fill="currentColor" /> #1
+                            <span className="text-[7px] bg-gradient-to-r from-amber-400 to-amber-500 text-white font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5 shadow-sm animate-pulse-slow">
+                              <Star size={7} fill="currentColor" className="text-amber-100" /> TOP 1 ASSIDUIDADE
                             </span>
                           )}
                         </div>
@@ -584,11 +592,13 @@ export default async function AdminDashboardPage() {
                   }
                   
                   return (
-                    <tr key={log.id} className={`hover:bg-slate-50/60 transition-colors ${log.isTop ? 'bg-amber-50/20' : ''}`}>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-1.5">
+                    <tr key={log.id} className={`hover:bg-slate-50/60 transition-colors ${log.isTop ? 'bg-amber-50/40' : ''}`}>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
                         {log.alunoNome}
                         {log.isTop && (
-                          <Star size={10} className="text-amber-500" fill="currentColor" />
+                          <span className="text-[7px] bg-gradient-to-r from-amber-400 to-amber-500 text-white font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5 shadow-sm">
+                            <Star size={7} fill="currentColor" className="text-amber-100" /> TOP 1
+                          </span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 font-semibold">{log.escola}</td>

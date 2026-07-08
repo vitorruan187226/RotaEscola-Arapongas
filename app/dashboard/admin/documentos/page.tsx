@@ -561,25 +561,35 @@ export default function DocumentosPage() {
               >
                 
                 {/* Cabeçalho do Card */}
-                <div className="flex items-start gap-3.5">
+                <div className="flex items-start gap-3.5 relative">
                   {/* Foto do Aluno */}
-                  <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 shadow-sm border border-slate-100 flex items-center justify-center relative bg-slate-50">
-                    {aluno.fotoUrl ? (
-                      <img src={aluno.fotoUrl} alt={aluno.nome} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-slate-800 text-white flex items-center justify-center font-black text-sm uppercase">
-                        {aluno.nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}
+                  <div className="relative shrink-0">
+                    <div className={`w-12 h-12 rounded-full overflow-hidden shadow-sm border flex items-center justify-center relative bg-slate-50 ${aluno.isTop ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'border-slate-100'}`}>
+                      {aluno.fotoUrl ? (
+                        <img src={aluno.fotoUrl} alt={aluno.nome} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className={`w-full h-full text-white flex items-center justify-center font-black text-sm uppercase ${aluno.isTop ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 'bg-slate-800'}`}>
+                          {aluno.nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Coroa do Top 1 */}
+                    {aluno.isTop && (
+                      <div className="absolute -top-3.5 -right-2.5 z-10 drop-shadow-md animate-bounce-slow">
+                        <span className="text-xl filter drop-shadow-[0_2px_4px_rgba(251,191,36,0.6)]">👑</span>
                       </div>
                     )}
                   </div>
 
                   {/* Nome e Escola */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <h4 className="text-xs font-black text-slate-950 truncate tracking-tight">{aluno.nome}</h4>
                       {aluno.isTop && (
-                        <span className="text-[8px] bg-amber-100 text-amber-700 font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-0.5" title="Mais Assíduo">
-                          <Star size={8} fill="currentColor" /> #1
+                        <span className="text-[9px] bg-gradient-to-r from-amber-400 to-amber-500 text-white font-black px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 shrink-0 animate-pulse-slow border border-amber-300">
+                          <Star size={10} fill="currentColor" className="text-amber-100" />
+                          TOP 1 ASSIDUIDADE
                         </span>
                       )}
                     </div>

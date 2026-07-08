@@ -21,7 +21,8 @@ import {
   ChevronDown,
   ChevronRight,
   Edit2,
-  Trash2
+  Trash2,
+  Star
 } from 'lucide-react';
 import { createClient } from '../../../../../utils/supabase/client';
 import { ALUNOS_MOCK_GLOBAL } from '../../../../../lib/mocks/alunos';

@@ -2866,6 +2866,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   const [loadingAusencia, setLoadingAusencia] = useState(false);
   const [ausenciaNotificada, setAusenciaNotificada] = useState(false);
   const [alunoEmbarcado, setAlunoEmbarcado] = useState(false);
+  const [alunoFaltou, setAlunoFaltou] = useState(false);
   const [tempoEstimado, setTempoEstimado] = useState(12);
   const [msg, setMsg] = useState<{ type: 'info' | 'success'; text: string } | null>(null);
 
@@ -2954,6 +2955,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
       try {
         // Reset states to avoid stale data between polls
         setAlunoEmbarcado(false);
+        setAlunoFaltou(false);
         setAusenciaNotificada(false);
 
         // 1. Checar ausência informada (se o pai cancelou a ida hoje)
@@ -2967,9 +2969,6 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
         if (dataPresenca && dataPresenca.compareceu === false) {
           setAusenciaNotificada(true);
         }
-        // Nota: Não usamos dataPresenca.compareceu === true para definir setAlunoEmbarcado(true)
-        // porque se o aluno foi de manhã (IDA), a tarde (VOLTA) ele já apareceria como embarcado antes de entrar na van!
-        // O embarque real da viagem atual será verificado via logs_embarque abaixo.
 
         // 2. Checar a direção atual da rota e status do aluno
         const queryRouteId = aluno.rotaUuid || aluno.rotaId;
@@ -3001,15 +3000,18 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
             setIsVolta(localSentido === 'VOLTA');
           }
           
-          // Verifica se o aluno logado está marcado como presente NO MESMO SENTIDO da viagem atual
+          // Verifica se o aluno logado está marcado como presente ou faltou NO MESMO SENTIDO da viagem atual
           if (localSentido) {
             const meuLog = routeLogs.find(log => 
               log.aluno_id === aluno.id && 
-              log.status === 'PRESENTE' &&
               log.tipo_movimento === localSentido
             );
             if (meuLog) {
-              setAlunoEmbarcado(true);
+              if (meuLog.status === 'PRESENTE') {
+                setAlunoEmbarcado(true);
+              } else if (meuLog.status === 'FALTOU') {
+                setAlunoFaltou(true);
+              }
             }
           }
         }
@@ -3102,10 +3104,10 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
   const busLng = localizacao && !localizacao.foraDeTurno ? localizacao.longitude : -51.4269;
 
   // Lógica definitiva de estado da viagem (baseada exclusivamente em ações do motorista)
-  const routeEnded = !isRouteActive && alunoEmbarcado;
-  const inTransit = isRouteActive && alunoEmbarcado;
-  const waitingPickup = isRouteActive && !alunoEmbarcado;
-  const notStarted = !isRouteActive && !alunoEmbarcado;
+  const routeEnded = !isRouteActive && (alunoEmbarcado || alunoFaltou);
+  const inTransit = isRouteActive && (alunoEmbarcado || alunoFaltou);
+  const waitingPickup = isRouteActive && (!alunoEmbarcado && !alunoFaltou);
+  const notStarted = !isRouteActive && (!alunoEmbarcado && !alunoFaltou);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3183,6 +3185,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           <div className="bg-slate-50 border rounded-2xl p-3.5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                routeEnded && alunoFaltou ? 'bg-rose-500/10 text-rose-500' :
                 routeEnded ? 'bg-emerald-500/10 text-emerald-500' : 
                 (inTransit || waitingPickup) ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'
               }`}>
@@ -3193,7 +3196,9 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   {routeEnded ? 'Status Final' : (inTransit && !isVolta) ? 'Status do Estudante' : 'Estimativa de Chegada'}
                 </h4>
                 <span className="text-xs font-extrabold text-slate-900 mt-1 block">
-                  {routeEnded 
+                  {routeEnded && alunoFaltou
+                    ? 'Faltou ao Embarque'
+                    : routeEnded 
                     ? (isVolta ? 'Desembarcou em Casa' : 'Desembarcou na Escola')
                     : inTransit && !isVolta 
                     ? 'Aluno Embarcado Seguramente' 
@@ -3249,14 +3254,14 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               {/* Parada 2: Ponto do Aluno */}
               <div className="relative flex flex-col gap-0.5">
                 <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
-                  ausenciaNotificada ? 'border-rose-500' : 
+                  ausenciaNotificada || alunoFaltou ? 'border-rose-500' : 
                   routeEnded ? 'border-emerald-500' :
                   inTransit && !isVolta ? 'border-emerald-500' :
                   inTransit && isVolta ? 'border-amber-500 animate-pulse' :
                   waitingPickup ? 'border-amber-500 animate-pulse' : 'border-slate-350'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                  ausenciaNotificada ? 'bg-rose-500' : 
+                  ausenciaNotificada || alunoFaltou ? 'bg-rose-500' : 
                   routeEnded ? 'bg-emerald-500' :
                   inTransit && !isVolta ? 'bg-emerald-500' :
                   inTransit && isVolta ? 'bg-amber-500' :
@@ -3270,6 +3275,10 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                   {ausenciaNotificada ? (
                     <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
                       Falta Avisada
+                    </span>
+                  ) : alunoFaltou ? (
+                    <span className="text-[8px] bg-rose-500/10 text-rose-600 border border-rose-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                      Faltou
                     </span>
                   ) : routeEnded ? (
                     <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
@@ -3288,6 +3297,10 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
                 <span className="text-[9px] text-slate-500">
                   {ausenciaNotificada 
                     ? 'Ausência notificada — veículo não parará neste ponto por hoje' 
+                    : routeEnded && alunoFaltou
+                    ? 'O motorista registrou que o aluno não compareceu ao embarque'
+                    : alunoFaltou
+                    ? 'O motorista registrou que o aluno não compareceu'
                     : routeEnded
                     ? (isVolta ? 'O aluno desembarcou com segurança em casa' : 'O aluno embarcou no veículo com segurança')
                     : inTransit
@@ -3301,15 +3314,15 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
               {/* Parada 3: Destino */}
               <div className="relative flex flex-col gap-0.5">
                 <span className={`absolute -left-[21px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white flex items-center justify-center ${
-                  routeEnded ? 'border-emerald-500' : 'border-slate-350'
+                  routeEnded && alunoFaltou ? 'border-rose-500' : routeEnded ? 'border-emerald-500' : 'border-slate-350'
                 }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${routeEnded ? 'bg-emerald-500' : 'bg-slate-350'}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${routeEnded && alunoFaltou ? 'bg-rose-500' : routeEnded ? 'bg-emerald-500' : 'bg-slate-350'}`} />
                 </span>
                 <span className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[280px]">
                   {isVolta ? 'Destino: Garagem / Fim de Rota' : `Destino: ${aluno.escola}`}
                 </span>
                 <span className="text-[9px] text-slate-500">
-                  {isVolta ? 'Encerramento do turno' : 'Desembarque seguro dos estudantes'}
+                  {routeEnded && alunoFaltou ? 'O aluno não realizou a viagem' : isVolta ? 'Encerramento do turno' : 'Desembarque seguro dos estudantes'}
                 </span>
               </div>
             </div>

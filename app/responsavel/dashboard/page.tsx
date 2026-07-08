@@ -3009,7 +3009,7 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
             if (meuLog) {
               if (meuLog.status === 'PRESENTE') {
                 setAlunoEmbarcado(true);
-              } else if (meuLog.status === 'FALTOU') {
+              } else if (meuLog.status === 'AUSENTE') {
                 setAlunoFaltou(true);
               }
             }

@@ -3226,7 +3226,9 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
             )}
             {routeEnded && (
               <div className="text-right flex flex-col items-end">
-                 <span className="text-xs font-black text-emerald-600 uppercase tracking-wider">Chegou</span>
+                 <span className={`text-xs font-black uppercase tracking-wider ${alunoFaltou ? 'text-rose-600' : 'text-emerald-600'}`}>
+                   {alunoFaltou ? 'Faltou' : 'Chegou'}
+                 </span>
               </div>
             )}
           </div>

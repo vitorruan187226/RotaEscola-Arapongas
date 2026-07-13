@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '../../../../utils/supabase/client';
@@ -595,9 +595,31 @@ export default function RotasPage() {
           {/* Table */}
           <div style={{ overflowX: 'auto' }}>
             {loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px', gap: '12px', color: '#94A3B8' }}>
-                <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
-                <span style={{ fontSize: '0.875rem' }}>Carregando rotas...</span>
+              <div className="flex flex-col animate-pulse">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border-b border-slate-100 last:border-0">
+                    <div className="flex items-center gap-3 w-1/4">
+                      <div className="w-10 h-10 bg-slate-100 rounded-xl shrink-0" />
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="h-3 bg-slate-100 rounded w-1/2" />
+                        <div className="h-2 bg-slate-100 rounded w-1/3" />
+                      </div>
+                    </div>
+                    <div className="w-1/6">
+                      <div className="h-4 bg-slate-100 rounded w-20" />
+                    </div>
+                    <div className="w-1/4">
+                      <div className="h-4 bg-slate-100 rounded w-24" />
+                    </div>
+                    <div className="w-1/6">
+                      <div className="h-5 bg-slate-100 rounded-full w-16" />
+                    </div>
+                    <div className="flex gap-2 justify-end w-1/6">
+                      <div className="w-8 h-8 bg-slate-100 rounded-lg" />
+                      <div className="w-8 h-8 bg-slate-100 rounded-lg" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filtered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px', color: '#94A3B8' }}>

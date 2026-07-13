@@ -511,9 +511,33 @@ export default function EscolasPage() {
 
       {/* Grid de Cards de Escolas */}
       {loading ? (
-        <div className="bg-white border rounded-2xl p-20 flex flex-col items-center justify-center gap-3 shadow-sm">
-          <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-slate-500 font-bold">Carregando escolas...</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex flex-col justify-between animate-pulse h-[220px]">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 bg-slate-100 rounded-2xl shrink-0" />
+                  <div className="flex-1 pr-6 flex flex-col gap-2 mt-1">
+                    <div className="h-3.5 bg-slate-100 rounded w-3/4" />
+                    <div className="h-2 bg-slate-100 rounded w-1/3 mt-1" />
+                  </div>
+                </div>
+                <div className="h-2.5 bg-slate-100 rounded w-full mt-3" />
+                <div className="h-2.5 bg-slate-100 rounded w-4/5" />
+                <div className="flex gap-1.5 mt-2">
+                  <div className="h-4 w-14 bg-slate-100 rounded-full" />
+                  <div className="h-4 w-14 bg-slate-100 rounded-full" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-50 mt-5 pt-3.5">
+                <div className="h-2.5 w-16 bg-slate-100 rounded" />
+                <div className="flex items-center gap-1">
+                  <div className="w-6 h-6 bg-slate-100 rounded-lg" />
+                  <div className="w-6 h-6 bg-slate-100 rounded-lg" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredEscolas.length === 0 ? (
         <div className="bg-white border rounded-2xl p-20 text-center flex flex-col items-center gap-3 shadow-sm">

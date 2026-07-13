@@ -215,24 +215,24 @@ export default function EscolaDetalhesPage() {
 
   async function loadRotas() {
     try {
-      const { data, error } = await supabase
-        .from('rotas')
-        .select('id, codigo, nome');
+      const { data, error } = await supabase.rpc('get_rotas_capacidade');
       if (!error && data) {
         const rotasComStatus = data.map((r: any) => ({ ...r, status: r.status ?? 'Ativo' }));
         setRotas(rotasComStatus.filter((r: any) => r.status === 'Ativo'));
       } else {
-        setRotas([
-          { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
-          { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
-          { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
-        ]);
+        const fallbackRes = await supabase.from('rotas').select('id, codigo, nome');
+        if (!fallbackRes.error && fallbackRes.data) {
+           const fallbackData = fallbackRes.data.map((r: any) => ({ ...r, status: r.status ?? 'Ativo', capacidade_veiculo: 999, alunos_vinculados: 0 }));
+           setRotas(fallbackData.filter((r: any) => r.status === 'Ativo'));
+        } else {
+           throw fallbackRes.error;
+        }
       }
     } catch {
       setRotas([
-        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo' },
-        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo' },
-        { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo' },
+        { id: '9d0f2832-7288-4682-9642-17cb25e36928', codigo: 'RT-04', nome: 'Rota 04 — Zona Rural', status: 'Ativo', capacidade_veiculo: 28, alunos_vinculados: 26 },
+        { id: '8a723821-3928-4444-9123-ab39d1b0d777', codigo: 'RT-04-T', nome: 'Rota 04 — Zona Rural (Tarde)', status: 'Ativo', capacidade_veiculo: 20, alunos_vinculados: 20 },
+        { id: 'rota-mock-3', codigo: 'RT-22', nome: 'Rota 22 — Centro', status: 'Ativo', capacidade_veiculo: 15, alunos_vinculados: 10 },
       ]);
     }
   }
@@ -1365,15 +1365,41 @@ export default function EscolaDetalhesPage() {
                   className="w-full px-3 py-3 rounded-xl border text-xs font-bold text-slate-850 bg-white focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
                 >
                   <option value="" disabled>-- Selecione uma Rota --</option>
-                  {rotas.map((r: any) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nome_rota || r.nome}{r.turno ? ` (${r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})` : ''}
-                    </option>
-                  ))}
+                  {rotas.map((r: any) => {
+                    const maxCap = r.capacidade_veiculo || 0;
+                    const used = r.alunos_vinculados || 0;
+                    const isLotado = maxCap > 0 && used >= maxCap;
+                    const vagasLabel = maxCap > 0 ? ` (Vagas: ${Math.max(0, maxCap - used)}/${maxCap})` : '';
+                    return (
+                      <option key={r.id} value={r.id} disabled={isLotado}>
+                        {r.nome_rota || r.nome}{r.turno ? ` (${r.turno === 'manha' || r.turno === 'Manhã' ? 'Manhã' : 'Tarde'})` : ''} 
+                        {isLotado ? ' (LOTADO)' : vagasLabel}
+                      </option>
+                    );
+                  })}
                 </select>
                 <p className="text-[10px] text-slate-400 mt-1.5 leading-normal">
                   A rota selecionada definirá automaticamente o motorista designado e o veículo que aparecerão na carteirinha digital e no mapa do responsável.
                 </p>
+                {/* Warning message if selected route is >= 90% full */}
+                {selectedRotaId && (() => {
+                  const r = rotas.find((rt) => rt.id === selectedRotaId);
+                  if (!r || r.capacidade_veiculo === 0) return null;
+                  const ratio = r.alunos_vinculados / r.capacidade_veiculo;
+                  const left = r.capacidade_veiculo - r.alunos_vinculados;
+                  if (ratio >= 0.9) {
+                    return (
+                      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 items-start text-amber-800">
+                        <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[11px] font-bold">Atenção! Rota quase cheia</p>
+                          <p className="text-[10px] opacity-90 mt-0.5">O veículo desta rota possui apenas {left} vaga{left !== 1 ? 's' : ''} restante{left !== 1 ? 's' : ''}.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Bus, Plus, Filter, Download, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, User } from 'lucide-react';
@@ -510,9 +510,32 @@ export default function FrotaPage() {
 
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-slate-500 font-bold">Carregando frota...</span>
+            <div className="flex flex-col animate-pulse">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border-b border-slate-100 last:border-0">
+                  <div className="flex items-center gap-3 w-1/4">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl shrink-0" />
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="h-3 bg-slate-100 rounded w-1/2" />
+                      <div className="h-2 bg-slate-100 rounded w-1/3" />
+                    </div>
+                  </div>
+                  <div className="w-1/6">
+                    <div className="h-5 bg-slate-100 rounded-full w-16" />
+                  </div>
+                  <div className="w-1/6">
+                    <div className="h-3 bg-slate-100 rounded w-10 mx-auto" />
+                  </div>
+                  <div className="flex flex-col gap-2 w-1/4">
+                    <div className="h-2.5 bg-slate-100 rounded w-3/4" />
+                    <div className="h-2 bg-slate-100 rounded w-1/2" />
+                  </div>
+                  <div className="flex gap-2 justify-end w-1/6">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg" />
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredVeiculos.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center gap-3">

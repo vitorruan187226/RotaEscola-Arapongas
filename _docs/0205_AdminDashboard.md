@@ -120,7 +120,7 @@ O módulo de **Aprovação de Docs** (`documentos/page.tsx`) foi reestruturado d
 - **Visualização Linear**: Alunos listados diretamente em um grid de cards contendo a foto real do aluno (`foto_url`) ou avatar com as iniciais correspondentes.
 - **Ações Rápidas**:
   - **Ver Anexos**: Abre modal para auditoria dos documentos anexados (Storage).
-  - **Aprovar**: Abre modal para vincular a rota de transporte (tabela `rotas`), alterando `status_carteirinha` para `'Aprovado'`.
+  - **Aprovar**: Abre modal para vincular a rota de transporte (tabela `rotas`), alterando `status_carteirinha` para `'Aprovado'`. *Regra de Negócio:* Rotas com capacidade atingida em 100% (com base na capacidade do veículo vinculado) são bloqueadas para novas designações. Um aviso de "quase cheia" é exibido quando atinge 90% da ocupação.
   - **Corrigir**: Envia solicitação de correção com feedback textual ao responsável, definindo status para `'pendente_correcao'`.
 
 ## Histórico de Alterações

@@ -2879,12 +2879,13 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
     return false;
   });
 
-  // Busca Localização GPS
+  // Busca Localização GPS e Assina Realtime
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const queryRouteId = aluno.rotaUuid || aluno.rotaId;
+    
     async function fetchLoc() {
       try {
-        const queryRouteId = aluno.rotaUuid || aluno.rotaId;
-
         // Busca o status ativo da rota e o sentido em tempo real
         if (queryRouteId && queryRouteId.length > 10) {
           const { data: routeData } = await supabase
@@ -2915,14 +2916,15 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           const diffHoras = (new Date().getTime() - updated.getTime()) / (1000 * 60 * 60);
           const foraDeTurno = diffHoras > 2;
 
-          setLocalizacao({
+          setLocalizacao(prev => ({
+            ...prev,
             latitude: data.latitude,
             longitude: data.longitude,
             velocidade_kmh: data.velocidade_kmh,
             atualizado_em: updated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             foraDeTurno,
-          });
-        } else {
+          }));
+        } else if (!localizacao) {
           setLocalizacao({
             latitude: -23.4178,
             longitude: -51.4269,
@@ -2932,21 +2934,40 @@ function RastreioModal({ aluno, onClose }: RastreioModalProps) {
           });
         }
       } catch {
-        setLocalizacao({
-          latitude: -23.4178,
-          longitude: -51.4269,
-          velocidade_kmh: 0,
-          atualizado_em: '--:--',
-          foraDeTurno: true,
-        });
+        // Ignora erro e mantém o estado anterior ou default
       } finally {
         setLoadingLoc(false);
       }
     }
 
     fetchLoc();
-    const interval = setInterval(fetchLoc, 10000); // Pooling rápido de 10s para modal ativo
-    return () => clearInterval(interval);
+    interval = setInterval(fetchLoc, 30000); // Polling reduzido para 30s, pois usaremos realtime
+
+    // Assinatura do Canal de Broadcast (Tempo Real < 1s)
+    let channel: any = null;
+    if (queryRouteId && queryRouteId.length > 10) {
+      channel = supabase.channel(`gps:${queryRouteId}`)
+        .on('broadcast', { event: 'position_update' }, (payload) => {
+          if (payload.payload) {
+            const gps = payload.payload;
+            const updated = new Date(gps.timestamp);
+            setLocalizacao({
+              latitude: gps.lat,
+              longitude: gps.lng,
+              velocidade_kmh: gps.speed ? Math.round(gps.speed * 3.6) : 0,
+              atualizado_em: updated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              foraDeTurno: false, // Se está transmitindo via broadcast, está no turno
+            });
+            setIsRouteActive(true); // Se está transmitindo, a rota está ativa
+          }
+        })
+        .subscribe();
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [aluno.rotaId, aluno.rotaUuid, supabase]);
 
   // Carrega status de embarque e de ausência

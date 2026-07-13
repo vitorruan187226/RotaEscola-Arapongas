@@ -124,7 +124,7 @@ function mapStatus(raw: string | null): Filho['statusCarteirinha'] {
 function formatarCpfVisual(rawCpf: string) {
   const clean = rawCpf.replace(/\D/g, '');
   if (clean.length !== 11) return rawCpf;
-  return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '***.***.$3-$4');
 }
 
 // ─── Componente Principal ─────────────────────────────────────────────────────

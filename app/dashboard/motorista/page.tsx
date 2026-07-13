@@ -5,6 +5,7 @@ import { useGPSBroadcast } from '@/lib/hooks/useGPSBroadcast';
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus';
 import { useOfflineChecklist } from '@/lib/hooks/useOfflineChecklist';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { createClient } from '../../../utils/supabase/client';
 import { 
   Bus, 
@@ -45,7 +46,9 @@ import {
   Home,
   BarChart2,
   Wallet,
-  UserCircle
+  UserCircle,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface Aluno {
@@ -127,6 +130,7 @@ const getLocalDateString = () => {
 export default function MotoristaDashboardPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { theme, setTheme } = useTheme();
 
   const [selectedRotaId, setSelectedRotaId] = useState(ROTAS_MOCK[0].id);
   const [selectedTurno, setSelectedTurno] = useState<'Manhã' | 'Tarde' | 'Noite'>('Manhã');
@@ -1307,7 +1311,7 @@ export default function MotoristaDashboardPage() {
       `}</style>
 
       {/* Moldura Celular Simulada Premium (Bank Card Style) */}
-      <div className="w-full max-w-md bg-[#f4f7fb] sm:shadow-[0_24px_64px_rgba(0,0,0,0.08)] flex flex-col relative min-h-screen sm:min-h-[840px] sm:rounded-[40px] overflow-hidden border border-slate-200">
+      <div className="w-full max-w-md bg-[#f4f7fb] dark:bg-slate-950 sm:shadow-[0_24px_64px_rgba(0,0,0,0.08)] flex flex-col relative min-h-screen sm:min-h-[840px] sm:rounded-[40px] overflow-hidden border border-slate-200 dark:border-slate-800 transition-colors">
         
 
         
@@ -1355,7 +1359,7 @@ export default function MotoristaDashboardPage() {
         {/* Header Minimalista (Bank Style) */}
         <header className="px-6 pt-12 pb-4 flex items-center justify-between z-10 bg-transparent">
           <div className="flex flex-col">
-            <h1 className="font-extrabold text-2xl text-[#1a2b4c] leading-tight">
+            <h1 className="font-extrabold text-2xl text-[#1a2b4c] dark:text-white leading-tight">
               Olá, {perfilMotorista?.nome ? perfilMotorista.nome.split(' ')[0] : 'Motorista'}
             </h1>
           </div>
@@ -1390,20 +1394,20 @@ export default function MotoristaDashboardPage() {
           {!rotaAtiva?.ativa && (
             <section className="animate-fadeIn mt-2 flex flex-col flex-1">
               <div className="mb-6 px-1 shrink-0">
-                <h2 className="text-2xl font-extrabold text-[#002045]">Preparar Viagem</h2>
-                <p className="text-sm text-[#74777f] mt-1">Configure os detalhes antes de iniciar sua rota.</p>
+                <h2 className="text-2xl font-extrabold text-[#002045] dark:text-white">Preparar Viagem</h2>
+                <p className="text-sm text-[#74777f] dark:text-slate-400 mt-1">Configure os detalhes antes de iniciar sua rota.</p>
               </div>
 
-              <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 flex flex-col relative overflow-hidden flex-1">
+              <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col relative overflow-hidden flex-1 transition-colors">
                 {/* Decorative blob */}
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#d6e3ff]/30 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#d6e3ff]/30 dark:bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
                 
                 <div className="relative z-10 flex flex-col flex-1">
                   <div className="space-y-6">
                   {/* Turno */}
                   <div>
-                    <label className="text-xs font-bold text-[#74777f] uppercase tracking-wider mb-2 block">Turno</label>
-                    <div className="flex bg-[#f1f4f6] p-1.5 rounded-2xl">
+                    <label className="text-xs font-bold text-[#74777f] dark:text-slate-400 uppercase tracking-wider mb-2 block">Turno</label>
+                    <div className="flex bg-[#f1f4f6] dark:bg-slate-800 p-1.5 rounded-2xl transition-colors">
                       {(['Manhã', 'Tarde', 'Noite'] as const).map(t => (
                         <button
                           key={t}
@@ -2258,128 +2262,128 @@ export default function MotoristaDashboardPage() {
             MODAL DE PERFIL DO MOTORISTA
         ══════════════════════════════════════════════════════ */}
         {showPerfilModal && (
-          <div className="absolute inset-0 z-50 flex flex-col rounded-[36px] overflow-hidden animate-fadeIn" style={{ backgroundColor: '#020617' }}>
+          <div className="absolute inset-0 z-50 flex flex-col rounded-[36px] overflow-hidden animate-fadeIn bg-white dark:bg-[#020617]">
             {/* Header do Modal */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60 bg-slate-900/90">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/90">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-500 dark:text-amber-400">
                   <User size={16} />
                 </div>
                 <div>
-                  <h3 className="text-xs font-extrabold text-white tracking-tight">Meu Perfil</h3>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Gerencie seus dados pessoais e profissionais</p>
+                  <h3 className="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight">Meu Perfil</h3>
+                  <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">Gerencie seus dados pessoais e profissionais</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowPerfilModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors border-0 cursor-pointer"
-              >
-                <X size={14} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors border-0 cursor-pointer"
+                  title="Alternar Tema Escuro/Claro"
+                >
+                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
+                <button
+                  onClick={() => setShowPerfilModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors border-0 cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             </div>
 
             {/* Conteúdo do Modal */}
             <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-6 scrollbar-thin">
               
-              {/* Upload de Foto de Perfil */}
               <div className="flex flex-col items-center gap-2.5">
                 <div 
                   onClick={() => document.getElementById('upload-avatar-motorista')?.click()}
-                  className="w-24 h-24 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden cursor-pointer relative group hover:border-amber-500 hover:scale-[1.03] transition-all shrink-0"
+                  className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden cursor-pointer relative group hover:border-amber-500 hover:scale-[1.03] transition-all shrink-0"
                   title="Clique para alterar sua foto de perfil"
                 >
                   {perfilMotorista?.foto_url ? (
                     <img src={perfilMotorista.foto_url} alt={perfilMotorista.nome} className="w-full h-full object-cover" />
                   ) : (
-                    <User size={36} className="text-slate-700" />
+                    <User size={36} className="text-slate-400 dark:text-slate-700" />
                   )}
                   
                   {/* Overlay de Hover */}
-                  <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-amber-400 gap-1 text-[8px] font-black uppercase tracking-wider">
+                  <div className="absolute inset-0 bg-slate-900/50 dark:bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-amber-500 dark:text-amber-400 gap-1 text-[8px] font-black uppercase tracking-wider">
                     <Camera size={16} />
                     <span>Alterar</span>
                   </div>
-
-                  {/* Indicador de Upload */}
+                  
                   {uploadingPhoto && (
-                    <div className="absolute inset-0 bg-slate-950/70 flex items-center justify-center z-10">
-                      <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="absolute inset-0 bg-slate-900/80 dark:bg-slate-950/80 flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                   )}
                 </div>
-
-                <input
-                  type="file"
-                  id="upload-avatar-motorista"
+                <input 
+                  type="file" 
+                  id="upload-avatar-motorista" 
+                  className="hidden" 
                   accept="image/*"
-                  className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) handleUploadPhoto(file);
                   }}
                 />
-                <span className="text-[8.5px] text-slate-500 font-medium">Toque no círculo para alterar sua foto</span>
+                <p className="text-[9px] text-slate-500 dark:text-slate-500">Toque no círculo para alterar sua foto</p>
               </div>
-
-              {/* Dados Pessoais Editáveis */}
-              <div className="space-y-4">
+              
+              {/* Formulário de Dados Pessoais */}
+              <div className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
-                    Nome Completo
-                  </label>
+                  <label className="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo</label>
                   <input
                     type="text"
                     value={editNome}
                     onChange={(e) => setEditNome(e.target.value)}
-                    placeholder="Digite seu nome completo..."
-                    className="w-full bg-slate-900 border border-slate-850 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-750 focus:outline-none transition-colors"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
-
+                
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
-                    Telefone / WhatsApp (Contato)
-                  </label>
+                  <label className="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Telefone / WhatsApp (Contato)</label>
                   <input
                     type="text"
                     value={editTelefone}
                     onChange={(e) => setEditTelefone(e.target.value)}
-                    placeholder="Ex: 43999999999"
-                    className="w-full bg-slate-900 border border-slate-850 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder:text-slate-750 focus:outline-none transition-colors font-mono"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Dados Operacionais e de Habilitação (Apenas Leitura) */}
-              <div className="bg-slate-900/60 border border-slate-850 rounded-2xl p-4 space-y-3.5 shadow-inner">
-                <h4 className="text-[9.5px] font-black text-amber-500 uppercase tracking-widest border-b border-slate-800/60 pb-2">
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-2xl p-4 space-y-3.5 shadow-inner">
+                <h4 className="text-[9.5px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800/60 pb-2">
                   Informações Operacionais
                 </h4>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">Veículo Associado</span>
-                    <span className="text-xs font-bold text-white mt-1 block">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white mt-1 block">
                       {perfilMotorista?.modelo_veiculo || 'Não Atribuído'}
                     </span>
                   </div>
                   <div>
                     <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">Placa da Van</span>
-                    <span className="text-xs font-mono font-bold text-amber-400 mt-1 block">
+                    <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 mt-1 block">
                       {perfilMotorista?.placa_veiculo || '—'}
                     </span>
                   </div>
                   <div>
                     <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">CNH (Documento)</span>
-                    <span className="text-xs font-mono font-bold text-white mt-1 block">
+                    <span className="text-xs font-mono font-bold text-slate-900 dark:text-white mt-1 block">
                       {perfilMotorista?.cnh || 'Não Cadastrado'}
                     </span>
                   </div>
                   <div>
                     <span className="text-[8.5px] text-slate-500 uppercase tracking-wider block">Categoria da CNH</span>
-                    <span className="text-xs font-bold text-white mt-1 block">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white mt-1 block">
                       {perfilMotorista?.cnh_categoria ? (
-                        <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[9.5px] font-mono text-emerald-450">
+                        <span className="bg-slate-200 dark:bg-slate-950 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-800 text-[9.5px] font-mono text-emerald-600 dark:text-emerald-450">
                           {perfilMotorista.cnh_categoria}
                         </span>
                       ) : (
